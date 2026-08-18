@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>信息助手</title>
+  <style>
+    :root {
+      --primary: #4a90e2;
+      --bg: #f7f9fc;
+      --card-bg: #ffffff;
+      --text: #2c3e50;
+      --border: #e0e6ed;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5;
+      padding: 16px; max-width: 800px; margin: 0 auto;
+    }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    h1 { font-size: 1.5rem; font-weight: 600; flex: 1; }
+    .header-buttons { display: flex; gap: 10px; }
+    button {
+      background: var(--primary); color: white; border: none; border-radius: var(--radius);
+      padding: 10px 18px; font-size: 1rem; cursor: pointer; transition: opacity 0.2s;
+      box-shadow: var(--shadow); white-space: nowrap;
+    }
+    button:active { opacity: 0.8; }
+    button.secondary { background: #e2e8f0; color: var(--text); }
+    button.danger { background: #e74c3c; }
+    button.small { padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; }
+    .card {
+      background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 20px; margin-bottom: 20px;
+    }
+    label { display: block; font-weight: 500; margin-bottom: 6px; font-size: 0.95rem; }
+    select, input[type="text"], input[type="number"], textarea {
+      width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 1rem; background: #fafbfc; transition: border-color 0.2s; margin-bottom: 12px;
+      -webkit-appearance: none; appearance: none;
+    }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+    textarea { min-height: 100px; resize: vertical; }
+    .preview-box {
+      background: #f8fafd; border: 1px dashed var(--border); border-radius: 8px;
+      padding: 14px; font-size: 1rem; white-space: pre-wrap; word-break: break-word;
+      min-height: 60px; margin-bottom: 12px;
+    }
+    .group-hint {
+      background: #eef4ff; border-left: 4px solid var(--primary); padding: 10px 14px;
+      border-radius: 6px; margin-bottom: 15px; font-size: 0.95rem; color: #2c3e50;
+    }
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4);
+      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: white; border-radius: var(--radius); width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto; padding: 24px; position: relative;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { font-size: 1.3rem; font-weight: 600; }
+    .close-btn { background: none; border: none; font-size: 1.8rem; line-height: 1; cursor: pointer; color: #666; padding: 0 4px; }
+    .template-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .template-item-wrapper { display: flex; align-items: center; gap: 4px; }
+    .template-item {
+      background: #f1f4f8; padding: 8px 16px; border-radius: 20px; cursor: pointer;
+      font-size: 0.9rem; transition: all 0.2s; border: 2px solid transparent;
+    }
+    .template-item.active { background: #e3edfb; border-color: var(--primary); font-weight: 500; }
+    .order-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0 4px; color: #666; }
+    .order-btn:disabled { opacity: 0.3; cursor: default; }
+    .custom-setting-row, .entrance-row {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .custom-setting-row > * { flex: 1; min-width: 0; }
+    .custom-setting-row .custom-key { flex: 2; }
+    .custom-setting-row .custom-type { flex: 1; }
+    .custom-setting-row .custom-value { flex: 3; }
+    .custom-setting-row .custom-del { flex: 0 0 auto; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .checkbox-group label { display: flex; align-items: center; gap: 5px; font-weight: normal; font-size: 0.95rem; cursor: pointer; }
+    .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .import-export-area { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+    .help-content { font-size: 0.95rem; line-height: 1.6; }
+    .help-content h3 { margin: 16px 0 8px; font-size: 1.1rem; }
+    .help-content ul { padding-left: 20px; margin-bottom: 12px; }
+    .help-content li { margin-bottom: 6px; }
+    .help-content code { background: #f1f4f8; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #333; color: white; padding: 10px 20px; border-radius: 20px;
+      font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 2000;
+    }
+    .toast.show { opacity: 1; }
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      .card { padding: 16px; }
+      h1 { font-size: 1.3rem; }
+      .header-buttons button { padding: 8px 14px; font-size: 0.9rem; }
+      .custom-setting-row { flex-direction: column; align-items: stretch; }
+      .custom-setting-row > * { flex: 1 1 auto; }
+      .custom-setting-row .custom-del { align-self: flex-end; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>信息替换小工具</h1>
+    <div class="header-buttons">
+      <button id="helpBtn" class="secondary">📖 说明</button>
+      <button id="settingsBtn" class="secondary">⚙️ 设置</button>
+      <button id="manageBtn" class="secondary">管理模板</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <label for="templateSelect">选择模板</label>
+      <select id="templateSelect"></select>
+    </section>
+
+    <section class="card" id="inputSection">
+      <h2 style="font-size:1.1rem; margin-bottom:10px;">填写内容</h2>
+      <div id="groupHintBox" class="group-hint" style="display:none;"></div>
+      <div id="inputsContainer"></div>
+    </section>
+
+    <section class="card">
+      <label>预览</label>
+      <div id="previewBox" class="preview-box"></div>
+      <button id="copyBtn">📋 一键复制</button>
+    </section>
+  </main>
+
+  <!-- 管理模态框 -->
+  <div id="manageModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>管理模板</h2>
+        <button class="close-btn" id="closeManageBtn">&times;</button>
+      </div>
+      <div class="template-list" id="templateList"></div>
+      <button id="addTemplateBtn" class="secondary" style="margin-bottom:20px;">➕ 添加新模板</button>
+      <div id="templateEditor" style="display:none;">
+        <label>模板名称</label>
+        <input type="text" id="editTemplateName" placeholder="例如 乘客事务">
+        <label>发往群提示（可选）</label>
+        <input type="text" id="editGroupHint" placeholder="例如：安检工作群、值班群">
+        <label>模板内容（用 *变量名* 标记需要填写的内容）</label>
+        <textarea id="editTemplateContent" placeholder="例如：班长*班长*电话号码*电话号码*，请查收。"></textarea>
+        <div class="btn-group">
+          <button id="saveTemplateBtn">保存模板</button>
+          <button id="deleteTemplateBtn" class="danger">删除模板</button>
+        </div>
+      </div>
+      <div class="import-export-area">
+        <h3 style="font-size:1rem; margin-bottom:10px;">💾 导入 / 导出配置</h3>
+        <div class="btn-group">
+          <button id="exportBtn" class="secondary">导出配置</button>
+          <button id="importBtn" class="secondary">导入配置</button>
+        </div>
+        <textarea id="importExportText" style="margin-top:10px;" placeholder="导出的JSON会显示在这里，或粘贴JSON后点击导入"></textarea>
+        <button id="confirmImportBtn" style="display:none;">确认导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置模态框 -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>个人设置</h2>
+        <button class="close-btn" id="closeSettingsBtn">&times;</button>
+      </div>
+      <label>所属线路</label>
+      <input type="text" id="settingLine" placeholder="例如 3">
+      <label>所属站点</label>
+      <input type="text" id="settingStation" placeholder="例如 广州塔">
+      <label>班长姓名</label>
+      <input type="text" id="settingLeader" placeholder="例如 李四">
+      <label>班长电话号码</label>
+      <input type="text" id="settingLeaderPhone" placeholder="例如 13800138000">
+
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
+        <h3 style="font-size:1rem; margin-bottom:10px;">🚪 安检点管理</h3>
+        <div id="entranceList"></div>
+        <button id="addEntranceBtn" class="secondary" style="margin-bottom:20px;">➕ 添加安检点</button>
+      </div>
+
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
+        <h3 style="font-size:1rem; margin-bottom:10px;">🔧 自定义预设项（用于替换模板中的 *变量*）</h3>
+        <div id="customSettingsList"></div>
+        <button id="addCustomSettingBtn" class="secondary" style="margin-bottom:20px;">➕ 添加预设项</button>
+      </div>
+
+      <div class="btn-group">
+        <button id="saveSettingsBtn">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 帮助模态框 -->
+  <div id="helpModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>使用说明</h2>
+        <button class="close-btn" id="closeHelpBtn">&times;</button>
+      </div>
+      <div class="help-content">
+        <h3>1. 基本概念</h3>
+        <p>本工具通过模板替换生成工作信息。在模板中使用 <code>*变量名*</code> 标记需要手动填写的内容，系统会自动识别并生成输入框。</p>
+
+        <h3>2. 模板管理</h3>
+        <p>点击“管理模板”可添加、编辑、删除模板，并可调整模板顺序（使用模板列表旁的 ↑ ↓ 按钮）。</p>
+        <p>每个模板可设置“发往群提示”，在主界面显示提醒。</p>
+        <p>模板内容留空时，主界面只显示群提示（如有），不显示输入框。</p>
+
+        <h3>3. 特殊变量</h3>
+        <ul>
+          <li><code>*年*</code>、<code>*月*</code>、<code>*日*</code>：自动填充当前日期并加上单位（如“2026年”“8月”“19日”），不显示输入框。</li>
+          <li>包含“时间”二字的变量（如 <code>*时间*</code>、<code>*时间1*</code>）：自动填充当前时间（HH:MM），支持小数点输入（输入 <code>5.12</code> 自动变为 <code>5:12</code>）。</li>
+          <li><code>*安检点*</code>：单选下拉框，选项来自设置中的安检点列表。</li>
+          <li><code>*多安检点*</code>：多选复选框组，选中的值以“、”连接。</li>
+        </ul>
+
+        <h3>4. 固定预设</h3>
+        <p>在“设置”中填写线路、站点、班长、电话后，模板中对应的变量（<code>*线路*</code>、<code>*站点*</code>、<code>*班长*</code>、<code>*电话号码*</code>）会自动替换且不显示输入框。</p>
+
+        <h3>5. 自定义预设项</h3>
+        <p>在“设置”→“自定义预设项”中，可定义任意变量的类型：</p>
+        <ul>
+          <li><strong>文本</strong>：固定文本，自动替换且不显示输入框。</li>
+          <li><strong>单选</strong>：提供下拉选项，多个选项用 <code>|</code> 分隔，如 <code>A口|B口|C口</code>。</li>
+          <li><strong>多选</strong>：提供复选框组，选中的值以“、”连接。</li>
+        </ul>
+        <p>在模板中使用对应的键名（如 <code>*处理方式*</code>）即可生成控件。</p>
+
+        <h3>6. 动态件数输入</h3>
+        <p>针对违禁品/限带品，使用变量组合：<code>*违禁品件数*</code> 与 <code>*违禁品信息*</code>（限带品同理）。系统会根据件数自动生成对应数量的输入组，每组包含名称、规格、数量、处理方式。件数为0时不显示输入组。</p>
+        <p>输出格式：<code>名称规格×数量（处理方式）</code>，多件自动换行。</p>
+
+        <h3>7. 条件显示</h3>
+        <p>使用 <code>{?变量名}...{/变量名}</code> 包裹可选文本。当变量留空时，包裹的内容自动隐藏。</p>
+
+        <h3>8. 导入导出与数据保存</h3>
+        <p>所有数据保存在浏览器本地。可在“管理模板”底部导出配置为JSON文本，分享给同事；导入JSON即可恢复配置。</p>
+
+        <h3>9. 其他</h3>
+        <p>预览和复制不再自动添加句号，请根据需要在模板中自行添加标点。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    (function() {
+      const DEFAULT_DATA = {
+        templates: [],
+        settings: {
+          line: '',
+          station: '',
+          leader: '',
+          leaderphone: '',
+          entrances: [],
+          custom: []
+        }
+      };
+
+      let data = loadData();
+      let currentTemplateId = null;
+      let formValues = {};
+      let editingTemplateId = null;
+
+      const templateSelect = document.getElementById('templateSelect');
+      const inputsContainer = document.getElementById('inputsContainer');
+      const previewBox = document.getElementById('previewBox');
+      const groupHintBox = document.getElementById('groupHintBox');
+      const copyBtn = document.getElementById('copyBtn');
+      const manageBtn = document.getElementById('manageBtn');
+      const manageModal = document.getElementById('manageModal');
+      const closeManageBtn = document.getElementById('closeManageBtn');
+      const templateList = document.getElementById('templateList');
+      const addTemplateBtn = document.getElementById('addTemplateBtn');
+      const templateEditor = document.getElementById('templateEditor');
+      const editTemplateName = document.getElementById('editTemplateName');
+      const editGroupHint = document.getElementById('editGroupHint');
+      const editTemplateContent = document.getElementById('editTemplateContent');
+      const saveTemplateBtn = document.getElementById('saveTemplateBtn');
+      const deleteTemplateBtn = document.getElementById('deleteTemplateBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const importBtn = document.getElementById('importBtn');
+      const importExportText = document.getElementById('importExportText');
+      const confirmImportBtn = document.getElementById('confirmImportBtn');
+      const toast = document.getElementById('toast');
+
+      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsModal = document.getElementById('settingsModal');
+      const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+      const settingLine = document.getElementById('settingLine');
+      const settingStation = document.getElementById('settingStation');
+      const settingLeader = document.getElementById('settingLeader');
+      const settingLeaderPhone = document.getElementById('settingLeaderPhone');
+      const entranceList = document.getElementById('entranceList');
+      const addEntranceBtn = document.getElementById('addEntranceBtn');
+      const customSettingsList = document.getElementById('customSettingsList');
+      const addCustomSettingBtn = document.getElementById('addCustomSettingBtn');
+      const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+
+      const helpBtn = document.getElementById('helpBtn');
+      const helpModal = document.getElementById('helpModal');
+      const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+      function loadData() {
+        const saved = localStorage.getItem('templateReplaceToolData');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed && typeof parsed === 'object' && Array.isArray(parsed.templates) && parsed.settings) {
+              if (!parsed.settings.entrances) parsed.settings.entrances = [];
+              if (!Array.isArray(parsed.settings.custom)) {
+                const oldCustom = parsed.settings.custom || {};
+                parsed.settings.custom = [];
+                Object.keys(oldCustom).forEach(key => {
+                  parsed.settings.custom.push({ key, type: 'text', value: oldCustom[key] });
+                });
+              }
+              parsed.templates.forEach(t => {
+                if (!t.hasOwnProperty('groupHint')) t.groupHint = '';
+              });
+              return parsed;
+            }
+          } catch (e) { console.warn('读取数据失败，使用默认'); }
+        }
+        return JSON.parse(JSON.stringify(DEFAULT_DATA));
+      }
+
+      function saveData() {
+        localStorage.setItem('templateReplaceToolData', JSON.stringify(data));
+      }
+
+      function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      }
+
+      function getTemplateById(id) {
+        return data.templates.find(t => t.id === id);
+      }
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      }
+
+      function extractVariables(content) {
+        const regex = /\*([^*]+)\*/g;
+        const vars = [];
+        const seen = new Set();
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+          const name = match[1].trim();
+          if (name && !seen.has(name)) {
+            seen.add(name);
+            vars.push(name);
+          }
+        }
+        const condRegex = /\{\?([^}]+)\}/g;
+        while ((match = condRegex.exec(content)) !== null) {
+          const name = match[1].trim();
+          if (name && !seen.has(name)) {
+            seen.add(name);
+            vars.push(name);
+          }
+        }
+        return vars;
+      }
+
+      function getDefaultValue(varName) {
+        const now = new Date();
+        if (varName.includes('时间')) {
+          const hh = String(now.getHours()).padStart(2, '0');
+          const mm = String(now.getMinutes()).padStart(2, '0');
+          return `${hh}:${mm}`;
+        }
+        switch (varName) {
+          case '年': return String(now.getFullYear());
+          case '月': return String(now.getMonth() + 1);
+          case '日': return String(now.getDate());
+          case '时': return String(now.getHours()).padStart(2, '0');
+          case '分': return String(now.getMinutes()).padStart(2, '0');
+          default: return '';
+        }
+      }
+
+      function getPresetValue(varName) {
+        const s = data.settings;
+        if (s.line && varName === '线路') return s.line;
+        if (s.station && varName === '站点') return s.station;
+        if (s.leader && varName === '班长') return s.leader;
+        if (s.leaderphone && varName === '电话号码') return s.leaderphone;
+        const customItem = s.custom.find(item => item.key === varName);
+        if (customItem) {
+          if (customItem.type === 'text') return customItem.value;
+          if (customItem.type === 'single' || customItem.type === 'multi') {
+            const options = customItem.value.split('|').map(s => s.trim()).filter(Boolean);
+            if (options.length > 0) return options[0];
+          }
+        }
+        return '';
+      }
+
+      function applyConditionalBlocks(content, values) {
+        let result = content;
+        const regex = /\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g;
+        result = result.replace(regex, (match, varName, innerContent) => {
+          const val = values[varName] || '';
+          return (val.trim() === '') ? '' : innerContent;
+        });
+        return result;
+      }
+
+      function isDynamicItemVar(varName) {
+        return varName === '违禁品信息' || varName === '限带品信息';
+      }
+      function getRelatedCountVar(varName) {
+        if (varName === '违禁品信息') return '违禁品件数';
+        if (varName === '限带品信息') return '限带品件数';
+        return null;
+      }
+      function buildDynamicItemText(varName) {
+        const items = formValues[varName + '_items'] || [];
+        if (items.length === 0) return '';
+        return items.filter(item => item.name || item.spec || item.count || item.method)
+          .map(item => `${item.name || ''}${item.spec || ''}×${item.count || '1'}${item.method ? '（' + item.method + '）' : ''}`)
+          .join('\n');
+      }
+
+      function renderTemplateSelect() {
+        templateSelect.innerHTML = '';
+        if (data.templates.length === 0) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = '请先添加模板';
+          templateSelect.appendChild(opt);
+          currentTemplateId = null;
+          updateGroupHint();
+          return;
+        }
+        data.templates.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.textContent = t.name;
+          if (t.id === currentTemplateId) opt.selected = true;
+          templateSelect.appendChild(opt);
+        });
+        if (!currentTemplateId) {
+          currentTemplateId = data.templates[0].id;
+          templateSelect.value = currentTemplateId;
+        }
+        updateGroupHint();
+      }
+
+      function updateGroupHint() {
+        const template = getTemplateById(currentTemplateId);
+        if (template && template.groupHint && template.groupHint.trim()) {
+          groupHintBox.textContent = '📢 发往群：' + template.groupHint;
+          groupHintBox.style.display = 'block';
+        } else {
+          groupHintBox.style.display = 'none';
+        }
+      }
+
+      function renderInputs() {
+        const template = getTemplateById(currentTemplateId);
+        if (!template) {
+          inputsContainer.innerHTML = '';
+          previewBox.textContent = '';
+          formValues = {};
+          updateGroupHint();
+          return;
+        }
+        const vars = extractVariables(template.content);
+        const newValues = {};
+        vars.forEach(varName => {
+          let val = formValues[varName] || '';
+          if (!val) {
+            const preset = getPresetValue(varName);
+            if (preset) val = preset;
+            else {
+              const def = getDefaultValue(varName);
+              if (def) val = def;
+            }
+          }
+          newValues[varName] = val;
+        });
+        ['违禁品信息', '限带品信息'].forEach(dynVar => {
+          if (vars.includes(dynVar)) {
+            const countVar = getRelatedCountVar(dynVar);
+            if (vars.includes(countVar)) {
+              if (!formValues[dynVar + '_items']) {
+                formValues[dynVar + '_items'] = [];
+              }
+              newValues[dynVar] = formValues[dynVar] || '';
+              newValues[countVar] = formValues[countVar] || '0';
+            }
+          }
+        });
+        formValues = newValues;
+
+        inputsContainer.innerHTML = '';
+        if (vars.length === 0) {
+          // 空模板：仅显示群提示，不显示输入内容
+        } else {
+          vars.forEach(varName => {
+            if (varName === '年' || varName === '月' || varName === '日') return;
+
+            const fixedPreset = (varName === '线路' && data.settings.line) ||
+                                (varName === '站点' && data.settings.station) ||
+                                (varName === '班长' && data.settings.leader) ||
+                                (varName === '电话号码' && data.settings.leaderphone);
+            if (fixedPreset) return;
+
+            if (isDynamicItemVar(varName)) {
+              const countVar = getRelatedCountVar(varName);
+              if (vars.includes(countVar)) {
+                const wrapper = document.createElement('div');
+                wrapper.style.marginBottom = '12px';
+                const label = document.createElement('label');
+                label.textContent = varName;
+                wrapper.appendChild(label);
+
+                const count = parseInt(formValues[countVar]) || 0;
+                const itemsContainer = document.createElement('div');
+                itemsContainer.style.marginBottom = '8px';
+                wrapper.appendChild(itemsContainer);
+
+                function renderItemGroups() {
+                  itemsContainer.innerHTML = '';
+                  while (formValues[varName + '_items'].length < count) {
+                    formValues[varName + '_items'].push({ name: '', spec: '', count: '1', method: '换乘' });
+                  }
+                  formValues[varName + '_items'].length = count;
+                  const items = formValues[varName + '_items'];
+                  items.forEach((item, idx) => {
+                    const group = document.createElement('div');
+                    group.style.border = '1px solid #e0e6ed';
+                    group.style.borderRadius = '8px';
+                    group.style.padding = '10px';
+                    group.style.marginBottom = '8px';
+                    group.innerHTML = `<strong>第${idx+1}件</strong>`;
+
+                    const fieldRow = document.createElement('div');
+                    fieldRow.style.display = 'flex';
+                    fieldRow.style.gap = '6px';
+                    fieldRow.style.flexWrap = 'wrap';
+                    fieldRow.style.marginTop = '8px';
+
+                    const createField = (placeholder, value, key) => {
+                      const input = document.createElement('input');
+                      input.type = 'text';
+                      input.placeholder = placeholder;
+                      input.value = value;
+                      input.style.flex = '1 1 auto';
+                      input.style.marginBottom = '0';
+                      input.addEventListener('input', (e) => {
+                        item[key] = e.target.value;
+                        formValues[varName] = buildDynamicItemText(varName);
+                        updatePreview();
+                      });
+                      return input;
+                    };
+
+                    const nameInput = createField('名称', item.name, 'name');
+                    const specInput = createField('规格', item.spec, 'spec');
+                    const countInput = createField('数量', item.count, 'count');
+                    fieldRow.appendChild(nameInput);
+                    fieldRow.appendChild(specInput);
+                    fieldRow.appendChild(countInput);
+
+                    const methodSelect = document.createElement('select');
+                    methodSelect.style.flex = '1 1 auto';
+                    methodSelect.style.marginBottom = '0';
+                    ['换乘', '自弃'].forEach(opt => {
+                      const option = document.createElement('option');
+                      option.value = opt;
+                      option.textContent = opt;
+                      if (item.method === opt) option.selected = true;
+                      methodSelect.appendChild(option);
+                    });
+                    methodSelect.addEventListener('change', (e) => {
+                      item.method = e.target.value;
+                      formValues[varName] = buildDynamicItemText(varName);
+                      updatePreview();
+                    });
+                    fieldRow.appendChild(methodSelect);
+
+                    group.appendChild(fieldRow);
+                    itemsContainer.appendChild(group);
+                  });
+                }
+
+                const countWrapper = document.createElement('div');
+                countWrapper.style.marginBottom = '10px';
+                const countLabel = document.createElement('label');
+                countLabel.textContent = countVar;
+                countLabel.style.display = 'block';
+                countLabel.style.marginBottom = '6px';
+                countWrapper.appendChild(countLabel);
+                const countInput = document.createElement('input');
+                countInput.type = 'number';
+                countInput.min = '0';
+                countInput.value = formValues[countVar] || '0';
+                countInput.addEventListener('input', (e) => {
+                  formValues[countVar] = e.target.value;
+                  renderItemGroups();
+                  updatePreview();
+                });
+                countWrapper.appendChild(countInput);
+                wrapper.appendChild(countWrapper);
+                renderItemGroups();
+
+                inputsContainer.appendChild(wrapper);
+                return;
+              }
+            }
+
+            const customItem = data.settings.custom.find(c => c.key === varName);
+            if (customItem) {
+              const wrapper = document.createElement('div');
+              wrapper.style.marginBottom = '12px';
+              const label = document.createElement('label');
+              label.textContent = varName;
+              wrapper.appendChild(label);
+              if (customItem.type === 'text') return;
+              else if (customItem.type === 'single') {
+                const options = customItem.value.split('|').map(s => s.trim()).filter(Boolean);
+                const select = document.createElement('select');
+                options.forEach(option => {
+                  const opt = document.createElement('option');
+                  opt.value = option;
+                  opt.textContent = option;
+                  if (formValues[varName] === option) opt.selected = true;
+                  select.appendChild(opt);
+                });
+                select.addEventListener('change', (e) => {
+                  formValues[varName] = e.target.value;
+                  updatePreview();
+                });
+                wrapper.appendChild(select);
+                inputsContainer.appendChild(wrapper);
+                return;
+              } else if (customItem.type === 'multi') {
+                const options = customItem.value.split('|').map(s => s.trim()).filter(Boolean);
+                const group = document.createElement('div');
+                group.className = 'checkbox-group';
+                const currentVal = formValues[varName] || '';
+                const selected = currentVal ? currentVal.split('、').map(s => s.trim()).filter(Boolean) : [];
+                options.forEach(option => {
+                  const labelEl = document.createElement('label');
+                  const cb = document.createElement('input');
+                  cb.type = 'checkbox';
+                  cb.value = option;
+                  cb.checked = selected.includes(option);
+                  cb.addEventListener('change', (e) => {
+                    const checked = Array.from(group.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                    formValues[varName] = checked.join('、');
+                    updatePreview();
+                  });
+                  labelEl.appendChild(cb);
+                  labelEl.appendChild(document.createTextNode(option));
+                  group.appendChild(labelEl);
+                });
+                wrapper.appendChild(group);
+                inputsContainer.appendChild(wrapper);
+                return;
+              }
+            }
+
+            if (varName === '安检点' && data.settings.entrances.length > 0) {
+              const wrapper = document.createElement('div');
+              wrapper.style.marginBottom = '12px';
+              const label = document.createElement('label');
+              label.textContent = '安检点';
+              wrapper.appendChild(label);
+              const select = document.createElement('select');
+              const optEmpty = document.createElement('option');
+              optEmpty.value = '';
+              optEmpty.textContent = '请选择';
+              select.appendChild(optEmpty);
+              data.settings.entrances.forEach(ent => {
+                const opt = document.createElement('option');
+                opt.value = ent;
+                opt.textContent = ent;
+                if (formValues[varName] === ent) opt.selected = true;
+                select.appendChild(opt);
+              });
+              select.addEventListener('change', (e) => {
+                formValues[varName] = e.target.value;
+                updatePreview();
+              });
+              wrapper.appendChild(select);
+              inputsContainer.appendChild(wrapper);
+              return;
+            }
+
+            if (varName === '多安检点' && data.settings.entrances.length > 0) {
+              const wrapper = document.createElement('div');
+              wrapper.style.marginBottom = '12px';
+              const label = document.createElement('label');
+              label.textContent = '多安检点';
+              wrapper.appendChild(label);
+              const group = document.createElement('div');
+              group.className = 'checkbox-group';
+              const currentVal = formValues[varName] || '';
+              const selected = currentVal ? currentVal.split('、').map(s => s.trim()).filter(Boolean) : [];
+              data.settings.entrances.forEach(ent => {
+                const labelEl = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = ent;
+                cb.checked = selected.includes(ent);
+                cb.addEventListener('change', (e) => {
+                  const checked = Array.from(group.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                  formValues[varName] = checked.join('、');
+                  updatePreview();
+                });
+                labelEl.appendChild(cb);
+                labelEl.appendChild(document.createTextNode(ent));
+                group.appendChild(labelEl);
+              });
+              wrapper.appendChild(group);
+              inputsContainer.appendChild(wrapper);
+              return;
+            }
+
+            if (varName.includes('时间')) {
+              const wrapper = document.createElement('div');
+              wrapper.style.marginBottom = '12px';
+              const label = document.createElement('label');
+              label.textContent = varName;
+              wrapper.appendChild(label);
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = formValues[varName] || '';
+              input.dataset.varName = varName;
+              input.placeholder = '例如 5.12 表示 5:12';
+              input.addEventListener('input', (e) => {
+                let val = e.target.value;
+                if (val.includes('.')) {
+                  val = val.replace('.', ':');
+                  e.target.value = val;
+                }
+                formValues[varName] = val;
+                updatePreview();
+              });
+              wrapper.appendChild(input);
+              inputsContainer.appendChild(wrapper);
+              return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '12px';
+            const label = document.createElement('label');
+            label.textContent = varName;
+            wrapper.appendChild(label);
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = formValues[varName] || '';
+            input.dataset.varName = varName;
+            input.placeholder = varName;
+            input.addEventListener('input', (e) => {
+              formValues[varName] = e.target.value;
+              updatePreview();
+            });
+            wrapper.appendChild(input);
+            inputsContainer.appendChild(wrapper);
+          });
+        }
+        updatePreview();
+        updateGroupHint();
+      }
+
+      function updatePreview() {
+        const template = getTemplateById(currentTemplateId);
+        if (!template) {
+          previewBox.textContent = '';
+          return;
+        }
+        let output = template.content;
+        ['违禁品信息', '限带品信息'].forEach(dynVar => {
+          if (formValues.hasOwnProperty(dynVar)) {
+            formValues[dynVar] = buildDynamicItemText(dynVar);
+          }
+        });
+        output = applyConditionalBlocks(output, formValues);
+        const vars = extractVariables(template.content);
+        vars.forEach(varName => {
+          let val = formValues[varName] || '';
+          if ((varName === '年' || varName === '月' || varName === '日') && val) val += varName;
+          if (varName.includes('时间') && val.includes('.')) val = val.replace('.', ':');
+          const regex = new RegExp(`\\*${varName}\\*`, 'g');
+          output = output.replace(regex, val);
+        });
+        previewBox.textContent = output;
+      }
+
+      function renderMain() {
+        renderTemplateSelect();
+        renderInputs();
+      }
+
+      // ==================== 管理模态框 ====================
+      function renderTemplateList() {
+        templateList.innerHTML = '';
+        data.templates.forEach((t, index) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'template-item-wrapper';
+
+          // 上移按钮
+          const upBtn = document.createElement('button');
+          upBtn.className = 'order-btn';
+          upBtn.innerHTML = '↑';
+          upBtn.disabled = index === 0;
+          upBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (index > 0) {
+              [data.templates[index-1], data.templates[index]] = [data.templates[index], data.templates[index-1]];
+              saveData();
+              renderTemplateList();
+              renderTemplateEditor();
+            }
+          });
+          wrapper.appendChild(upBtn);
+
+          // 下移按钮
+          const downBtn = document.createElement('button');
+          downBtn.className = 'order-btn';
+          downBtn.innerHTML = '↓';
+          downBtn.disabled = index === data.templates.length - 1;
+          downBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (index < data.templates.length - 1) {
+              [data.templates[index], data.templates[index+1]] = [data.templates[index+1], data.templates[index]];
+              saveData();
+              renderTemplateList();
+              renderTemplateEditor();
+            }
+          });
+          wrapper.appendChild(downBtn);
+
+          const item = document.createElement('div');
+          item.className = 'template-item' + (t.id === editingTemplateId ? ' active' : '');
+          item.textContent = t.name;
+          item.addEventListener('click', () => {
+            editingTemplateId = t.id;
+            renderTemplateEditor();
+            renderTemplateList();
+          });
+          wrapper.appendChild(item);
+
+          templateList.appendChild(wrapper);
+        });
+      }
+
+      function renderTemplateEditor() {
+        const template = getTemplateById(editingTemplateId);
+        if (!template) {
+          templateEditor.style.display = 'none';
+          return;
+        }
+        templateEditor.style.display = 'block';
+        editTemplateName.value = template.name;
+        editGroupHint.value = template.groupHint || '';
+        editTemplateContent.value = template.content;
+      }
+
+      function renderManageModal() {
+        renderTemplateList();
+        if (editingTemplateId) renderTemplateEditor();
+        else templateEditor.style.display = 'none';
+      }
+
+      // ==================== 设置模态框 ====================
+      function renderEntranceList() {
+        entranceList.innerHTML = '';
+        data.settings.entrances.forEach((ent, index) => {
+          const row = document.createElement('div');
+          row.className = 'entrance-row';
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = ent;
+          input.placeholder = '口名称，例如 A口';
+          input.addEventListener('input', (e) => {
+            data.settings.entrances[index] = e.target.value;
+            saveData();
+          });
+          row.appendChild(input);
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '删除';
+          delBtn.className = 'danger small';
+          delBtn.addEventListener('click', () => {
+            data.settings.entrances.splice(index, 1);
+            renderEntranceList();
+            saveData();
+          });
+          row.appendChild(delBtn);
+          entranceList.appendChild(row);
+        });
+      }
+
+      function renderCustomSettings() {
+        customSettingsList.innerHTML = '';
+        data.settings.custom.forEach((item, index) => {
+          const row = document.createElement('div');
+          row.className = 'custom-setting-row';
+
+          const keyInput = document.createElement('input');
+          keyInput.type = 'text';
+          keyInput.className = 'custom-key';
+          keyInput.value = item.key;
+          keyInput.placeholder = '键名';
+          keyInput.addEventListener('input', (e) => {
+            item.key = e.target.value.trim();
+            saveData();
+          });
+          row.appendChild(keyInput);
+
+          const typeSelect = document.createElement('select');
+          typeSelect.className = 'custom-type';
+          const typeOptions = [
+            { value: 'text', label: '文本' },
+            { value: 'single', label: '单选' },
+            { value: 'multi', label: '多选' }
+          ];
+          typeOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (item.type === opt.value) option.selected = true;
+            typeSelect.appendChild(option);
+          });
+          typeSelect.addEventListener('change', (e) => {
+            item.type = e.target.value;
+            saveData();
+          });
+          row.appendChild(typeSelect);
+
+          const valueInput = document.createElement('input');
+          valueInput.type = 'text';
+          valueInput.className = 'custom-value';
+          valueInput.value = item.value;
+          valueInput.placeholder = item.type === 'text' ? '文本值' : '选项用 | 分隔，如 A口|B口';
+          valueInput.addEventListener('input', (e) => {
+            item.value = e.target.value;
+            saveData();
+          });
+          row.appendChild(valueInput);
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '删除';
+          delBtn.className = 'danger small custom-del';
+          delBtn.addEventListener('click', () => {
+            data.settings.custom.splice(index, 1);
+            renderCustomSettings();
+            saveData();
+          });
+          row.appendChild(delBtn);
+
+          customSettingsList.appendChild(row);
+        });
+      }
+
+      function openSettingsModal() {
+        settingLine.value = data.settings.line || '';
+        settingStation.value = data.settings.station || '';
+        settingLeader.value = data.settings.leader || '';
+        settingLeaderPhone.value = data.settings.leaderphone || '';
+        renderEntranceList();
+        renderCustomSettings();
+        settingsModal.classList.add('active');
+      }
+
+      // ==================== 事件绑定 ====================
+      templateSelect.addEventListener('change', (e) => {
+        currentTemplateId = e.target.value;
+        renderInputs();
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        const text = previewBox.textContent;
+        if (!text) {
+          showToast('预览内容为空');
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('已复制到剪贴板');
+        } catch (err) {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          showToast('已复制到剪贴板');
+        }
+      });
+
+      manageBtn.addEventListener('click', () => {
+        if (data.templates.length > 0 && !editingTemplateId) editingTemplateId = data.templates[0].id;
+        renderManageModal();
+        manageModal.classList.add('active');
+      });
+
+      closeManageBtn.addEventListener('click', () => {
+        manageModal.classList.remove('active');
+        renderMain();
+      });
+
+      manageModal.addEventListener('click', (e) => {
+        if (e.target === manageModal) {
+          manageModal.classList.remove('active');
+          renderMain();
+        }
+      });
+
+      addTemplateBtn.addEventListener('click', () => {
+        const newTemplate = { id: generateId(), name: '新模板', content: '', groupHint: '' };
+        data.templates.push(newTemplate);
+        editingTemplateId = newTemplate.id;
+        saveData();
+        renderManageModal();
+      });
+
+      saveTemplateBtn.addEventListener('click', () => {
+        const template = getTemplateById(editingTemplateId);
+        if (!template) return;
+        template.name = editTemplateName.value.trim() || '未命名模板';
+        template.groupHint = editGroupHint.value.trim();
+        template.content = editTemplateContent.value;
+        saveData();
+        if (currentTemplateId === template.id) {
+          renderInputs();
+          updateGroupHint();
+        }
+        renderManageModal();
+        renderMain();
+        showToast('模板已保存');
+      });
+
+      deleteTemplateBtn.addEventListener('click', () => {
+        const template = getTemplateById(editingTemplateId);
+        if (!template) return;
+        if (!confirm(`确定删除模板「${template.name}」吗？`)) return;
+        data.templates = data.templates.filter(t => t.id !== editingTemplateId);
+        if (currentTemplateId === editingTemplateId) {
+          currentTemplateId = data.templates.length > 0 ? data.templates[0].id : null;
+        }
+        editingTemplateId = data.templates.length > 0 ? data.templates[0].id : null;
+        saveData();
+        renderManageModal();
+        renderMain();
+        showToast('模板已删除');
+      });
+
+      exportBtn.addEventListener('click', () => {
+        importExportText.value = JSON.stringify(data, null, 2);
+        showToast('配置已导出，请复制文本');
+      });
+
+      importBtn.addEventListener('click', () => {
+        confirmImportBtn.style.display = 'inline-block';
+        importExportText.focus();
+        showToast('请粘贴JSON配置，然后点击确认导入');
+      });
+
+      confirmImportBtn.addEventListener('click', () => {
+        try {
+          const parsed = JSON.parse(importExportText.value);
+          if (!parsed || !Array.isArray(parsed.templates) || !parsed.settings) throw new Error('格式不正确');
+          if (!parsed.settings.entrances) parsed.settings.entrances = [];
+          if (!Array.isArray(parsed.settings.custom)) {
+            const oldCustom = parsed.settings.custom || {};
+            parsed.settings.custom = [];
+            Object.keys(oldCustom).forEach(key => {
+              parsed.settings.custom.push({ key, type: 'text', value: oldCustom[key] });
+            });
+          }
+          parsed.templates.forEach(t => {
+            if (!t.hasOwnProperty('groupHint')) t.groupHint = '';
+          });
+          data = parsed;
+          saveData();
+          if (data.templates.length > 0) {
+            currentTemplateId = data.templates[0].id;
+            editingTemplateId = data.templates[0].id;
+          } else {
+            currentTemplateId = null;
+            editingTemplateId = null;
+          }
+          renderMain();
+          renderManageModal();
+          confirmImportBtn.style.display = 'none';
+          importExportText.value = '';
+          showToast('导入成功');
+        } catch (e) {
+          showToast('导入失败：' + e.message);
+        }
+      });
+
+      settingsBtn.addEventListener('click', openSettingsModal);
+      closeSettingsBtn.addEventListener('click', () => {
+        settingsModal.classList.remove('active');
+        renderMain();
+      });
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+          settingsModal.classList.remove('active');
+          renderMain();
+        }
+      });
+
+      addEntranceBtn.addEventListener('click', () => {
+        data.settings.entrances.push('');
+        renderEntranceList();
+        saveData();
+      });
+
+      addCustomSettingBtn.addEventListener('click', () => {
+        data.settings.custom.push({ key: '', type: 'text', value: '' });
+        renderCustomSettings();
+        saveData();
+      });
+
+      saveSettingsBtn.addEventListener('click', () => {
+        data.settings.line = settingLine.value.trim();
+        data.settings.station = settingStation.value.trim();
+        data.settings.leader = settingLeader.value.trim();
+        data.settings.leaderphone = settingLeaderPhone.value.trim();
+        saveData();
+        settingsModal.classList.remove('active');
+        renderMain();
+        showToast('设置已保存');
+      });
+
+      helpBtn.addEventListener('click', () => {
+        helpModal.classList.add('active');
+      });
+      closeHelpBtn.addEventListener('click', () => {
+        helpModal.classList.remove('active');
+      });
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) helpModal.classList.remove('active');
+      });
+
+      // ==================== 初始化 ====================
+      renderMain();
+    })();
+  </script>
+</body>
+</html>
