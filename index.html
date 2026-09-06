@@ -5,1165 +5,1703 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>信息助手</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
     :root {
       --primary: #4a90e2;
-      --bg: #f7f9fc;
-      --card-bg: #ffffff;
-      --text: #2c3e50;
-      --border: #e0e6ed;
+      --primary-light: #e8f0fe;
+      --primary-dark: #2d6fb0;
+      --success: #34c759;
+      --warning: #f5a623;
+      --danger: #e74c3c;
+      --gray: #8e9aaf;
+      --bg: #f2f4f8;
+      --card: #ffffff;
+      --text: #1a2332;
+      --text-secondary: #5a6a7a;
+      --border: #e2e8f0;
       --radius: 12px;
-      --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg); color: var(--text); line-height: 1.5;
-      padding: 16px; max-width: 800px; margin: 0 auto;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 0 0 calc(70px + var(--safe-bottom)) 0;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
     }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    h1 { font-size: 1.5rem; font-weight: 600; flex: 1; }
-    .header-buttons { display: flex; gap: 10px; }
-    button {
-      background: var(--primary); color: white; border: none; border-radius: var(--radius);
-      padding: 10px 18px; font-size: 1rem; cursor: pointer; transition: opacity 0.2s;
-      box-shadow: var(--shadow); white-space: nowrap;
+
+    /* --- 顶部导航 --- */
+    .app-header {
+      background: var(--card);
+      padding: 14px 16px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
     }
-    button:active { opacity: 0.8; }
-    button.secondary { background: #e2e8f0; color: var(--text); }
-    button.danger { background: #e74c3c; }
-    button.small { padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; }
+    .app-header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .app-header h1 small {
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: var(--gray);
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .header-actions button {
+      background: var(--bg);
+      border: none;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .header-actions button:active { opacity: 0.6; }
+    .header-actions button.primary-btn {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* --- Tab 切换 --- */
+    .tab-bar {
+      display: flex;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 62px;
+      z-index: 49;
+    }
+    .tab-bar .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .tab-bar .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .tab-bar .tab:active { opacity: 0.6; }
+
+    /* --- 内容区 --- */
+    .tab-content {
+      display: none;
+      padding: 12px 14px 20px;
+    }
+    .tab-content.active { display: block; }
+
+    /* --- 卡片 --- */
     .card {
-      background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
-      padding: 20px; margin-bottom: 20px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      margin-bottom: 14px;
     }
-    label { display: block; font-weight: 500; margin-bottom: 6px; font-size: 0.95rem; }
-    select, input[type="text"], input[type="number"], textarea {
-      width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
-      font-size: 1rem; background: #fafbfc; transition: border-color 0.2s; margin-bottom: 12px;
-      -webkit-appearance: none; appearance: none;
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary); }
-    textarea { min-height: 100px; resize: vertical; }
+
+    /* --- 表单控件 (移动优先) --- */
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+    }
+    select, input[type="text"], input[type="number"], input[type="time"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;  /* 防止 iOS 缩放 */
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafbfc;
+      transition: border-color 0.15s;
+      font-family: inherit;
+      color: var(--text);
+      -webkit-appearance: none;
+      appearance: none;
+      margin-bottom: 8px;
+    }
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+    textarea { min-height: 70px; resize: vertical; }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e9aaf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+    button {
+      min-height: 44px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: var(--shadow);
+      touch-action: manipulation;
+    }
+    button:active { opacity: 0.7; transform: scale(0.97); }
+    button.secondary { background: #e8ecf2; color: var(--text); }
+    button.danger { background: var(--danger); color: #fff; }
+    button.success { background: var(--success); color: #fff; }
+    button.ghost { background: transparent; color: var(--primary); box-shadow: none; min-height: 32px; padding: 0 8px; }
+    button.small { min-height: 34px; font-size: 0.8rem; padding: 0 12px; }
+    button.block { width: 100%; justify-content: center; }
+    button:disabled { opacity: 0.4; pointer-events: none; }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .btn-row button { flex: 1 1 auto; min-width: 60px; }
+
+    /* --- 预览 --- */
     .preview-box {
-      background: #f8fafd; border: 1px dashed var(--border); border-radius: 8px;
-      padding: 14px; font-size: 1rem; white-space: pre-wrap; word-break: break-word;
-      min-height: 60px; margin-bottom: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 50px;
+      margin-bottom: 10px;
+      color: var(--text);
+      line-height: 1.6;
     }
+    .preview-box.empty { color: var(--gray); font-style: italic; }
+
+    /* --- 动态件数 --- */
+    .dyn-item-group {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #fafbfc;
+    }
+    .dyn-item-group .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+    .dyn-item-group .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .dyn-item-group .fields .row {
+      display: flex;
+      gap: 6px;
+    }
+    .dyn-item-group .fields .row > * {
+      flex: 1;
+      min-width: 0;
+    }
+    .dyn-item-group .fields input,
+    .dyn-item-group .fields select {
+      padding: 10px 10px;
+      font-size: 15px;
+      margin: 0;
+    }
+    @media (min-width: 420px) {
+      .dyn-item-group .fields { flex-direction: row; flex-wrap: wrap; }
+      .dyn-item-group .fields .row { flex: 1 1 auto; min-width: 120px; }
+    }
+
+    /* --- 群提示 --- */
     .group-hint {
-      background: #eef4ff; border-left: 4px solid var(--primary); padding: 10px 14px;
-      border-radius: 6px; margin-bottom: 15px; font-size: 0.95rem; color: #2c3e50;
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      padding: 8px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
     }
+
+    /* --- 时间线 --- */
+    .timeline-current-time {
+      text-align: center;
+      padding: 12px 0 8px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 2px;
+    }
+    .timeline-current-time small {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--gray);
+      margin-left: 8px;
+    }
+    .timeline-empty {
+      text-align: center;
+      color: var(--gray);
+      padding: 30px 0;
+      font-size: 0.9rem;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: stretch;
+      position: relative;
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-item .time-col {
+      flex: 0 0 80px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      padding-top: 2px;
+      line-height: 1.3;
+    }
+    .timeline-item .time-col .range {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--gray);
+    }
+    .timeline-item .content-col {
+      flex: 1;
+      padding-left: 4px;
+    }
+    .timeline-item .content-col .task {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .timeline-item .content-col .desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .timeline-item .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex: 0 0 12px;
+      margin-top: 4px;
+      border: 2px solid var(--border);
+    }
+    /* 状态 */
+    .timeline-item.past .status-dot { background: var(--gray); border-color: var(--gray); }
+    .timeline-item.past .task { color: var(--gray); }
+    .timeline-item.current .status-dot { background: var(--success); border-color: var(--success); box-shadow: 0 0 0 3px rgba(52,199,89,0.2); }
+    .timeline-item.current { background: var(--primary-light); margin: 0 -16px; padding: 12px 16px; border-radius: 10px; }
+    .timeline-item.current .task { color: var(--primary-dark); }
+    .timeline-item.future .status-dot { background: transparent; border-color: var(--border); }
+
+    /* --- 模态框 (底部弹出) --- */
     .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4);
-      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: flex-end;
+      align-items: flex-end;
+      z-index: 1000;
+      padding: 0;
+      animation: fadeIn 0.2s;
     }
     .modal-overlay.active { display: flex; }
-    .modal-content {
-      background: white; border-radius: var(--radius); width: 100%; max-width: 600px;
-      max-height: 90vh; overflow-y: auto; padding: 24px; position: relative;
+    .modal-overlay .modal-content {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      max-height: 92vh;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(20px + var(--safe-bottom));
+      overflow-y: auto;
+      animation: slideUp 0.25s ease;
+      position: relative;
     }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .modal-header h2 { font-size: 1.3rem; font-weight: 600; }
-    .close-btn { background: none; border: none; font-size: 1.8rem; line-height: 1; cursor: pointer; color: #666; padding: 0 4px; }
-    .template-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-    .template-item-wrapper { display: flex; align-items: center; gap: 4px; }
-    .template-item {
-      background: #f1f4f8; padding: 8px 16px; border-radius: 20px; cursor: pointer;
-      font-size: 0.9rem; transition: all 0.2s; border: 2px solid transparent;
+    .modal-overlay .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: #d0d7e2;
+      border-radius: 4px;
+      margin: 0 auto 16px;
     }
-    .template-item.active { background: #e3edfb; border-color: var(--primary); font-weight: 500; }
-    .order-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0 4px; color: #666; }
-    .order-btn:disabled { opacity: 0.3; cursor: default; }
-    .custom-setting-row, .entrance-row {
-      display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
     }
-    .custom-setting-row > * { flex: 1; min-width: 0; }
-    .custom-setting-row .custom-key { flex: 2; }
-    .custom-setting-row .custom-type { flex: 1; }
-    .custom-setting-row .custom-value { flex: 3; }
-    .custom-setting-row .custom-del { flex: 0 0 auto; }
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-    .checkbox-group label { display: flex; align-items: center; gap: 5px; font-weight: normal; font-size: 0.95rem; cursor: pointer; }
-    .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-    .import-export-area { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
-    .help-content { font-size: 0.95rem; line-height: 1.6; }
-    .help-content h3 { margin: 16px 0 8px; font-size: 1.1rem; }
-    .help-content ul { padding-left: 20px; margin-bottom: 12px; }
-    .help-content li { margin-bottom: 6px; }
-    .help-content code { background: #f1f4f8; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .modal-header h2 { font-size: 1.1rem; font-weight: 600; }
+    .modal-header .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      line-height: 1;
+      color: var(--gray);
+      padding: 0 4px;
+      min-height: 40px;
+      box-shadow: none;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0.6; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* --- 辅助 --- */
+    .flex-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .flex-row > * { flex: 1 1 auto; min-width: 0; }
+    .flex-row .shrink { flex: 0 0 auto; }
+    .mt-8 { margin-top: 8px; }
+    .mb-8 { margin-bottom: 8px; }
+    .border-top { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+    .text-muted { color: var(--text-secondary); font-size: 0.8rem; }
+    .text-center { text-align: center; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+    .tag {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .tag:active { opacity: 0.6; }
+    .tag-sm { font-size: 0.7rem; padding: 2px 10px; }
+
+    /* --- Toast --- */
     .toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: #333; color: white; padding: 10px 20px; border-radius: 20px;
-      font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 2000;
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a2332;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+      z-index: 2000;
+      max-width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     }
     .toast.show { opacity: 1; }
-    @media (max-width: 480px) {
-      body { padding: 10px; }
-      .card { padding: 16px; }
-      h1 { font-size: 1.3rem; }
-      .header-buttons button { padding: 8px 14px; font-size: 0.9rem; }
-      .custom-setting-row { flex-direction: column; align-items: stretch; }
-      .custom-setting-row > * { flex: 1 1 auto; }
-      .custom-setting-row .custom-del { align-self: flex-end; }
-    }
+
+    /* --- 隐藏辅助 --- */
+    .hidden { display: none !important; }
+
+    /* --- 滚动条美化 --- */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>信息替换小工具</h1>
-    <div class="header-buttons">
-      <button id="helpBtn" class="secondary">📖 说明</button>
-      <button id="settingsBtn" class="secondary">⚙️ 设置</button>
-      <button id="manageBtn" class="secondary">管理模板</button>
+  <!-- ====== 顶部导航 ====== -->
+  <header class="app-header">
+    <h1>📋 信息助手 <small>v3</small></h1>
+    <div class="header-actions">
+      <button id="helpBtn">📖 说明</button>
+      <button id="settingsBtn" class="primary-btn">⚙️ 设置</button>
     </div>
   </header>
 
-  <main>
-    <section class="card">
+  <!-- ====== Tab 栏 ====== -->
+  <div class="tab-bar">
+    <div class="tab active" data-tab="replace">📝 信息替换</div>
+    <div class="tab" data-tab="timeline">⏰ 时间线</div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- TAB 1: 信息替换 -->
+  <!-- ========================================================== -->
+  <div class="tab-content active" id="tabReplace">
+    <div class="card">
       <label for="templateSelect">选择模板</label>
       <select id="templateSelect"></select>
-    </section>
+    </div>
 
-    <section class="card" id="inputSection">
-      <h2 style="font-size:1.1rem; margin-bottom:10px;">填写内容</h2>
+    <div class="card">
       <div id="groupHintBox" class="group-hint" style="display:none;"></div>
       <div id="inputsContainer"></div>
-    </section>
+      <div style="margin-top:10px;">
+        <label>预览效果</label>
+        <div id="previewBox" class="preview-box empty">💡 选择模板后，填写内容会在这里实时预览</div>
+        <button id="copyBtn" class="block">📋 复制结果</button>
+      </div>
+    </div>
+  </div>
 
-    <section class="card">
-      <label>预览</label>
-      <div id="previewBox" class="preview-box"></div>
-      <button id="copyBtn">📋 一键复制</button>
-    </section>
-  </main>
+  <!-- ========================================================== -->
+  <!-- TAB 2: 时间线 -->
+  <!-- ========================================================== -->
+  <div class="tab-content" id="tabTimeline">
+    <div class="card">
+      <div class="timeline-current-time">
+        <span id="currentTimeDisplay">--:--:--</span>
+        <small id="currentPeriodDisplay"></small>
+      </div>
+      <div id="timelineList">
+        <div class="timeline-empty">⏰ 还没有时间线任务，点击下方「管理时间线」添加</div>
+      </div>
+      <button id="manageTimelineBtn" class="block secondary" style="margin-top:8px;">📋 管理时间线</button>
+    </div>
+  </div>
 
-  <!-- 管理模态框 -->
+  <!-- ========================================================== -->
+  <!-- 模态框：管理模板 -->
+  <!-- ========================================================== -->
   <div id="manageModal" class="modal-overlay">
     <div class="modal-content">
+      <div class="modal-handle"></div>
       <div class="modal-header">
         <h2>管理模板</h2>
         <button class="close-btn" id="closeManageBtn">&times;</button>
       </div>
-      <div class="template-list" id="templateList"></div>
-      <button id="addTemplateBtn" class="secondary" style="margin-bottom:20px;">➕ 添加新模板</button>
-      <div id="templateEditor" style="display:none;">
-        <label>模板名称</label>
-        <input type="text" id="editTemplateName" placeholder="例如 乘客事务">
-        <label>发往群提示（可选）</label>
-        <input type="text" id="editGroupHint" placeholder="例如：安检工作群、值班群">
-        <label>模板内容（用 *变量名* 标记需要填写的内容）</label>
-        <textarea id="editTemplateContent" placeholder="例如：班长*班长*电话号码*电话号码*，请查收。"></textarea>
-        <div class="btn-group">
-          <button id="saveTemplateBtn">保存模板</button>
-          <button id="deleteTemplateBtn" class="danger">删除模板</button>
+      <div class="flex-row mb-8">
+        <button id="addTemplateBtn" class="small">➕ 新建</button>
+        <button id="exportBtn" class="secondary small">📤 导出</button>
+        <button id="importBtn" class="secondary small">📥 导入</button>
+      </div>
+      <div id="templateList" class="tag-list"></div>
+      <div id="templateEditor" class="hidden">
+        <div class="flex-row">
+          <input type="text" id="editTemplateName" placeholder="模板名称" style="flex:2;">
+          <input type="text" id="editGroupHint" placeholder="发往群提示（选填）" style="flex:3;">
+        </div>
+        <label style="margin-top:6px;">模板内容 <span class="text-muted">（用 <code>*变量*</code> 标记）</span></label>
+        <textarea id="editTemplateContent" rows="4" placeholder="例如：*班长*你好，*时间*在*安检点*发现*违禁品件数*件违禁品"></textarea>
+        <div id="varTagList" class="tag-list"></div>
+        <div class="btn-row">
+          <button id="saveTemplateBtn" class="small">💾 保存</button>
+          <button id="deleteTemplateBtn" class="danger small">🗑 删除</button>
+          <button id="duplicateTemplateBtn" class="secondary small">📋 复制</button>
         </div>
       </div>
-      <div class="import-export-area">
-        <h3 style="font-size:1rem; margin-bottom:10px;">💾 导入 / 导出配置</h3>
-        <div class="btn-group">
-          <button id="exportBtn" class="secondary">导出配置</button>
-          <button id="importBtn" class="secondary">导入配置</button>
+      <div class="border-top hidden" id="importArea">
+        <label>粘贴 JSON 配置</label>
+        <textarea id="importExportText" rows="4" placeholder="粘贴从本工具导出的 JSON"></textarea>
+        <div class="btn-row">
+          <button id="confirmImportBtn" class="small">确认导入</button>
+          <button id="cancelImportBtn" class="secondary small">取消</button>
         </div>
-        <textarea id="importExportText" style="margin-top:10px;" placeholder="导出的JSON会显示在这里，或粘贴JSON后点击导入"></textarea>
-        <button id="confirmImportBtn" style="display:none;">确认导入</button>
       </div>
     </div>
   </div>
 
-  <!-- 设置模态框 -->
+  <!-- ========================================================== -->
+  <!-- 模态框：管理时间线 -->
+  <!-- ========================================================== -->
+  <div id="timelineModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>管理时间线</h2>
+        <button class="close-btn" id="closeTimelineBtn">&times;</button>
+      </div>
+      <div id="timelineEditorList"></div>
+      <button id="addTimelineItemBtn" class="block secondary small">+ 添加任务</button>
+      <div class="border-top">
+        <div class="btn-row">
+          <button id="saveTimelineBtn" class="block">💾 保存时间线</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- 模态框：设置 -->
+  <!-- ========================================================== -->
   <div id="settingsModal" class="modal-overlay">
     <div class="modal-content">
+      <div class="modal-handle"></div>
       <div class="modal-header">
         <h2>个人设置</h2>
         <button class="close-btn" id="closeSettingsBtn">&times;</button>
       </div>
-      <label>所属线路</label>
-      <input type="text" id="settingLine" placeholder="例如 3">
-      <label>所属站点</label>
-      <input type="text" id="settingStation" placeholder="例如 广州塔">
-      <label>班长姓名</label>
-      <input type="text" id="settingLeader" placeholder="例如 李四">
-      <label>班长电话号码</label>
-      <input type="text" id="settingLeaderPhone" placeholder="例如 13800138000">
-
-      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
-        <h3 style="font-size:1rem; margin-bottom:10px;">🚪 安检点管理</h3>
+      <div class="flex-row"><input type="text" id="settingLine" placeholder="所属线路，如：3号线"><input type="text" id="settingStation" placeholder="所属站点，如：广州塔"></div>
+      <div class="flex-row"><input type="text" id="settingLeader" placeholder="班长姓名"><input type="text" id="settingLeaderPhone" placeholder="班长电话"></div>
+      <div class="border-top">
+        <label>🚪 安检点列表</label>
         <div id="entranceList"></div>
-        <button id="addEntranceBtn" class="secondary" style="margin-bottom:20px;">➕ 添加安检点</button>
+        <button id="addEntranceBtn" class="secondary small">+ 添加安检点</button>
+        <div class="text-muted" style="margin-top:4px;">添加后可在模板中用 <code>*安检点*</code> 或 <code>*多安检点*</code> 引用</div>
       </div>
-
-      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
-        <h3 style="font-size:1rem; margin-bottom:10px;">🔧 自定义预设项（用于替换模板中的 *变量*）</h3>
+      <div class="border-top">
+        <label>🔧 自定义预设项</label>
         <div id="customSettingsList"></div>
-        <button id="addCustomSettingBtn" class="secondary" style="margin-bottom:20px;">➕ 添加预设项</button>
+        <button id="addCustomSettingBtn" class="secondary small">+ 添加预设项</button>
+        <div class="text-muted" style="margin-top:4px;">预设项直接替换模板中的对应变量，不显示输入框</div>
       </div>
-
-      <div class="btn-group">
-        <button id="saveSettingsBtn">保存设置</button>
-      </div>
+      <button id="saveSettingsBtn" class="block" style="margin-top:16px;">保存设置</button>
     </div>
   </div>
 
-  <!-- 帮助模态框 -->
+  <!-- ========================================================== -->
+  <!-- 模态框：帮助 -->
+  <!-- ========================================================== -->
   <div id="helpModal" class="modal-overlay">
     <div class="modal-content">
+      <div class="modal-handle"></div>
       <div class="modal-header">
         <h2>使用说明</h2>
         <button class="close-btn" id="closeHelpBtn">&times;</button>
       </div>
-      <div class="help-content">
-        <h3>1. 基本概念</h3>
-        <p>本工具通过模板替换生成工作信息。在模板中使用 <code>*变量名*</code> 标记需要手动填写的内容，系统会自动识别并生成输入框。</p>
-
-        <h3>2. 模板管理</h3>
-        <p>点击“管理模板”可添加、编辑、删除模板，并可调整模板顺序（使用模板列表旁的 ↑ ↓ 按钮）。</p>
-        <p>每个模板可设置“发往群提示”，在主界面显示提醒。</p>
-        <p>模板内容留空时，主界面只显示群提示（如有），不显示输入框。</p>
-
-        <h3>3. 特殊变量</h3>
-        <ul>
-          <li><code>*年*</code>、<code>*月*</code>、<code>*日*</code>：自动填充当前日期并加上单位（如“2026年”“8月”“19日”），不显示输入框。</li>
-          <li>包含“时间”二字的变量（如 <code>*时间*</code>、<code>*时间1*</code>）：自动填充当前时间（HH:MM），支持小数点输入（输入 <code>5.12</code> 自动变为 <code>5:12</code>）。</li>
-          <li><code>*安检点*</code>：单选下拉框，选项来自设置中的安检点列表。</li>
-          <li><code>*多安检点*</code>：多选复选框组，选中的值以“、”连接。</li>
+      <div style="font-size:0.9rem;line-height:1.7;">
+        <p><strong>📝 信息替换</strong></p>
+        <ul style="padding-left:18px;margin:4px 0 12px;">
+          <li>用 <code>*变量*</code> 标记占位，自动生成输入框</li>
+          <li><code>*年*</code> <code>*月*</code> <code>*日*</code> 自动填充</li>
+          <li>含“时间”的变量自动填充当前时间</li>
+          <li><code>{?变量}...{/变量}</code> 条件隐藏</li>
+          <li>动态件数：<code>*违禁品件数*</code> + <code>*违禁品信息*</code></li>
         </ul>
-
-        <h3>4. 固定预设</h3>
-        <p>在“设置”中填写线路、站点、班长、电话后，模板中对应的变量（<code>*线路*</code>、<code>*站点*</code>、<code>*班长*</code>、<code>*电话号码*</code>）会自动替换且不显示输入框。</p>
-
-        <h3>5. 自定义预设项</h3>
-        <p>在“设置”→“自定义预设项”中，可定义任意变量的类型：</p>
-        <ul>
-          <li><strong>文本</strong>：固定文本，自动替换且不显示输入框。</li>
-          <li><strong>单选</strong>：提供下拉选项，多个选项用 <code>|</code> 分隔，如 <code>A口|B口|C口</code>。</li>
-          <li><strong>多选</strong>：提供复选框组，选中的值以“、”连接。</li>
+        <p><strong>⏰ 时间线</strong></p>
+        <ul style="padding-left:18px;margin:4px 0 12px;">
+          <li>自定义每天的时间任务，系统自动高亮当前进行中的任务</li>
+          <li>支持时间点（如 08:30）和时间范围（如 08:00-09:00）</li>
+          <li>已过任务置灰，当前任务高亮，未来任务正常显示</li>
         </ul>
-        <p>在模板中使用对应的键名（如 <code>*处理方式*</code>）即可生成控件。</p>
-
-        <h3>6. 动态件数输入</h3>
-        <p>针对违禁品/限带品，使用变量组合：<code>*违禁品件数*</code> 与 <code>*违禁品信息*</code>（限带品同理）。系统会根据件数自动生成对应数量的输入组，每组包含名称、规格、数量、处理方式。件数为0时不显示输入组。</p>
-        <p>输出格式：<code>名称规格×数量（处理方式）</code>，多件自动换行。</p>
-
-        <h3>7. 条件显示</h3>
-        <p>使用 <code>{?变量名}...{/变量名}</code> 包裹可选文本。当变量留空时，包裹的内容自动隐藏。</p>
-
-        <h3>8. 导入导出与数据保存</h3>
-        <p>所有数据保存在浏览器本地。可在“管理模板”底部导出配置为JSON文本，分享给同事；导入JSON即可恢复配置。</p>
-
-        <h3>9. 其他</h3>
-        <p>预览和复制不再自动添加句号，请根据需要在模板中自行添加标点。</p>
+        <p class="text-muted" style="font-size:0.8rem;">所有数据保存在浏览器本地，导出配置可分享给同事</p>
       </div>
     </div>
   </div>
 
+  <!-- ====== Toast ====== -->
   <div id="toast" class="toast"></div>
 
   <script>
-    (function() {
-      const DEFAULT_DATA = {
+  (function() {
+    'use strict';
+
+    // ============================================================
+    //  数据层
+    // ============================================================
+    const STORAGE_KEY = 'infoAssistantData';
+
+    function defaultData() {
+      return {
         templates: [],
-        settings: {
-          line: '',
-          station: '',
-          leader: '',
-          leaderphone: '',
-          entrances: [],
-          custom: []
-        }
+        settings: { line: '', station: '', leader: '', leaderphone: '', entrances: [], custom: [] },
+        timeline: []  // { id, start, end, task, desc }  start/end 格式 "HH:MM"
       };
+    }
 
-      let data = loadData();
-      let currentTemplateId = null;
-      let formValues = {};
-      let editingTemplateId = null;
+    let data = loadData();
+    let currentTemplateId = null;
+    let editingTemplateId = null;
+    let formValues = {};
+    let timelineEditItems = [];
 
-      const templateSelect = document.getElementById('templateSelect');
-      const inputsContainer = document.getElementById('inputsContainer');
-      const previewBox = document.getElementById('previewBox');
-      const groupHintBox = document.getElementById('groupHintBox');
-      const copyBtn = document.getElementById('copyBtn');
-      const manageBtn = document.getElementById('manageBtn');
-      const manageModal = document.getElementById('manageModal');
-      const closeManageBtn = document.getElementById('closeManageBtn');
-      const templateList = document.getElementById('templateList');
-      const addTemplateBtn = document.getElementById('addTemplateBtn');
-      const templateEditor = document.getElementById('templateEditor');
-      const editTemplateName = document.getElementById('editTemplateName');
-      const editGroupHint = document.getElementById('editGroupHint');
-      const editTemplateContent = document.getElementById('editTemplateContent');
-      const saveTemplateBtn = document.getElementById('saveTemplateBtn');
-      const deleteTemplateBtn = document.getElementById('deleteTemplateBtn');
-      const exportBtn = document.getElementById('exportBtn');
-      const importBtn = document.getElementById('importBtn');
-      const importExportText = document.getElementById('importExportText');
-      const confirmImportBtn = document.getElementById('confirmImportBtn');
-      const toast = document.getElementById('toast');
-
-      const settingsBtn = document.getElementById('settingsBtn');
-      const settingsModal = document.getElementById('settingsModal');
-      const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-      const settingLine = document.getElementById('settingLine');
-      const settingStation = document.getElementById('settingStation');
-      const settingLeader = document.getElementById('settingLeader');
-      const settingLeaderPhone = document.getElementById('settingLeaderPhone');
-      const entranceList = document.getElementById('entranceList');
-      const addEntranceBtn = document.getElementById('addEntranceBtn');
-      const customSettingsList = document.getElementById('customSettingsList');
-      const addCustomSettingBtn = document.getElementById('addCustomSettingBtn');
-      const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-
-      const helpBtn = document.getElementById('helpBtn');
-      const helpModal = document.getElementById('helpModal');
-      const closeHelpBtn = document.getElementById('closeHelpBtn');
-
-      function loadData() {
-        const saved = localStorage.getItem('templateReplaceToolData');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed && typeof parsed === 'object' && Array.isArray(parsed.templates) && parsed.settings) {
-              if (!parsed.settings.entrances) parsed.settings.entrances = [];
-              if (!Array.isArray(parsed.settings.custom)) {
-                const oldCustom = parsed.settings.custom || {};
-                parsed.settings.custom = [];
-                Object.keys(oldCustom).forEach(key => {
-                  parsed.settings.custom.push({ key, type: 'text', value: oldCustom[key] });
-                });
-              }
-              parsed.templates.forEach(t => {
-                if (!t.hasOwnProperty('groupHint')) t.groupHint = '';
-              });
-              return parsed;
+    // ============================================================
+    //  存储
+    // ============================================================
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d && Array.isArray(d.templates) && d.settings) {
+            if (!Array.isArray(d.settings.custom)) {
+              const old = d.settings.custom || {};
+              d.settings.custom = Object.keys(old).map(k => ({ key: k, type: 'text', value: old[k] }));
             }
-          } catch (e) { console.warn('读取数据失败，使用默认'); }
-        }
-        return JSON.parse(JSON.stringify(DEFAULT_DATA));
-      }
-
-      function saveData() {
-        localStorage.setItem('templateReplaceToolData', JSON.stringify(data));
-      }
-
-      function generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-      }
-
-      function getTemplateById(id) {
-        return data.templates.find(t => t.id === id);
-      }
-
-      function showToast(msg) {
-        toast.textContent = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
-      }
-
-      function extractVariables(content) {
-        const regex = /\*([^*]+)\*/g;
-        const vars = [];
-        const seen = new Set();
-        let match;
-        while ((match = regex.exec(content)) !== null) {
-          const name = match[1].trim();
-          if (name && !seen.has(name)) {
-            seen.add(name);
-            vars.push(name);
+            d.templates.forEach(t => { if (!t.groupHint) t.groupHint = ''; });
+            if (!Array.isArray(d.timeline)) d.timeline = [];
+            return d;
           }
         }
-        const condRegex = /\{\?([^}]+)\}/g;
-        while ((match = condRegex.exec(content)) !== null) {
-          const name = match[1].trim();
-          if (name && !seen.has(name)) {
-            seen.add(name);
-            vars.push(name);
+      } catch (_) {}
+      return defaultData();
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function genId() { return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6); }
+
+    function getTemplate(id) { return data.templates.find(t => t.id === id); }
+
+    // ============================================================
+    //  工具函数
+    // ============================================================
+    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    // ============================================================
+    //  模板引擎
+    // ============================================================
+    function extractVars(content) {
+      const set = new Set();
+      let m;
+      const re = /\*([^*]+)\*/g;
+      while ((m = re.exec(content)) !== null) set.add(m[1].trim());
+      const re2 = /\{\?([^}]+)\}/g;
+      while ((m = re2.exec(content)) !== null) set.add(m[1].trim());
+      return Array.from(set);
+    }
+
+    function getDefaultVal(name) {
+      const d = new Date();
+      if (name.includes('时间')) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      if (name === '年') return String(d.getFullYear());
+      if (name === '月') return String(d.getMonth()+1);
+      if (name === '日') return String(d.getDate());
+      if (name === '时') return String(d.getHours()).padStart(2,'0');
+      if (name === '分') return String(d.getMinutes()).padStart(2,'0');
+      return '';
+    }
+
+    function getPreset(name) {
+      const s = data.settings;
+      if (name === '线路' && s.line) return s.line;
+      if (name === '站点' && s.station) return s.station;
+      if (name === '班长' && s.leader) return s.leader;
+      if (name === '电话号码' && s.leaderphone) return s.leaderphone;
+      const c = s.custom.find(x => x.key === name);
+      if (c) {
+        if (c.type === 'text') return c.value;
+        if (c.type === 'single' || c.type === 'multi') {
+          const opts = c.value.split('|').map(s=>s.trim()).filter(Boolean);
+          return opts.length ? opts[0] : '';
+        }
+      }
+      return '';
+    }
+
+    function getPresetType(name) {
+      const c = data.settings.custom.find(x => x.key === name);
+      return c ? c.type : null;
+    }
+
+    function getEntranceOptions() { return data.settings.entrances.filter(Boolean); }
+
+    function isDynamicInfoVar(name) { return name === '违禁品信息' || name === '限带品信息'; }
+    function getCountVar(name) {
+      if (name === '违禁品信息') return '违禁品件数';
+      if (name === '限带品信息') return '限带品件数';
+      return null;
+    }
+
+    function buildDynamicText(items) {
+      if (!items || !items.length) return '';
+      return items.filter(it => it.name || it.spec || it.count)
+        .map(it => `${it.name||''}${it.spec||''}×${it.count||'1'}${it.method ? '（'+it.method+'）' : ''}`)
+        .join('\n');
+    }
+
+    function applyConditionals(content, values) {
+      return content.replace(/\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g, (_, name, inner) => {
+        const v = values[name] || '';
+        return v.trim() === '' ? '' : inner;
+      });
+    }
+
+    function renderPreview(template, values) {
+      if (!template || !template.content) return '';
+      let out = template.content;
+      ['违禁品信息','限带品信息'].forEach(d => {
+        if (values[d + '_items']) {
+          values[d] = buildDynamicText(values[d + '_items']);
+        }
+      });
+      out = applyConditionals(out, values);
+      const vars = extractVars(template.content);
+      vars.forEach(name => {
+        let val = values[name] || '';
+        if ((name === '年' || name === '月' || name === '日') && val) val += name;
+        if (name.includes('时间') && val.includes('.')) val = val.replace('.', ':');
+        out = out.replace(new RegExp(`\\*${name}\\*`, 'g'), val);
+      });
+      return out;
+    }
+
+    // ============================================================
+    //  DOM 引用
+    // ============================================================
+    const $ = id => document.getElementById(id);
+    const templateSelect = $('templateSelect');
+    const inputsContainer = $('inputsContainer');
+    const previewBox = $('previewBox');
+    const groupHintBox = $('groupHintBox');
+    const copyBtn = $('copyBtn');
+
+    const manageBtn = $('manageBtn');
+    const manageModal = $('manageModal');
+    const closeManageBtn = $('closeManageBtn');
+    const templateList = $('templateList');
+    const addTemplateBtn = $('addTemplateBtn');
+    const templateEditor = $('templateEditor');
+    const editTemplateName = $('editTemplateName');
+    const editGroupHint = $('editGroupHint');
+    const editTemplateContent = $('editTemplateContent');
+    const varTagList = $('varTagList');
+    const saveTemplateBtn = $('saveTemplateBtn');
+    const deleteTemplateBtn = $('deleteTemplateBtn');
+    const duplicateTemplateBtn = $('duplicateTemplateBtn');
+    const exportBtn = $('exportBtn');
+    const importBtn = $('importBtn');
+    const importArea = $('importArea');
+    const importExportText = $('importExportText');
+    const confirmImportBtn = $('confirmImportBtn');
+    const cancelImportBtn = $('cancelImportBtn');
+
+    const settingsBtn = $('settingsBtn');
+    const settingsModal = $('settingsModal');
+    const closeSettingsBtn = $('closeSettingsBtn');
+    const settingLine = $('settingLine');
+    const settingStation = $('settingStation');
+    const settingLeader = $('settingLeader');
+    const settingLeaderPhone = $('settingLeaderPhone');
+    const entranceList = $('entranceList');
+    const addEntranceBtn = $('addEntranceBtn');
+    const customSettingsList = $('customSettingsList');
+    const addCustomSettingBtn = $('addCustomSettingBtn');
+    const saveSettingsBtn = $('saveSettingsBtn');
+
+    const helpBtn = $('helpBtn');
+    const helpModal = $('helpModal');
+    const closeHelpBtn = $('closeHelpBtn');
+
+    const timelineList = $('timelineList');
+    const manageTimelineBtn = $('manageTimelineBtn');
+    const timelineModal = $('timelineModal');
+    const closeTimelineBtn = $('closeTimelineBtn');
+    const timelineEditorList = $('timelineEditorList');
+    const addTimelineItemBtn = $('addTimelineItemBtn');
+    const saveTimelineBtn = $('saveTimelineBtn');
+    const currentTimeDisplay = $('currentTimeDisplay');
+    const currentPeriodDisplay = $('currentPeriodDisplay');
+
+    // ============================================================
+    //  Tab 切换
+    // ============================================================
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        const target = document.getElementById('tab' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1));
+        if (target) target.classList.add('active');
+        if (tab.dataset.tab === 'timeline') renderTimeline();
+      });
+    });
+
+    // ============================================================
+    //  信息替换 - 渲染
+    // ============================================================
+    function renderTemplateSelect() {
+      templateSelect.innerHTML = '';
+      if (!data.templates.length) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '还没有模板，点「管理模板」新建';
+        templateSelect.appendChild(opt);
+        currentTemplateId = null;
+        return;
+      }
+      data.templates.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        if (t.id === currentTemplateId) opt.selected = true;
+        templateSelect.appendChild(opt);
+      });
+      if (!currentTemplateId || !getTemplate(currentTemplateId)) {
+        currentTemplateId = data.templates[0].id;
+        templateSelect.value = currentTemplateId;
+      }
+      updateGroupHint();
+    }
+
+    function updateGroupHint() {
+      const t = getTemplate(currentTemplateId);
+      if (t && t.groupHint) {
+        groupHintBox.textContent = '📢 发往群：' + t.groupHint;
+        groupHintBox.style.display = 'block';
+      } else {
+        groupHintBox.style.display = 'none';
+      }
+    }
+
+    function renderInputs() {
+      const template = getTemplate(currentTemplateId);
+      if (!template) {
+        inputsContainer.innerHTML = '<div class="text-muted">💡 请先选择或创建一个模板</div>';
+        previewBox.textContent = '💡 选择模板后，这里会显示预览效果';
+        previewBox.className = 'preview-box empty';
+        return;
+      }
+      const vars = extractVars(template.content);
+
+      vars.forEach(name => {
+        if (!(name in formValues)) {
+          const preset = getPreset(name);
+          formValues[name] = preset || getDefaultVal(name) || '';
+        }
+      });
+      ['违禁品信息','限带品信息'].forEach(d => {
+        if (vars.includes(d)) {
+          const cv = getCountVar(d);
+          if (vars.includes(cv)) {
+            if (!(cv in formValues)) formValues[cv] = '0';
+            if (!formValues[d + '_items']) formValues[d + '_items'] = [];
+            const cnt = parseInt(formValues[cv]) || 0;
+            const items = formValues[d + '_items'];
+            while (items.length < cnt) items.push({ name: '', spec: '', count: '1', method: '换乘' });
+            if (items.length > cnt) items.length = cnt;
           }
         }
-        return vars;
-      }
+      });
 
-      function getDefaultValue(varName) {
-        const now = new Date();
-        if (varName.includes('时间')) {
-          const hh = String(now.getHours()).padStart(2, '0');
-          const mm = String(now.getMinutes()).padStart(2, '0');
-          return `${hh}:${mm}`;
-        }
-        switch (varName) {
-          case '年': return String(now.getFullYear());
-          case '月': return String(now.getMonth() + 1);
-          case '日': return String(now.getDate());
-          case '时': return String(now.getHours()).padStart(2, '0');
-          case '分': return String(now.getMinutes()).padStart(2, '0');
-          default: return '';
-        }
-      }
+      let html = '';
+      let hasInput = false;
 
-      function getPresetValue(varName) {
-        const s = data.settings;
-        if (s.line && varName === '线路') return s.line;
-        if (s.station && varName === '站点') return s.station;
-        if (s.leader && varName === '班长') return s.leader;
-        if (s.leaderphone && varName === '电话号码') return s.leaderphone;
-        const customItem = s.custom.find(item => item.key === varName);
-        if (customItem) {
-          if (customItem.type === 'text') return customItem.value;
-          if (customItem.type === 'single' || customItem.type === 'multi') {
-            const options = customItem.value.split('|').map(s => s.trim()).filter(Boolean);
-            if (options.length > 0) return options[0];
+      vars.forEach(name => {
+        if (['年','月','日'].includes(name)) return;
+        if (getPreset(name) && !isDynamicInfoVar(name)) return;
+
+        const customType = getPresetType(name);
+        const isTime = name.includes('时间');
+        const isEntrance = name === '安检点';
+        const isMultiEntrance = name === '多安检点';
+        const isDynamic = isDynamicInfoVar(name);
+
+        if (isDynamic) {
+          const cv = getCountVar(name);
+          if (!vars.includes(cv)) return;
+          hasInput = true;
+          const cnt = parseInt(formValues[cv]) || 0;
+          const items = formValues[name + '_items'] || [];
+          html += `<div style="margin-bottom:12px;"><label>${name}</label>`;
+          html += `<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label style="font-weight:400;font-size:0.85rem;margin:0;">${cv}</label>
+            <input type="number" min="0" value="${cnt}" data-dyn-count="${name}" style="width:70px;padding:8px 10px;margin:0;font-size:16px;">
+            <span class="text-muted" style="font-size:0.75rem;">填写件数后自动生成</span>
+          </div>`;
+          html += `<div data-dyn-items="${name}">`;
+          items.forEach((item, idx) => {
+            html += `<div class="dyn-item-group">
+              <div class="head"><span>第${idx+1}件</span>
+                <button class="ghost small" data-dyn-del="${name}" data-idx="${idx}">✕ 删除</button>
+              </div>
+              <div class="fields">
+                <div class="row"><input type="text" placeholder="名称" value="${escHtml(item.name)}" data-dyn-field="${name}" data-idx="${idx}" data-key="name"></div>
+                <div class="row"><input type="text" placeholder="规格" value="${escHtml(item.spec)}" data-dyn-field="${name}" data-idx="${idx}" data-key="spec"></div>
+                <div class="row"><input type="text" placeholder="数量" value="${escHtml(item.count)}" data-dyn-field="${name}" data-idx="${idx}" data-key="count"></div>
+                <div class="row"><select data-dyn-field="${name}" data-idx="${idx}" data-key="method">
+                  ${['换乘','自弃'].map(o => `<option value="${o}" ${item.method===o?'selected':''}>${o}</option>`).join('')}
+                </select></div>
+              </div>
+            </div>`;
+          });
+          html += `</div>`;
+          if (items.length) {
+            html += `<button class="ghost small" data-dyn-add="${name}">+ 添加一件</button>`;
           }
-        }
-        return '';
-      }
-
-      function applyConditionalBlocks(content, values) {
-        let result = content;
-        const regex = /\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g;
-        result = result.replace(regex, (match, varName, innerContent) => {
-          const val = values[varName] || '';
-          return (val.trim() === '') ? '' : innerContent;
-        });
-        return result;
-      }
-
-      function isDynamicItemVar(varName) {
-        return varName === '违禁品信息' || varName === '限带品信息';
-      }
-      function getRelatedCountVar(varName) {
-        if (varName === '违禁品信息') return '违禁品件数';
-        if (varName === '限带品信息') return '限带品件数';
-        return null;
-      }
-      function buildDynamicItemText(varName) {
-        const items = formValues[varName + '_items'] || [];
-        if (items.length === 0) return '';
-        return items.filter(item => item.name || item.spec || item.count || item.method)
-          .map(item => `${item.name || ''}${item.spec || ''}×${item.count || '1'}${item.method ? '（' + item.method + '）' : ''}`)
-          .join('\n');
-      }
-
-      function renderTemplateSelect() {
-        templateSelect.innerHTML = '';
-        if (data.templates.length === 0) {
-          const opt = document.createElement('option');
-          opt.value = '';
-          opt.textContent = '请先添加模板';
-          templateSelect.appendChild(opt);
-          currentTemplateId = null;
-          updateGroupHint();
+          html += `</div>`;
           return;
         }
-        data.templates.forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t.id;
-          opt.textContent = t.name;
-          if (t.id === currentTemplateId) opt.selected = true;
-          templateSelect.appendChild(opt);
-        });
-        if (!currentTemplateId) {
-          currentTemplateId = data.templates[0].id;
-          templateSelect.value = currentTemplateId;
+
+        if (customType === 'single') {
+          hasInput = true;
+          const opts = (data.settings.custom.find(c=>c.key===name)?.value || '').split('|').map(s=>s.trim()).filter(Boolean);
+          html += `<div style="margin-bottom:10px;"><label>${name}</label><select data-var="${name}">`;
+          opts.forEach(o => {
+            html += `<option value="${escHtml(o)}" ${formValues[name]===o?'selected':''}>${escHtml(o)}</option>`;
+          });
+          html += `</select></div>`;
+          return;
         }
-        updateGroupHint();
+        if (customType === 'multi') {
+          hasInput = true;
+          const opts = (data.settings.custom.find(c=>c.key===name)?.value || '').split('|').map(s=>s.trim()).filter(Boolean);
+          const selected = (formValues[name]||'').split('、').filter(Boolean);
+          html += `<div style="margin-bottom:10px;"><label>${name}</label><div class="flex-row" style="gap:6px;">`;
+          opts.forEach(o => {
+            const checked = selected.includes(o);
+            html += `<label style="font-weight:400;font-size:0.9rem;display:flex;align-items:center;gap:4px;">
+              <input type="checkbox" data-var-multi="${name}" value="${escHtml(o)}" ${checked?'checked':''}> ${escHtml(o)}
+            </label>`;
+          });
+          html += `</div></div>`;
+          return;
+        }
+
+        if (isEntrance && getEntranceOptions().length) {
+          hasInput = true;
+          const opts = getEntranceOptions();
+          html += `<div style="margin-bottom:10px;"><label>安检点</label><select data-var="安检点">`;
+          html += `<option value="">请选择安检点</option>`;
+          opts.forEach(o => {
+            html += `<option value="${escHtml(o)}" ${formValues[name]===o?'selected':''}>${escHtml(o)}</option>`;
+          });
+          html += `</select></div>`;
+          return;
+        }
+        if (isMultiEntrance && getEntranceOptions().length) {
+          hasInput = true;
+          const opts = getEntranceOptions();
+          const selected = (formValues[name]||'').split('、').filter(Boolean);
+          html += `<div style="margin-bottom:10px;"><label>多安检点</label><div class="flex-row" style="gap:6px;">`;
+          opts.forEach(o => {
+            const checked = selected.includes(o);
+            html += `<label style="font-weight:400;font-size:0.9rem;display:flex;align-items:center;gap:4px;">
+              <input type="checkbox" data-var-multi="${name}" value="${escHtml(o)}" ${checked?'checked':''}> ${escHtml(o)}
+            </label>`;
+          });
+          html += `</div></div>`;
+          return;
+        }
+
+        if (isTime) {
+          hasInput = true;
+          html += `<div style="margin-bottom:10px;"><label>${name}</label>`;
+          html += `<input type="text" data-var="${name}" value="${escHtml(formValues[name]||'')}" placeholder="如：5.12 或 5:12"></div>`;
+          return;
+        }
+
+        hasInput = true;
+        html += `<div style="margin-bottom:10px;"><label>${name}</label>`;
+        html += `<input type="text" data-var="${name}" value="${escHtml(formValues[name]||'')}" placeholder="请输入${name}"></div>`;
+      });
+
+      if (!hasInput && vars.length) {
+        html = '<div class="text-muted">✅ 所有变量已通过「设置」预设填充，无需手动填写</div>';
+      }
+      if (!vars.length) {
+        html = '<div class="text-muted">💡 当前模板没有变量，在「管理模板」中用 <code>*变量*</code> 标记占位</div>';
       }
 
-      function updateGroupHint() {
-        const template = getTemplateById(currentTemplateId);
-        if (template && template.groupHint && template.groupHint.trim()) {
-          groupHintBox.textContent = '📢 发往群：' + template.groupHint;
-          groupHintBox.style.display = 'block';
+      inputsContainer.innerHTML = html;
+
+      // ---- 绑定事件 ----
+      inputsContainer.querySelectorAll('input[data-var], select[data-var]').forEach(el => {
+        const name = el.dataset.var;
+        if (el.tagName === 'SELECT') {
+          el.addEventListener('change', () => { formValues[name] = el.value; updatePreview(); });
         } else {
-          groupHintBox.style.display = 'none';
-        }
-      }
-
-      function renderInputs() {
-        const template = getTemplateById(currentTemplateId);
-        if (!template) {
-          inputsContainer.innerHTML = '';
-          previewBox.textContent = '';
-          formValues = {};
-          updateGroupHint();
-          return;
-        }
-        const vars = extractVariables(template.content);
-        const newValues = {};
-        vars.forEach(varName => {
-          let val = formValues[varName] || '';
-          if (!val) {
-            const preset = getPresetValue(varName);
-            if (preset) val = preset;
-            else {
-              const def = getDefaultValue(varName);
-              if (def) val = def;
-            }
-          }
-          newValues[varName] = val;
-        });
-        ['违禁品信息', '限带品信息'].forEach(dynVar => {
-          if (vars.includes(dynVar)) {
-            const countVar = getRelatedCountVar(dynVar);
-            if (vars.includes(countVar)) {
-              if (!formValues[dynVar + '_items']) {
-                formValues[dynVar + '_items'] = [];
-              }
-              newValues[dynVar] = formValues[dynVar] || '';
-              newValues[countVar] = formValues[countVar] || '0';
-            }
-          }
-        });
-        formValues = newValues;
-
-        inputsContainer.innerHTML = '';
-        if (vars.length === 0) {
-          // 空模板：仅显示群提示，不显示输入内容
-        } else {
-          vars.forEach(varName => {
-            if (varName === '年' || varName === '月' || varName === '日') return;
-
-            const fixedPreset = (varName === '线路' && data.settings.line) ||
-                                (varName === '站点' && data.settings.station) ||
-                                (varName === '班长' && data.settings.leader) ||
-                                (varName === '电话号码' && data.settings.leaderphone);
-            if (fixedPreset) return;
-
-            if (isDynamicItemVar(varName)) {
-              const countVar = getRelatedCountVar(varName);
-              if (vars.includes(countVar)) {
-                const wrapper = document.createElement('div');
-                wrapper.style.marginBottom = '12px';
-                const label = document.createElement('label');
-                label.textContent = varName;
-                wrapper.appendChild(label);
-
-                const count = parseInt(formValues[countVar]) || 0;
-                const itemsContainer = document.createElement('div');
-                itemsContainer.style.marginBottom = '8px';
-                wrapper.appendChild(itemsContainer);
-
-                function renderItemGroups() {
-                  itemsContainer.innerHTML = '';
-                  while (formValues[varName + '_items'].length < count) {
-                    formValues[varName + '_items'].push({ name: '', spec: '', count: '1', method: '换乘' });
-                  }
-                  formValues[varName + '_items'].length = count;
-                  const items = formValues[varName + '_items'];
-                  items.forEach((item, idx) => {
-                    const group = document.createElement('div');
-                    group.style.border = '1px solid #e0e6ed';
-                    group.style.borderRadius = '8px';
-                    group.style.padding = '10px';
-                    group.style.marginBottom = '8px';
-                    group.innerHTML = `<strong>第${idx+1}件</strong>`;
-
-                    const fieldRow = document.createElement('div');
-                    fieldRow.style.display = 'flex';
-                    fieldRow.style.gap = '6px';
-                    fieldRow.style.flexWrap = 'wrap';
-                    fieldRow.style.marginTop = '8px';
-
-                    const createField = (placeholder, value, key) => {
-                      const input = document.createElement('input');
-                      input.type = 'text';
-                      input.placeholder = placeholder;
-                      input.value = value;
-                      input.style.flex = '1 1 auto';
-                      input.style.marginBottom = '0';
-                      input.addEventListener('input', (e) => {
-                        item[key] = e.target.value;
-                        formValues[varName] = buildDynamicItemText(varName);
-                        updatePreview();
-                      });
-                      return input;
-                    };
-
-                    const nameInput = createField('名称', item.name, 'name');
-                    const specInput = createField('规格', item.spec, 'spec');
-                    const countInput = createField('数量', item.count, 'count');
-                    fieldRow.appendChild(nameInput);
-                    fieldRow.appendChild(specInput);
-                    fieldRow.appendChild(countInput);
-
-                    const methodSelect = document.createElement('select');
-                    methodSelect.style.flex = '1 1 auto';
-                    methodSelect.style.marginBottom = '0';
-                    ['换乘', '自弃'].forEach(opt => {
-                      const option = document.createElement('option');
-                      option.value = opt;
-                      option.textContent = opt;
-                      if (item.method === opt) option.selected = true;
-                      methodSelect.appendChild(option);
-                    });
-                    methodSelect.addEventListener('change', (e) => {
-                      item.method = e.target.value;
-                      formValues[varName] = buildDynamicItemText(varName);
-                      updatePreview();
-                    });
-                    fieldRow.appendChild(methodSelect);
-
-                    group.appendChild(fieldRow);
-                    itemsContainer.appendChild(group);
-                  });
-                }
-
-                const countWrapper = document.createElement('div');
-                countWrapper.style.marginBottom = '10px';
-                const countLabel = document.createElement('label');
-                countLabel.textContent = countVar;
-                countLabel.style.display = 'block';
-                countLabel.style.marginBottom = '6px';
-                countWrapper.appendChild(countLabel);
-                const countInput = document.createElement('input');
-                countInput.type = 'number';
-                countInput.min = '0';
-                countInput.value = formValues[countVar] || '0';
-                countInput.addEventListener('input', (e) => {
-                  formValues[countVar] = e.target.value;
-                  renderItemGroups();
-                  updatePreview();
-                });
-                countWrapper.appendChild(countInput);
-                wrapper.appendChild(countWrapper);
-                renderItemGroups();
-
-                inputsContainer.appendChild(wrapper);
-                return;
-              }
-            }
-
-            const customItem = data.settings.custom.find(c => c.key === varName);
-            if (customItem) {
-              const wrapper = document.createElement('div');
-              wrapper.style.marginBottom = '12px';
-              const label = document.createElement('label');
-              label.textContent = varName;
-              wrapper.appendChild(label);
-              if (customItem.type === 'text') return;
-              else if (customItem.type === 'single') {
-                const options = customItem.value.split('|').map(s => s.trim()).filter(Boolean);
-                const select = document.createElement('select');
-                options.forEach(option => {
-                  const opt = document.createElement('option');
-                  opt.value = option;
-                  opt.textContent = option;
-                  if (formValues[varName] === option) opt.selected = true;
-                  select.appendChild(opt);
-                });
-                select.addEventListener('change', (e) => {
-                  formValues[varName] = e.target.value;
-                  updatePreview();
-                });
-                wrapper.appendChild(select);
-                inputsContainer.appendChild(wrapper);
-                return;
-              } else if (customItem.type === 'multi') {
-                const options = customItem.value.split('|').map(s => s.trim()).filter(Boolean);
-                const group = document.createElement('div');
-                group.className = 'checkbox-group';
-                const currentVal = formValues[varName] || '';
-                const selected = currentVal ? currentVal.split('、').map(s => s.trim()).filter(Boolean) : [];
-                options.forEach(option => {
-                  const labelEl = document.createElement('label');
-                  const cb = document.createElement('input');
-                  cb.type = 'checkbox';
-                  cb.value = option;
-                  cb.checked = selected.includes(option);
-                  cb.addEventListener('change', (e) => {
-                    const checked = Array.from(group.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-                    formValues[varName] = checked.join('、');
-                    updatePreview();
-                  });
-                  labelEl.appendChild(cb);
-                  labelEl.appendChild(document.createTextNode(option));
-                  group.appendChild(labelEl);
-                });
-                wrapper.appendChild(group);
-                inputsContainer.appendChild(wrapper);
-                return;
-              }
-            }
-
-            if (varName === '安检点' && data.settings.entrances.length > 0) {
-              const wrapper = document.createElement('div');
-              wrapper.style.marginBottom = '12px';
-              const label = document.createElement('label');
-              label.textContent = '安检点';
-              wrapper.appendChild(label);
-              const select = document.createElement('select');
-              const optEmpty = document.createElement('option');
-              optEmpty.value = '';
-              optEmpty.textContent = '请选择';
-              select.appendChild(optEmpty);
-              data.settings.entrances.forEach(ent => {
-                const opt = document.createElement('option');
-                opt.value = ent;
-                opt.textContent = ent;
-                if (formValues[varName] === ent) opt.selected = true;
-                select.appendChild(opt);
-              });
-              select.addEventListener('change', (e) => {
-                formValues[varName] = e.target.value;
-                updatePreview();
-              });
-              wrapper.appendChild(select);
-              inputsContainer.appendChild(wrapper);
-              return;
-            }
-
-            if (varName === '多安检点' && data.settings.entrances.length > 0) {
-              const wrapper = document.createElement('div');
-              wrapper.style.marginBottom = '12px';
-              const label = document.createElement('label');
-              label.textContent = '多安检点';
-              wrapper.appendChild(label);
-              const group = document.createElement('div');
-              group.className = 'checkbox-group';
-              const currentVal = formValues[varName] || '';
-              const selected = currentVal ? currentVal.split('、').map(s => s.trim()).filter(Boolean) : [];
-              data.settings.entrances.forEach(ent => {
-                const labelEl = document.createElement('label');
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.value = ent;
-                cb.checked = selected.includes(ent);
-                cb.addEventListener('change', (e) => {
-                  const checked = Array.from(group.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-                  formValues[varName] = checked.join('、');
-                  updatePreview();
-                });
-                labelEl.appendChild(cb);
-                labelEl.appendChild(document.createTextNode(ent));
-                group.appendChild(labelEl);
-              });
-              wrapper.appendChild(group);
-              inputsContainer.appendChild(wrapper);
-              return;
-            }
-
-            if (varName.includes('时间')) {
-              const wrapper = document.createElement('div');
-              wrapper.style.marginBottom = '12px';
-              const label = document.createElement('label');
-              label.textContent = varName;
-              wrapper.appendChild(label);
-              const input = document.createElement('input');
-              input.type = 'text';
-              input.value = formValues[varName] || '';
-              input.dataset.varName = varName;
-              input.placeholder = '例如 5.12 表示 5:12';
-              input.addEventListener('input', (e) => {
-                let val = e.target.value;
-                if (val.includes('.')) {
-                  val = val.replace('.', ':');
-                  e.target.value = val;
-                }
-                formValues[varName] = val;
-                updatePreview();
-              });
-              wrapper.appendChild(input);
-              inputsContainer.appendChild(wrapper);
-              return;
-            }
-
-            const wrapper = document.createElement('div');
-            wrapper.style.marginBottom = '12px';
-            const label = document.createElement('label');
-            label.textContent = varName;
-            wrapper.appendChild(label);
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = formValues[varName] || '';
-            input.dataset.varName = varName;
-            input.placeholder = varName;
-            input.addEventListener('input', (e) => {
-              formValues[varName] = e.target.value;
-              updatePreview();
-            });
-            wrapper.appendChild(input);
-            inputsContainer.appendChild(wrapper);
+          el.addEventListener('input', () => {
+            let val = el.value;
+            if (name.includes('时间') && val.includes('.')) val = val.replace('.', ':');
+            formValues[name] = val;
+            updatePreview();
           });
-        }
-        updatePreview();
-        updateGroupHint();
-      }
-
-      function updatePreview() {
-        const template = getTemplateById(currentTemplateId);
-        if (!template) {
-          previewBox.textContent = '';
-          return;
-        }
-        let output = template.content;
-        ['违禁品信息', '限带品信息'].forEach(dynVar => {
-          if (formValues.hasOwnProperty(dynVar)) {
-            formValues[dynVar] = buildDynamicItemText(dynVar);
-          }
-        });
-        output = applyConditionalBlocks(output, formValues);
-        const vars = extractVariables(template.content);
-        vars.forEach(varName => {
-          let val = formValues[varName] || '';
-          if ((varName === '年' || varName === '月' || varName === '日') && val) val += varName;
-          if (varName.includes('时间') && val.includes('.')) val = val.replace('.', ':');
-          const regex = new RegExp(`\\*${varName}\\*`, 'g');
-          output = output.replace(regex, val);
-        });
-        previewBox.textContent = output;
-      }
-
-      function renderMain() {
-        renderTemplateSelect();
-        renderInputs();
-      }
-
-      // ==================== 管理模态框 ====================
-      function renderTemplateList() {
-        templateList.innerHTML = '';
-        data.templates.forEach((t, index) => {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'template-item-wrapper';
-
-          // 上移按钮
-          const upBtn = document.createElement('button');
-          upBtn.className = 'order-btn';
-          upBtn.innerHTML = '↑';
-          upBtn.disabled = index === 0;
-          upBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (index > 0) {
-              [data.templates[index-1], data.templates[index]] = [data.templates[index], data.templates[index-1]];
-              saveData();
-              renderTemplateList();
-              renderTemplateEditor();
-            }
-          });
-          wrapper.appendChild(upBtn);
-
-          // 下移按钮
-          const downBtn = document.createElement('button');
-          downBtn.className = 'order-btn';
-          downBtn.innerHTML = '↓';
-          downBtn.disabled = index === data.templates.length - 1;
-          downBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (index < data.templates.length - 1) {
-              [data.templates[index], data.templates[index+1]] = [data.templates[index+1], data.templates[index]];
-              saveData();
-              renderTemplateList();
-              renderTemplateEditor();
-            }
-          });
-          wrapper.appendChild(downBtn);
-
-          const item = document.createElement('div');
-          item.className = 'template-item' + (t.id === editingTemplateId ? ' active' : '');
-          item.textContent = t.name;
-          item.addEventListener('click', () => {
-            editingTemplateId = t.id;
-            renderTemplateEditor();
-            renderTemplateList();
-          });
-          wrapper.appendChild(item);
-
-          templateList.appendChild(wrapper);
-        });
-      }
-
-      function renderTemplateEditor() {
-        const template = getTemplateById(editingTemplateId);
-        if (!template) {
-          templateEditor.style.display = 'none';
-          return;
-        }
-        templateEditor.style.display = 'block';
-        editTemplateName.value = template.name;
-        editGroupHint.value = template.groupHint || '';
-        editTemplateContent.value = template.content;
-      }
-
-      function renderManageModal() {
-        renderTemplateList();
-        if (editingTemplateId) renderTemplateEditor();
-        else templateEditor.style.display = 'none';
-      }
-
-      // ==================== 设置模态框 ====================
-      function renderEntranceList() {
-        entranceList.innerHTML = '';
-        data.settings.entrances.forEach((ent, index) => {
-          const row = document.createElement('div');
-          row.className = 'entrance-row';
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = ent;
-          input.placeholder = '口名称，例如 A口';
-          input.addEventListener('input', (e) => {
-            data.settings.entrances[index] = e.target.value;
-            saveData();
-          });
-          row.appendChild(input);
-          const delBtn = document.createElement('button');
-          delBtn.textContent = '删除';
-          delBtn.className = 'danger small';
-          delBtn.addEventListener('click', () => {
-            data.settings.entrances.splice(index, 1);
-            renderEntranceList();
-            saveData();
-          });
-          row.appendChild(delBtn);
-          entranceList.appendChild(row);
-        });
-      }
-
-      function renderCustomSettings() {
-        customSettingsList.innerHTML = '';
-        data.settings.custom.forEach((item, index) => {
-          const row = document.createElement('div');
-          row.className = 'custom-setting-row';
-
-          const keyInput = document.createElement('input');
-          keyInput.type = 'text';
-          keyInput.className = 'custom-key';
-          keyInput.value = item.key;
-          keyInput.placeholder = '键名';
-          keyInput.addEventListener('input', (e) => {
-            item.key = e.target.value.trim();
-            saveData();
-          });
-          row.appendChild(keyInput);
-
-          const typeSelect = document.createElement('select');
-          typeSelect.className = 'custom-type';
-          const typeOptions = [
-            { value: 'text', label: '文本' },
-            { value: 'single', label: '单选' },
-            { value: 'multi', label: '多选' }
-          ];
-          typeOptions.forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt.value;
-            option.textContent = opt.label;
-            if (item.type === opt.value) option.selected = true;
-            typeSelect.appendChild(option);
-          });
-          typeSelect.addEventListener('change', (e) => {
-            item.type = e.target.value;
-            saveData();
-          });
-          row.appendChild(typeSelect);
-
-          const valueInput = document.createElement('input');
-          valueInput.type = 'text';
-          valueInput.className = 'custom-value';
-          valueInput.value = item.value;
-          valueInput.placeholder = item.type === 'text' ? '文本值' : '选项用 | 分隔，如 A口|B口';
-          valueInput.addEventListener('input', (e) => {
-            item.value = e.target.value;
-            saveData();
-          });
-          row.appendChild(valueInput);
-
-          const delBtn = document.createElement('button');
-          delBtn.textContent = '删除';
-          delBtn.className = 'danger small custom-del';
-          delBtn.addEventListener('click', () => {
-            data.settings.custom.splice(index, 1);
-            renderCustomSettings();
-            saveData();
-          });
-          row.appendChild(delBtn);
-
-          customSettingsList.appendChild(row);
-        });
-      }
-
-      function openSettingsModal() {
-        settingLine.value = data.settings.line || '';
-        settingStation.value = data.settings.station || '';
-        settingLeader.value = data.settings.leader || '';
-        settingLeaderPhone.value = data.settings.leaderphone || '';
-        renderEntranceList();
-        renderCustomSettings();
-        settingsModal.classList.add('active');
-      }
-
-      // ==================== 事件绑定 ====================
-      templateSelect.addEventListener('change', (e) => {
-        currentTemplateId = e.target.value;
-        renderInputs();
-      });
-
-      copyBtn.addEventListener('click', async () => {
-        const text = previewBox.textContent;
-        if (!text) {
-          showToast('预览内容为空');
-          return;
-        }
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast('已复制到剪贴板');
-        } catch (err) {
-          const textarea = document.createElement('textarea');
-          textarea.value = text;
-          document.body.appendChild(textarea);
-          textarea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textarea);
-          showToast('已复制到剪贴板');
         }
       });
 
-      manageBtn.addEventListener('click', () => {
-        if (data.templates.length > 0 && !editingTemplateId) editingTemplateId = data.templates[0].id;
-        renderManageModal();
-        manageModal.classList.add('active');
+      inputsContainer.querySelectorAll('input[data-var-multi]').forEach(cb => {
+        const name = cb.dataset.varMulti;
+        cb.addEventListener('change', () => {
+          const checked = Array.from(inputsContainer.querySelectorAll(`input[data-var-multi="${name}"]:checked`)).map(c => c.value);
+          formValues[name] = checked.join('、');
+          updatePreview();
+        });
       });
 
-      closeManageBtn.addEventListener('click', () => {
-        manageModal.classList.remove('active');
-        renderMain();
-      });
-
-      manageModal.addEventListener('click', (e) => {
-        if (e.target === manageModal) {
-          manageModal.classList.remove('active');
-          renderMain();
-        }
-      });
-
-      addTemplateBtn.addEventListener('click', () => {
-        const newTemplate = { id: generateId(), name: '新模板', content: '', groupHint: '' };
-        data.templates.push(newTemplate);
-        editingTemplateId = newTemplate.id;
-        saveData();
-        renderManageModal();
-      });
-
-      saveTemplateBtn.addEventListener('click', () => {
-        const template = getTemplateById(editingTemplateId);
-        if (!template) return;
-        template.name = editTemplateName.value.trim() || '未命名模板';
-        template.groupHint = editGroupHint.value.trim();
-        template.content = editTemplateContent.value;
-        saveData();
-        if (currentTemplateId === template.id) {
+      inputsContainer.querySelectorAll('input[data-dyn-count]').forEach(el => {
+        const name = el.dataset.dynCount;
+        el.addEventListener('input', () => {
+          const cnt = parseInt(el.value) || 0;
+          formValues[name] = String(cnt);
+          const items = formValues[name + '_items'] || [];
+          while (items.length < cnt) items.push({ name: '', spec: '', count: '1', method: '换乘' });
+          if (items.length > cnt) items.length = cnt;
           renderInputs();
-          updateGroupHint();
-        }
-        renderManageModal();
-        renderMain();
-        showToast('模板已保存');
+          updatePreview();
+        });
       });
 
-      deleteTemplateBtn.addEventListener('click', () => {
-        const template = getTemplateById(editingTemplateId);
-        if (!template) return;
-        if (!confirm(`确定删除模板「${template.name}」吗？`)) return;
-        data.templates = data.templates.filter(t => t.id !== editingTemplateId);
-        if (currentTemplateId === editingTemplateId) {
-          currentTemplateId = data.templates.length > 0 ? data.templates[0].id : null;
-        }
-        editingTemplateId = data.templates.length > 0 ? data.templates[0].id : null;
-        saveData();
-        renderManageModal();
-        renderMain();
-        showToast('模板已删除');
-      });
-
-      exportBtn.addEventListener('click', () => {
-        importExportText.value = JSON.stringify(data, null, 2);
-        showToast('配置已导出，请复制文本');
-      });
-
-      importBtn.addEventListener('click', () => {
-        confirmImportBtn.style.display = 'inline-block';
-        importExportText.focus();
-        showToast('请粘贴JSON配置，然后点击确认导入');
-      });
-
-      confirmImportBtn.addEventListener('click', () => {
-        try {
-          const parsed = JSON.parse(importExportText.value);
-          if (!parsed || !Array.isArray(parsed.templates) || !parsed.settings) throw new Error('格式不正确');
-          if (!parsed.settings.entrances) parsed.settings.entrances = [];
-          if (!Array.isArray(parsed.settings.custom)) {
-            const oldCustom = parsed.settings.custom || {};
-            parsed.settings.custom = [];
-            Object.keys(oldCustom).forEach(key => {
-              parsed.settings.custom.push({ key, type: 'text', value: oldCustom[key] });
-            });
-          }
-          parsed.templates.forEach(t => {
-            if (!t.hasOwnProperty('groupHint')) t.groupHint = '';
+      inputsContainer.querySelectorAll('input[data-dyn-field], select[data-dyn-field]').forEach(el => {
+        const name = el.dataset.dynField;
+        const idx = parseInt(el.dataset.idx);
+        const key = el.dataset.key;
+        const items = formValues[name + '_items'] || [];
+        if (el.tagName === 'SELECT') {
+          el.addEventListener('change', () => {
+            if (items[idx]) items[idx][key] = el.value;
+            updatePreview();
           });
-          data = parsed;
-          saveData();
-          if (data.templates.length > 0) {
-            currentTemplateId = data.templates[0].id;
-            editingTemplateId = data.templates[0].id;
-          } else {
-            currentTemplateId = null;
-            editingTemplateId = null;
+        } else {
+          el.addEventListener('input', () => {
+            if (items[idx]) items[idx][key] = el.value;
+            updatePreview();
+          });
+        }
+      });
+
+      inputsContainer.querySelectorAll('button[data-dyn-del]').forEach(btn => {
+        const name = btn.dataset.dynDel;
+        const idx = parseInt(btn.dataset.idx);
+        btn.addEventListener('click', () => {
+          const items = formValues[name + '_items'] || [];
+          if (idx < items.length) {
+            items.splice(idx, 1);
+            const cnt = items.length;
+            formValues[getCountVar(name)] = String(cnt);
+            renderInputs();
+            updatePreview();
           }
+        });
+      });
+
+      inputsContainer.querySelectorAll('button[data-dyn-add]').forEach(btn => {
+        const name = btn.dataset.dynAdd;
+        btn.addEventListener('click', () => {
+          const items = formValues[name + '_items'] || [];
+          items.push({ name: '', spec: '', count: '1', method: '换乘' });
+          formValues[getCountVar(name)] = String(items.length);
+          renderInputs();
+          updatePreview();
+        });
+      });
+
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const template = getTemplate(currentTemplateId);
+      if (!template) {
+        previewBox.textContent = '💡 请先选择或创建一个模板';
+        previewBox.className = 'preview-box empty';
+        return;
+      }
+      const out = renderPreview(template, formValues);
+      if (!out || !out.trim()) {
+        previewBox.textContent = '💡 填写内容后，这里会实时显示预览效果';
+        previewBox.className = 'preview-box empty';
+      } else {
+        previewBox.textContent = out;
+        previewBox.className = 'preview-box';
+      }
+    }
+
+    // ============================================================
+    //  信息替换 - 管理
+    // ============================================================
+    function renderManage() {
+      renderTemplateList();
+      if (editingTemplateId && getTemplate(editingTemplateId)) {
+        templateEditor.classList.remove('hidden');
+        const t = getTemplate(editingTemplateId);
+        editTemplateName.value = t.name;
+        editGroupHint.value = t.groupHint || '';
+        editTemplateContent.value = t.content;
+        renderVarTags(t.content);
+      } else {
+        templateEditor.classList.add('hidden');
+      }
+    }
+
+    function renderTemplateList() {
+      templateList.innerHTML = '';
+      if (!data.templates.length) {
+        templateList.innerHTML = '<span class="text-muted" style="font-size:0.85rem;">还没有模板，点击「新建」开始</span>';
+        return;
+      }
+      data.templates.forEach((t, idx) => {
+        const wrap = document.createElement('span');
+        wrap.style.display = 'inline-flex';
+        wrap.style.alignItems = 'center';
+        wrap.style.gap = '2px';
+        const btn = document.createElement('span');
+        btn.className = 'tag' + (t.id === editingTemplateId ? ' tag-sm' : '');
+        btn.textContent = t.name;
+        if (t.id === editingTemplateId) { btn.style.background = 'var(--primary)'; btn.style.color = '#fff'; }
+        btn.addEventListener('click', () => { editingTemplateId = t.id; renderManage(); });
+        wrap.appendChild(btn);
+        const up = document.createElement('button');
+        up.textContent = '↑';
+        up.className = 'ghost small';
+        up.style.fontSize = '0.7rem';
+        up.disabled = idx === 0;
+        up.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (idx > 0) {
+            [data.templates[idx-1], data.templates[idx]] = [data.templates[idx], data.templates[idx-1]];
+            saveData();
+            renderManage();
+            renderMain();
+          }
+        });
+        wrap.appendChild(up);
+        const down = document.createElement('button');
+        down.textContent = '↓';
+        down.className = 'ghost small';
+        down.style.fontSize = '0.7rem';
+        down.disabled = idx === data.templates.length - 1;
+        down.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (idx < data.templates.length - 1) {
+            [data.templates[idx], data.templates[idx+1]] = [data.templates[idx+1], data.templates[idx]];
+            saveData();
+            renderManage();
+            renderMain();
+          }
+        });
+        wrap.appendChild(down);
+        templateList.appendChild(wrap);
+        templateList.appendChild(document.createTextNode(' '));
+      });
+    }
+
+    function renderVarTags(content) {
+      const vars = extractVars(content);
+      varTagList.innerHTML = '';
+      if (!vars.length) {
+        varTagList.innerHTML = '<span class="text-muted" style="font-size:0.8rem;">💡 用 <code>*变量*</code> 标记占位，点击下方变量快速插入</span>';
+        return;
+      }
+      vars.forEach(v => {
+        const tag = document.createElement('span');
+        tag.className = 'tag tag-sm';
+        tag.textContent = '*' + v + '*';
+        tag.addEventListener('click', () => {
+          const ta = editTemplateContent;
+          const start = ta.selectionStart;
+          const ins = '*' + v + '*';
+          ta.value = ta.value.slice(0, start) + ins + ta.value.slice(start);
+          ta.focus();
+          ta.selectionStart = ta.selectionEnd = start + ins.length;
+          renderVarTags(ta.value);
+        });
+        varTagList.appendChild(tag);
+      });
+    }
+
+    function renderMain() {
+      renderTemplateSelect();
+      renderInputs();
+    }
+
+    // ============================================================
+    //  时间线
+    // ============================================================
+    function getCurrentTime() {
+      const d = new Date();
+      return {
+        hh: String(d.getHours()).padStart(2,'0'),
+        mm: String(d.getMinutes()).padStart(2,'0'),
+        ss: String(d.getSeconds()).padStart(2,'0'),
+        total: d.getHours() * 60 + d.getMinutes()
+      };
+    }
+
+    function timeToMinutes(t) {
+      if (!t) return -1;
+      const parts = t.split(':');
+      if (parts.length !== 2) return -1;
+      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    function getTimelineStatus(item) {
+      const now = getCurrentTime().total;
+      const start = timeToMinutes(item.start);
+      const end = item.end ? timeToMinutes(item.end) : start;
+      if (start < 0) return 'future';
+      if (now >= start && now <= end) return 'current';
+      if (now > end) return 'past';
+      return 'future';
+    }
+
+    function renderTimeline() {
+      const now = getCurrentTime();
+      currentTimeDisplay.textContent = now.hh + ':' + now.mm + ':' + now.ss;
+      // 时段描述
+      const h = parseInt(now.hh);
+      let period = '🌙 深夜';
+      if (h >= 5 && h < 8) period = '🌅 清晨';
+      else if (h >= 8 && h < 12) period = '☀️ 上午';
+      else if (h >= 12 && h < 14) period = '🌤 中午';
+      else if (h >= 14 && h < 18) period = '🌇 下午';
+      else if (h >= 18 && h < 21) period = '🌆 傍晚';
+      else if (h >= 21 && h < 24) period = '🌙 夜间';
+      currentPeriodDisplay.textContent = period;
+
+      if (!data.timeline || !data.timeline.length) {
+        timelineList.innerHTML = '<div class="timeline-empty">⏰ 还没有时间线任务，点击「管理时间线」添加</div>';
+        return;
+      }
+
+      // 按开始时间排序
+      const sorted = [...data.timeline].sort((a,b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+      let html = '';
+      sorted.forEach(item => {
+        const status = getTimelineStatus(item);
+        const statusLabel = { past: '已完成', current: '● 进行中', future: '待执行' }[status] || '';
+        const cls = status === 'current' ? 'current' : (status === 'past' ? 'past' : 'future');
+        const timeDisplay = item.end ? `${item.start} - ${item.end}` : item.start;
+        html += `<div class="timeline-item ${cls}">
+          <div class="time-col">
+            <span>${timeDisplay}</span>
+            <span class="range">${statusLabel}</span>
+          </div>
+          <div class="content-col">
+            <div class="task">${escHtml(item.task)}</div>
+            ${item.desc ? `<div class="desc">${escHtml(item.desc)}</div>` : ''}
+          </div>
+          <div class="status-dot"></div>
+        </div>`;
+      });
+      timelineList.innerHTML = html;
+    }
+
+    // ============================================================
+    //  时间线 - 管理
+    // ============================================================
+    function renderTimelineEditor() {
+      timelineEditorList.innerHTML = '';
+      if (!timelineEditItems.length) {
+        timelineEditorList.innerHTML = '<div class="text-muted text-center" style="padding:16px 0;">还没有任务，点击下方添加</div>';
+        return;
+      }
+      timelineEditItems.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'dyn-item-group';
+        div.style.marginBottom = '10px';
+        div.innerHTML = `
+          <div class="head">
+            <span>任务 ${idx+1}</span>
+            <button class="ghost small" data-tl-del="${idx}">✕ 删除</button>
+          </div>
+          <div class="fields">
+            <div class="row"><input type="time" value="${item.start||''}" data-tl-field="${idx}" data-key="start" placeholder="开始时间"></div>
+            <div class="row"><input type="time" value="${item.end||''}" data-tl-field="${idx}" data-key="end" placeholder="结束时间（选填）"></div>
+            <div class="row"><input type="text" value="${escHtml(item.task||'')}" data-tl-field="${idx}" data-key="task" placeholder="任务名称"></div>
+            <div class="row"><input type="text" value="${escHtml(item.desc||'')}" data-tl-field="${idx}" data-key="desc" placeholder="备注（选填）"></div>
+          </div>
+        `;
+        timelineEditorList.appendChild(div);
+      });
+
+      // 绑定事件
+      timelineEditorList.querySelectorAll('input[data-tl-field]').forEach(el => {
+        const idx = parseInt(el.dataset.tlField);
+        const key = el.dataset.key;
+        el.addEventListener('input', () => {
+          if (timelineEditItems[idx]) {
+            timelineEditItems[idx][key] = el.value;
+          }
+        });
+      });
+
+      timelineEditorList.querySelectorAll('button[data-tl-del]').forEach(btn => {
+        const idx = parseInt(btn.dataset.tlDel);
+        btn.addEventListener('click', () => {
+          timelineEditItems.splice(idx, 1);
+          renderTimelineEditor();
+        });
+      });
+    }
+
+    // ============================================================
+    //  设置
+    // ============================================================
+    function renderSettings() {
+      settingLine.value = data.settings.line || '';
+      settingStation.value = data.settings.station || '';
+      settingLeader.value = data.settings.leader || '';
+      settingLeaderPhone.value = data.settings.leaderphone || '';
+      renderEntrances();
+      renderCustomSettingsUI();
+    }
+
+    function renderEntrances() {
+      entranceList.innerHTML = '';
+      if (!data.settings.entrances.length) {
+        entranceList.innerHTML = '<div class="text-muted" style="font-size:0.8rem;padding:4px 0;">还没有安检点</div>';
+      }
+      data.settings.entrances.forEach((ent, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex-row';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = ent;
+        inp.placeholder = '如：A口';
+        inp.style.margin = '0';
+        inp.addEventListener('input', () => { data.settings.entrances[idx] = inp.value; saveData(); });
+        row.appendChild(inp);
+        const del = document.createElement('button');
+        del.textContent = '删除';
+        del.className = 'danger small shrink';
+        del.addEventListener('click', () => {
+          data.settings.entrances.splice(idx, 1);
+          renderEntrances();
+          saveData();
           renderMain();
-          renderManageModal();
-          confirmImportBtn.style.display = 'none';
-          importExportText.value = '';
-          showToast('导入成功');
-        } catch (e) {
-          showToast('导入失败：' + e.message);
-        }
+        });
+        row.appendChild(del);
+        entranceList.appendChild(row);
       });
+    }
 
-      settingsBtn.addEventListener('click', openSettingsModal);
-      closeSettingsBtn.addEventListener('click', () => {
-        settingsModal.classList.remove('active');
-        renderMain();
-      });
-      settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-          settingsModal.classList.remove('active');
+    function renderCustomSettingsUI() {
+      customSettingsList.innerHTML = '';
+      if (!data.settings.custom.length) {
+        customSettingsList.innerHTML = '<div class="text-muted" style="font-size:0.8rem;padding:4px 0;">还没有自定义预设项</div>';
+      }
+      data.settings.custom.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex-row';
+        const keyInp = document.createElement('input');
+        keyInp.type = 'text';
+        keyInp.placeholder = '变量名';
+        keyInp.value = item.key;
+        keyInp.style.flex = '1.5';
+        keyInp.addEventListener('input', () => { item.key = keyInp.value.trim(); saveData(); });
+        row.appendChild(keyInp);
+
+        const typeSel = document.createElement('select');
+        typeSel.style.flex = '1';
+        ['text','single','multi'].forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = { text:'固定文本', single:'单选', multi:'多选' }[t];
+          if (item.type === t) opt.selected = true;
+          typeSel.appendChild(opt);
+        });
+        typeSel.addEventListener('change', () => { item.type = typeSel.value; saveData(); });
+        row.appendChild(typeSel);
+
+        const valInp = document.createElement('input');
+        valInp.type = 'text';
+        valInp.placeholder = item.type === 'text' ? '固定值' : '选项1|选项2|选项3';
+        valInp.value = item.value;
+        valInp.style.flex = '2';
+        valInp.addEventListener('input', () => { item.value = valInp.value; saveData(); });
+        row.appendChild(valInp);
+
+        const up = document.createElement('button');
+        up.textContent = '↑';
+        up.className = 'small shrink';
+        up.disabled = idx === 0;
+        up.addEventListener('click', () => {
+          if (idx > 0) {
+            [data.settings.custom[idx-1], data.settings.custom[idx]] = [data.settings.custom[idx], data.settings.custom[idx-1]];
+            saveData();
+            renderCustomSettingsUI();
+          }
+        });
+        row.appendChild(up);
+        const down = document.createElement('button');
+        down.textContent = '↓';
+        down.className = 'small shrink';
+        down.disabled = idx === data.settings.custom.length - 1;
+        down.addEventListener('click', () => {
+          if (idx < data.settings.custom.length - 1) {
+            [data.settings.custom[idx], data.settings.custom[idx+1]] = [data.settings.custom[idx+1], data.settings.custom[idx]];
+            saveData();
+            renderCustomSettingsUI();
+          }
+        });
+        row.appendChild(down);
+
+        const del = document.createElement('button');
+        del.textContent = '删除';
+        del.className = 'danger small shrink';
+        del.addEventListener('click', () => {
+          data.settings.custom.splice(idx, 1);
+          renderCustomSettingsUI();
+          saveData();
           renderMain();
-        }
+        });
+        row.appendChild(del);
+        customSettingsList.appendChild(row);
       });
+    }
 
-      addEntranceBtn.addEventListener('click', () => {
-        data.settings.entrances.push('');
-        renderEntranceList();
-        saveData();
-      });
+    // ============================================================
+    //  事件绑定
+    // ============================================================
 
-      addCustomSettingBtn.addEventListener('click', () => {
-        data.settings.custom.push({ key: '', type: 'text', value: '' });
-        renderCustomSettings();
-        saveData();
-      });
+    // --- 模板选择 ---
+    templateSelect.addEventListener('change', () => {
+      currentTemplateId = templateSelect.value;
+      formValues = {};
+      renderInputs();
+      updateGroupHint();
+    });
 
-      saveSettingsBtn.addEventListener('click', () => {
-        data.settings.line = settingLine.value.trim();
-        data.settings.station = settingStation.value.trim();
-        data.settings.leader = settingLeader.value.trim();
-        data.settings.leaderphone = settingLeaderPhone.value.trim();
-        saveData();
-        settingsModal.classList.remove('active');
-        renderMain();
-        showToast('设置已保存');
-      });
+    // --- 复制 ---
+    copyBtn.addEventListener('click', async () => {
+      const text = previewBox.textContent;
+      if (!text || previewBox.classList.contains('empty')) {
+        showToast('暂无内容可复制');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('✅ 已复制到剪贴板');
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('✅ 已复制到剪贴板');
+      }
+    });
 
-      helpBtn.addEventListener('click', () => {
-        helpModal.classList.add('active');
-      });
-      closeHelpBtn.addEventListener('click', () => {
-        helpModal.classList.remove('active');
-      });
-      helpModal.addEventListener('click', (e) => {
-        if (e.target === helpModal) helpModal.classList.remove('active');
-      });
+    // --- 管理模板 ---
+    document.getElementById('manageBtn').addEventListener('click', () => {
+      if (!editingTemplateId && data.templates.length) editingTemplateId = data.templates[0].id;
+      renderManage();
+      manageModal.classList.add('active');
+    });
+    closeManageBtn.addEventListener('click', () => { manageModal.classList.remove('active'); renderMain(); });
+    manageModal.addEventListener('click', (e) => { if (e.target === manageModal) { manageModal.classList.remove('active'); renderMain(); } });
 
-      // ==================== 初始化 ====================
+    addTemplateBtn.addEventListener('click', () => {
+      const t = { id: genId(), name: '新模板', content: '', groupHint: '' };
+      data.templates.push(t);
+      editingTemplateId = t.id;
+      saveData();
+      renderManage();
       renderMain();
-    })();
+    });
+
+    saveTemplateBtn.addEventListener('click', () => {
+      const t = getTemplate(editingTemplateId);
+      if (!t) return;
+      t.name = editTemplateName.value.trim() || '未命名模板';
+      t.groupHint = editGroupHint.value.trim();
+      t.content = editTemplateContent.value;
+      saveData();
+      renderManage();
+      renderMain();
+      showToast('✅ 模板已保存');
+    });
+
+    deleteTemplateBtn.addEventListener('click', () => {
+      const t = getTemplate(editingTemplateId);
+      if (!t) return;
+      if (!confirm(`确定删除「${t.name}」吗？`)) return;
+      data.templates = data.templates.filter(x => x.id !== editingTemplateId);
+      if (currentTemplateId === editingTemplateId) currentTemplateId = data.templates[0]?.id || null;
+      editingTemplateId = data.templates[0]?.id || null;
+      saveData();
+      renderManage();
+      renderMain();
+      showToast('🗑 已删除');
+    });
+
+    duplicateTemplateBtn.addEventListener('click', () => {
+      const t = getTemplate(editingTemplateId);
+      if (!t) return;
+      const nt = { id: genId(), name: t.name + '（副本）', content: t.content, groupHint: t.groupHint || '' };
+      data.templates.push(nt);
+      editingTemplateId = nt.id;
+      saveData();
+      renderManage();
+      renderMain();
+      showToast('📋 已复制模板');
+    });
+
+    // --- 导入导出 ---
+    let importMode = false;
+    importBtn.addEventListener('click', () => {
+      importMode = !importMode;
+      importArea.classList.toggle('hidden', !importMode);
+      if (importMode) { importExportText.value = ''; showToast('📥 粘贴 JSON 后点击确认导入'); }
+    });
+    cancelImportBtn.addEventListener('click', () => { importMode = false; importArea.classList.add('hidden'); });
+    confirmImportBtn.addEventListener('click', () => {
+      try {
+        const raw = importExportText.value.trim();
+        if (!raw) throw new Error('请粘贴 JSON 数据');
+        const d = JSON.parse(raw);
+        if (!d || !Array.isArray(d.templates) || !d.settings) throw new Error('数据格式不正确');
+        if (!Array.isArray(d.settings.custom)) {
+          const old = d.settings.custom || {};
+          d.settings.custom = Object.keys(old).map(k => ({ key: k, type: 'text', value: old[k] }));
+        }
+        d.templates.forEach(t => { if (!t.groupHint) t.groupHint = ''; });
+        if (!Array.isArray(d.timeline)) d.timeline = [];
+        data = d;
+        saveData();
+        currentTemplateId = data.templates[0]?.id || null;
+        editingTemplateId = data.templates[0]?.id || null;
+        formValues = {};
+        importMode = false;
+        importArea.classList.add('hidden');
+        renderMain();
+        renderManage();
+        renderTimeline();
+        showToast('✅ 配置导入成功');
+      } catch (e) {
+        showToast('❌ 导入失败：' + e.message);
+      }
+    });
+
+    exportBtn.addEventListener('click', () => {
+      importExportText.value = JSON.stringify(data, null, 2);
+      importArea.classList.remove('hidden');
+      importMode = true;
+      showToast('📤 配置已导出，请复制保存');
+    });
+
+    // --- 设置 ---
+    settingsBtn.addEventListener('click', () => { renderSettings(); settingsModal.classList.add('active'); });
+    closeSettingsBtn.addEventListener('click', () => { settingsModal.classList.remove('active'); renderMain(); });
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) { settingsModal.classList.remove('active'); renderMain(); } });
+
+    addEntranceBtn.addEventListener('click', () => {
+      data.settings.entrances.push('');
+      renderEntrances();
+      saveData();
+    });
+
+    addCustomSettingBtn.addEventListener('click', () => {
+      data.settings.custom.push({ key: '', type: 'text', value: '' });
+      renderCustomSettingsUI();
+      saveData();
+    });
+
+    saveSettingsBtn.addEventListener('click', () => {
+      data.settings.line = settingLine.value.trim();
+      data.settings.station = settingStation.value.trim();
+      data.settings.leader = settingLeader.value.trim();
+      data.settings.leaderphone = settingLeaderPhone.value.trim();
+      saveData();
+      settingsModal.classList.remove('active');
+      formValues = {};
+      renderMain();
+      showToast('✅ 设置已保存');
+    });
+
+    // --- 帮助 ---
+    helpBtn.addEventListener('click', () => helpModal.classList.add('active'));
+    closeHelpBtn.addEventListener('click', () => helpModal.classList.remove('active'));
+    helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.classList.remove('active'); });
+
+    // --- 时间线 ---
+    manageTimelineBtn.addEventListener('click', () => {
+      timelineEditItems = JSON.parse(JSON.stringify(data.timeline || []));
+      renderTimelineEditor();
+      timelineModal.classList.add('active');
+    });
+    closeTimelineBtn.addEventListener('click', () => { timelineModal.classList.remove('active'); renderTimeline(); });
+    timelineModal.addEventListener('click', (e) => { if (e.target === timelineModal) { timelineModal.classList.remove('active'); renderTimeline(); } });
+
+    addTimelineItemBtn.addEventListener('click', () => {
+      timelineEditItems.push({ id: genId(), start: '', end: '', task: '', desc: '' });
+      renderTimelineEditor();
+    });
+
+    saveTimelineBtn.addEventListener('click', () => {
+      // 过滤空任务
+      const valid = timelineEditItems.filter(item => item.task && item.task.trim() && item.start);
+      if (!valid.length) {
+        showToast('至少需要一个有名称和开始时间的任务');
+        return;
+      }
+      data.timeline = valid;
+      saveData();
+      timelineModal.classList.remove('active');
+      renderTimeline();
+      showToast('✅ 时间线已保存');
+    });
+
+    // --- 模板编辑实时更新变量标签 ---
+    editTemplateContent.addEventListener('input', () => {
+      renderVarTags(editTemplateContent.value);
+    });
+
+    // --- 时间线实时更新 ---
+    setInterval(renderTimeline, 10000);
+
+    // ============================================================
+    //  启动
+    // ============================================================
+    if (data.templates.length) {
+      currentTemplateId = data.templates[0].id;
+      editingTemplateId = data.templates[0].id;
+    }
+    renderMain();
+    renderTimeline();
+  })();
   </script>
 </body>
 </html>
