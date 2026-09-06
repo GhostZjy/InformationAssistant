@@ -1891,7 +1891,16 @@
           return;
         }
 
-        const sorted = [...data.timeline].sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+        // ★★★ 修复排序：按时间先后（分钟数）排序 ★★★
+        const sorted = [...data.timeline].sort((a, b) => {
+          const ta = timeToMinutes(a.start);
+          const tb = timeToMinutes(b.start);
+          // 无效时间（如空值）放到最后
+          if (ta === -1) return 1;
+          if (tb === -1) return -1;
+          return ta - tb;
+        });
+
         let html = '';
         sorted.forEach(item => {
           const status = getTimelineStatus(item);
