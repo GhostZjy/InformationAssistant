@@ -5,41 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>信息助手</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    /* ============================================================
+       全局重置 & 变量
+       ============================================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     :root {
-      --primary: #4a90e2;
-      --primary-light: #e8f0fe;
-      --primary-dark: #2d6fb0;
+      --primary: #4f7cf7;
+      --primary-light: #eef3ff;
+      --primary-dark: #3a5fc9;
       --success: #34c759;
-      --warning: #f5a623;
-      --danger: #e74c3c;
+      --success-light: #e8f9ed;
+      --danger: #ff3b30;
       --gray: #8e9aaf;
+      --gray-light: #e8ecf0;
       --bg: #f2f4f8;
       --card: #ffffff;
       --text: #1a2332;
       --text-secondary: #5a6a7a;
       --border: #e2e8f0;
-      --radius: 12px;
-      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+      --radius: 14px;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
+    html,
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 0 0 calc(70px + var(--safe-bottom)) 0;
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 0 0 calc(20px + var(--safe-bottom)) 0;
       max-width: 480px;
       margin: 0 auto;
       min-height: 100vh;
-      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* --- 顶部导航 --- */
+    /* ============================================================
+       顶部栏
+       ============================================================ */
     .app-header {
       background: var(--card);
-      padding: 14px 16px 10px;
+      padding: 14px 18px 12px;
       position: sticky;
       top: 0;
       z-index: 50;
@@ -47,198 +66,389 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
     }
     .app-header h1 {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--text);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
-    .app-header h1 small {
-      font-size: 0.65rem;
-      font-weight: 400;
+    .app-header h1 .badge {
+      font-size: 0.55rem;
+      font-weight: 500;
       color: var(--gray);
       background: var(--bg);
       padding: 2px 8px;
       border-radius: 10px;
+      letter-spacing: 0.3px;
     }
     .header-actions {
       display: flex;
       gap: 6px;
-      flex-wrap: wrap;
     }
     .header-actions button {
       background: var(--bg);
       border: none;
       border-radius: 20px;
       padding: 6px 14px;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
       min-height: 34px;
       display: flex;
       align-items: center;
       gap: 4px;
+      transition: all 0.15s;
+      font-weight: 500;
     }
-    .header-actions button:active { opacity: 0.6; }
+    .header-actions button:active {
+      opacity: 0.6;
+      transform: scale(0.95);
+    }
     .header-actions button.primary-btn {
       background: var(--primary);
       color: #fff;
     }
 
-    /* --- Tab 切换 --- */
-    .tab-bar {
-      display: flex;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 62px;
-      z-index: 49;
-    }
-    .tab-bar .tab {
-      flex: 1;
-      text-align: center;
-      padding: 12px 0 10px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--gray);
-      border-bottom: 3px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s;
-      min-height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .tab-bar .tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-      background: var(--primary-light);
-    }
-    .tab-bar .tab:active { opacity: 0.6; }
-
-    /* --- 内容区 --- */
-    .tab-content {
-      display: none;
+    /* ============================================================
+       主内容区
+       ============================================================ */
+    .main-content {
       padding: 12px 14px 20px;
     }
-    .tab-content.active { display: block; }
 
-    /* --- 卡片 --- */
+    /* ============================================================
+       卡片通用
+       ============================================================ */
     .card {
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 14px 16px;
+      padding: 16px 18px;
       margin-bottom: 14px;
     }
-    .card-title {
-      font-size: 0.85rem;
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .card-header .title {
+      font-size: 0.9rem;
       font-weight: 600;
       color: var(--text-secondary);
-      margin-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
+    .card-header .action-btn {
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 4px 8px;
+      min-height: 30px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .card-header .action-btn:active {
+      background: var(--primary-light);
+    }
 
-    /* --- 表单控件 (移动优先) --- */
-    label {
-      display: block;
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 10px 0 14px;
+    }
+
+    /* ============================================================
+       时间线区块
+       ============================================================ */
+    .timeline-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+    }
+    .timeline-clock {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+    .timeline-clock .period {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--gray);
+      margin-left: 8px;
+    }
+    .timeline-badge {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      background: var(--bg);
+      padding: 2px 12px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .timeline-badge.active {
+      background: var(--success-light);
+      color: var(--success);
+    }
+
+    .timeline-list {
+      margin-top: 6px;
+    }
+    .timeline-empty {
+      text-align: center;
+      color: var(--gray);
+      padding: 18px 0 8px;
       font-size: 0.85rem;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .timeline-item:last-child {
+      border-bottom: none;
+    }
+    .timeline-item .t-time {
+      flex: 0 0 62px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: right;
+      line-height: 1.2;
+    }
+    .timeline-item .t-time .t-range {
+      font-weight: 400;
+      font-size: 0.6rem;
+      color: var(--gray);
+      display: block;
+    }
+    .timeline-item .t-content {
+      flex: 1;
+      padding-left: 2px;
+    }
+    .timeline-item .t-content .t-task {
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .timeline-item .t-content .t-desc {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 1px;
+    }
+    .timeline-item .t-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 10px;
+      border: 2px solid var(--border);
+      background: transparent;
+    }
+
+    /* 状态：过去 */
+    .timeline-item.past .t-task {
+      color: var(--gray);
+    }
+    .timeline-item.past .t-dot {
+      background: var(--gray);
+      border-color: var(--gray);
+    }
+    .timeline-item.past .t-time {
+      color: var(--gray);
+    }
+
+    /* 状态：当前 */
+    .timeline-item.current {
+      background: var(--primary-light);
+      margin: 0 -18px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      border-bottom: none;
+    }
+    .timeline-item.current .t-task {
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    .timeline-item.current .t-dot {
+      background: var(--success);
+      border-color: var(--success);
+      box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.2);
+    }
+    .timeline-item.current .t-time {
+      color: var(--primary-dark);
+    }
+
+    /* 状态：未来 */
+    .timeline-item.future .t-dot {
+      background: transparent;
+      border-color: var(--border);
+    }
+
+    /* ============================================================
+       模板区块
+       ============================================================ */
+    .template-select-wrap {
+      margin-bottom: 4px;
+    }
+    .template-select-wrap select {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafbfc;
+      color: var(--text);
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e9aaf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      min-height: 48px;
+    }
+    .template-select-wrap select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .group-hint {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    /* 变量输入 */
+    .var-group {
+      margin-bottom: 12px;
+    }
+    .var-group label {
+      display: block;
+      font-size: 0.8rem;
       font-weight: 500;
       color: var(--text-secondary);
       margin-bottom: 3px;
     }
-    select, input[type="text"], input[type="number"], input[type="time"], textarea {
+    .var-group input[type="text"],
+    .var-group select {
       width: 100%;
       padding: 12px 14px;
-      font-size: 16px;  /* 防止 iOS 缩放 */
+      font-size: 16px;
       border: 1px solid var(--border);
       border-radius: 10px;
       background: #fafbfc;
-      transition: border-color 0.15s;
-      font-family: inherit;
       color: var(--text);
-      -webkit-appearance: none;
-      appearance: none;
-      margin-bottom: 8px;
+      min-height: 48px;
+      transition: border-color 0.15s;
     }
-    select:focus, input:focus, textarea:focus {
+    .var-group input[type="text"]:focus,
+    .var-group select:focus {
       outline: none;
       border-color: var(--primary);
       background: #fff;
     }
-    textarea { min-height: 70px; resize: vertical; }
-    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e9aaf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+    .var-group select {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e9aaf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
 
-    button {
-      min-height: 44px;
-      padding: 0 18px;
-      border: none;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
+    /* 步进器 (Stepper) */
+    .stepper {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      background: var(--primary);
-      color: #fff;
-      box-shadow: var(--shadow);
-      touch-action: manipulation;
-    }
-    button:active { opacity: 0.7; transform: scale(0.97); }
-    button.secondary { background: #e8ecf2; color: var(--text); }
-    button.danger { background: var(--danger); color: #fff; }
-    button.success { background: var(--success); color: #fff; }
-    button.ghost { background: transparent; color: var(--primary); box-shadow: none; min-height: 32px; padding: 0 8px; }
-    button.small { min-height: 34px; font-size: 0.8rem; padding: 0 12px; }
-    button.block { width: 100%; justify-content: center; }
-    button:disabled { opacity: 0.4; pointer-events: none; }
-
-    .btn-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 6px;
-    }
-    .btn-row button { flex: 1 1 auto; min-width: 60px; }
-
-    /* --- 预览 --- */
-    .preview-box {
-      background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 0.95rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      min-height: 50px;
-      margin-bottom: 10px;
-      color: var(--text);
-      line-height: 1.6;
+      overflow: hidden;
+      background: #fafbfc;
+      min-height: 48px;
     }
-    .preview-box.empty { color: var(--gray); font-style: italic; }
+    .stepper-btn {
+      min-height: 48px;
+      min-width: 48px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      box-shadow: none;
+      border-radius: 0;
+      flex-shrink: 0;
+    }
+    .stepper-btn:active {
+      background: var(--primary-light);
+      transform: none;
+    }
+    .stepper-btn:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .stepper-input {
+      min-width: 44px;
+      width: 52px;
+      padding: 0 4px;
+      border: none;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: transparent;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      height: 48px;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    .stepper-input::-webkit-outer-spin-button,
+    .stepper-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .stepper-input:focus {
+      outline: none;
+      background: #fff;
+    }
 
-    /* --- 动态件数 --- */
-    .dyn-item-group {
+    .stepper-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .stepper-row .stepper {
+      flex-shrink: 0;
+    }
+
+    /* 动态件数组 */
+    .dyn-group {
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 12px;
       margin-bottom: 8px;
       background: #fafbfc;
     }
-    .dyn-item-group .head {
+    .dyn-group .head {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -246,128 +456,129 @@
       font-size: 0.85rem;
       margin-bottom: 6px;
     }
-    .dyn-item-group .fields {
+    .dyn-group .fields {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .dyn-item-group .fields .row {
+    .dyn-group .fields .row {
       display: flex;
       gap: 6px;
+      align-items: center;
     }
-    .dyn-item-group .fields .row > * {
+    .dyn-group .fields .row>* {
       flex: 1;
       min-width: 0;
     }
-    .dyn-item-group .fields input,
-    .dyn-item-group .fields select {
+    .dyn-group .fields .row input,
+    .dyn-group .fields .row select {
       padding: 10px 10px;
       font-size: 15px;
-      margin: 0;
-    }
-    @media (min-width: 420px) {
-      .dyn-item-group .fields { flex-direction: row; flex-wrap: wrap; }
-      .dyn-item-group .fields .row { flex: 1 1 auto; min-width: 120px; }
-    }
-
-    /* --- 群提示 --- */
-    .group-hint {
-      background: var(--primary-light);
-      border-left: 4px solid var(--primary);
-      padding: 8px 14px;
+      border: 1px solid var(--border);
       border-radius: 8px;
-      margin-bottom: 12px;
+      background: #fff;
+      min-height: 40px;
+      margin: 0;
+      width: 100%;
+    }
+    .dyn-group .fields .row select {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e9aaf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+    .dyn-group .fields .row .stepper {
+      min-height: 40px;
+      width: 100%;
+    }
+    .dyn-group .fields .row .stepper .stepper-btn {
+      min-height: 40px;
+      min-width: 40px;
+      font-size: 1.2rem;
+    }
+    .dyn-group .fields .row .stepper .stepper-input {
+      height: 40px;
+      min-width: 32px;
+      width: 44px;
       font-size: 0.9rem;
     }
 
-    /* --- 时间线 --- */
-    .timeline-current-time {
-      text-align: center;
-      padding: 12px 0 8px;
-      font-size: 1.5rem;
-      font-weight: 700;
+    @media (min-width: 420px) {
+      .dyn-group .fields {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .dyn-group .fields .row {
+        flex: 1 1 auto;
+        min-width: 110px;
+      }
+    }
+
+    /* 预览 */
+    .preview-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 50px;
       color: var(--text);
-      letter-spacing: 2px;
+      line-height: 1.6;
     }
-    .timeline-current-time small {
-      font-size: 0.8rem;
-      font-weight: 400;
+    .preview-box.empty {
       color: var(--gray);
-      margin-left: 8px;
+      font-style: italic;
     }
-    .timeline-empty {
-      text-align: center;
-      color: var(--gray);
-      padding: 30px 0;
-      font-size: 0.9rem;
-    }
-    .timeline-item {
-      display: flex;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      align-items: stretch;
-      position: relative;
-    }
-    .timeline-item:last-child { border-bottom: none; }
-    .timeline-item .time-col {
-      flex: 0 0 80px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      padding-top: 2px;
-      line-height: 1.3;
-    }
-    .timeline-item .time-col .range {
-      font-size: 0.75rem;
-      font-weight: 400;
-      color: var(--gray);
-    }
-    .timeline-item .content-col {
-      flex: 1;
-      padding-left: 4px;
-    }
-    .timeline-item .content-col .task {
-      font-weight: 500;
-      font-size: 0.95rem;
-    }
-    .timeline-item .content-col .desc {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
-    .timeline-item .status-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex: 0 0 12px;
-      margin-top: 4px;
-      border: 2px solid var(--border);
-    }
-    /* 状态 */
-    .timeline-item.past .status-dot { background: var(--gray); border-color: var(--gray); }
-    .timeline-item.past .task { color: var(--gray); }
-    .timeline-item.current .status-dot { background: var(--success); border-color: var(--success); box-shadow: 0 0 0 3px rgba(52,199,89,0.2); }
-    .timeline-item.current { background: var(--primary-light); margin: 0 -16px; padding: 12px 16px; border-radius: 10px; }
-    .timeline-item.current .task { color: var(--primary-dark); }
-    .timeline-item.future .status-dot { background: transparent; border-color: var(--border); }
 
-    /* --- 模态框 (底部弹出) --- */
+    .copy-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .copy-btn:active {
+      opacity: 0.7;
+      transform: scale(0.97);
+    }
+    .copy-btn.success {
+      background: var(--success);
+    }
+
+    /* ============================================================
+       底部弹出模态框
+       ============================================================ */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.4);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
       display: none;
       justify-content: flex-end;
       align-items: flex-end;
       z-index: 1000;
-      padding: 0;
-      animation: fadeIn 0.2s;
+      animation: fadeIn 0.2s ease;
     }
-    .modal-overlay.active { display: flex; }
+    .modal-overlay.active {
+      display: flex;
+    }
     .modal-overlay .modal-content {
       background: #fff;
       width: 100%;
@@ -376,11 +587,11 @@
       border-radius: 20px 20px 0 0;
       padding: 20px 20px calc(20px + var(--safe-bottom));
       overflow-y: auto;
-      animation: slideUp 0.25s ease;
+      animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
       position: relative;
     }
     .modal-overlay .modal-handle {
-      width: 40px;
+      width: 36px;
       height: 4px;
       background: #d0d7e2;
       border-radius: 4px;
@@ -394,136 +605,511 @@
       padding-bottom: 10px;
       border-bottom: 1px solid var(--border);
     }
-    .modal-header h2 { font-size: 1.1rem; font-weight: 600; }
+    .modal-header h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
     .modal-header .close-btn {
       background: none;
       border: none;
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       line-height: 1;
       color: var(--gray);
-      padding: 0 4px;
+      padding: 0 6px;
       min-height: 40px;
-      box-shadow: none;
+      cursor: pointer;
     }
 
     @keyframes slideUp {
-      from { transform: translateY(40px); opacity: 0.6; }
-      to { transform: translateY(0); opacity: 1; }
+      from {
+        transform: translateY(40px);
+        opacity: 0.6;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
 
-    /* --- 辅助 --- */
-    .flex-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .flex-row > * { flex: 1 1 auto; min-width: 0; }
-    .flex-row .shrink { flex: 0 0 auto; }
-    .mt-8 { margin-top: 8px; }
-    .mb-8 { margin-bottom: 8px; }
-    .border-top { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
-    .text-muted { color: var(--text-secondary); font-size: 0.8rem; }
-    .text-center { text-align: center; }
-    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
-    .tag {
+    /* ============================================================
+       弹窗内的列表 & 表单
+       ============================================================ */
+    .modal-list-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-list-item:last-child {
+      border-bottom: none;
+    }
+    .modal-list-item .tag {
       background: var(--primary-light);
       color: var(--primary);
       padding: 4px 14px;
       border-radius: 20px;
       font-size: 0.8rem;
       cursor: pointer;
+      flex: 1;
+      font-weight: 500;
+    }
+    .modal-list-item .tag.active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .modal-list-item .order-btn {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      color: var(--gray);
+      cursor: pointer;
+      padding: 0 4px;
+      min-height: 32px;
+      min-width: 28px;
+    }
+    .modal-list-item .order-btn:disabled {
+      opacity: 0.2;
+      pointer-events: none;
+    }
+    .modal-list-item .action-btn {
+      background: none;
+      border: none;
+      font-size: 0.8rem;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 0 6px;
+      min-height: 32px;
+    }
+    .modal-list-item .action-btn.danger {
+      color: var(--danger);
+    }
+
+    .modal-form label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+      margin-top: 10px;
+    }
+    .modal-form label:first-of-type {
+      margin-top: 0;
+    }
+    .modal-form input,
+    .modal-form textarea,
+    .modal-form select {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafbfc;
+      color: var(--text);
+      min-height: 44px;
+      font-family: inherit;
+    }
+    .modal-form textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+    .modal-form input:focus,
+    .modal-form textarea:focus,
+    .modal-form select:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    .modal-btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .modal-btn-row button {
+      flex: 1 1 auto;
+      min-height: 44px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 60px;
+    }
+    .modal-btn-row button:active {
+      opacity: 0.7;
+      transform: scale(0.97);
+    }
+    .modal-btn-row button.primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .modal-btn-row button.secondary {
+      background: var(--bg);
+      color: var(--text);
+    }
+    .modal-btn-row button.danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .modal-btn-row button.block {
+      flex: 1 1 100%;
+    }
+
+    .modal-tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0 8px;
+    }
+    .modal-tag-list .tag {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
       border: 1px solid transparent;
       transition: all 0.15s;
+      font-weight: 500;
     }
-    .tag:active { opacity: 0.6; }
-    .tag-sm { font-size: 0.7rem; padding: 2px 10px; }
+    .modal-tag-list .tag:active {
+      background: var(--primary);
+      color: #fff;
+    }
 
-    /* --- Toast --- */
+    .modal-import-area {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .modal-import-area textarea {
+      min-height: 80px;
+    }
+
+    /* 设置页自定义预设项 */
+    .setting-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+      background: #fafbfc;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .setting-row>* {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .setting-row input:first-child {
+      flex: 1.2 1 70px;
+      min-width: 60px;
+      margin: 0;
+      padding: 8px 10px;
+      font-size: 15px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 38px;
+    }
+    .setting-row select {
+      flex: 0.8 1 60px;
+      min-width: 50px;
+      margin: 0;
+      padding: 8px 26px 8px 10px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 38px;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e9aaf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+    }
+    .setting-row input:nth-child(3) {
+      flex: 2.5 1 100px;
+      min-width: 80px;
+      margin: 0;
+      padding: 8px 10px;
+      font-size: 15px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 38px;
+    }
+    .setting-row .shrink {
+      flex: 0 0 auto;
+      min-width: 30px;
+      padding: 0 4px;
+      min-height: 34px;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--gray);
+    }
+    .setting-row .shrink.danger {
+      color: var(--danger);
+      min-width: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .setting-row .shrink:active {
+      opacity: 0.6;
+    }
+
+    @media (max-width: 400px) {
+      .setting-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 10px 12px;
+      }
+      .setting-row>* {
+        flex: 1 1 auto !important;
+        width: 100%;
+        min-width: 0 !important;
+      }
+      .setting-row .shrink {
+        flex: 0 0 auto !important;
+        width: auto;
+        align-self: flex-end;
+      }
+      .setting-row .shrink.danger {
+        align-self: flex-end;
+      }
+    }
+
+    /* 安检点列表 */
+    .entrance-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .entrance-row input {
+      flex: 3 1 100px;
+      margin: 0;
+      padding: 8px 10px;
+      font-size: 15px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 38px;
+    }
+    .entrance-row .shrink {
+      flex: 0 0 auto;
+      min-width: 40px;
+      padding: 0 6px;
+      min-height: 34px;
+      border: none;
+      background: transparent;
+      color: var(--danger);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .entrance-row .shrink:active {
+      opacity: 0.6;
+    }
+    @media (max-width: 400px) {
+      .entrance-row input {
+        flex: 1 1 100%;
+      }
+    }
+
+    /* ============================================================
+       Toast
+       ============================================================ */
     .toast {
       position: fixed;
-      bottom: 90px;
+      bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
-      background: #1a2332;
+      background: rgba(26, 35, 50, 0.92);
       color: #fff;
       padding: 10px 24px;
       border-radius: 24px;
       font-size: 0.9rem;
       opacity: 0;
-      transition: opacity 0.25s;
+      transition: opacity 0.3s ease;
       pointer-events: none;
       z-index: 2000;
-      max-width: 90%;
+      max-width: 88%;
       text-align: center;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      backdrop-filter: blur(4px);
+      font-weight: 500;
     }
-    .toast.show { opacity: 1; }
+    .toast.show {
+      opacity: 1;
+    }
 
-    /* --- 隐藏辅助 --- */
-    .hidden { display: none !important; }
+    /* ============================================================
+       帮助内容
+       ============================================================ */
+    .help-content {
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .help-content code {
+      background: var(--bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-family: monospace;
+      color: var(--primary-dark);
+    }
+    .help-content ul {
+      padding-left: 18px;
+      margin: 4px 0 12px;
+    }
+    .help-content ul li {
+      margin-bottom: 3px;
+    }
+    .help-content .section-title {
+      font-weight: 600;
+      margin-top: 12px;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
 
-    /* --- 滚动条美化 --- */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    /* ============================================================
+       工具类
+       ============================================================ */
+    .hidden {
+      display: none !important;
+    }
+    .text-muted {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .mt-8 {
+      margin-top: 8px;
+    }
+    .mb-8 {
+      margin-bottom: 8px;
+    }
+    .gap-6 {
+      gap: 6px;
+    }
+    .flex-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .w-full {
+      width: 100%;
+    }
+    .border-top {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar {
+      width: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- ====== 顶部导航 ====== -->
+  <!-- ============================================================
+  顶部导航
+  ============================================================ -->
   <header class="app-header">
-    <h1>📋 信息助手 <small>v3</small></h1>
+    <h1>
+      📋 信息助手
+      <span class="badge">v4</span>
+    </h1>
     <div class="header-actions">
-      <button id="helpBtn">📖 说明</button>
-      <button id="settingsBtn" class="primary-btn">⚙️ 设置</button>
+      <button id="helpBtn">📖</button>
+      <button id="settingsBtn" class="primary-btn">⚙️</button>
     </div>
   </header>
 
-  <!-- ====== Tab 栏 ====== -->
-  <div class="tab-bar">
-    <div class="tab active" data-tab="replace">📝 信息替换</div>
-    <div class="tab" data-tab="timeline">⏰ 时间线</div>
-  </div>
+  <!-- ============================================================
+  主内容
+  ============================================================ -->
+  <div class="main-content">
 
-  <!-- ========================================================== -->
-  <!-- TAB 1: 信息替换 -->
-  <!-- ========================================================== -->
-  <div class="tab-content active" id="tabReplace">
+    <!-- ==========================================================
+    卡片：时间线
+    ========================================================== -->
     <div class="card">
-      <label for="templateSelect">选择模板</label>
-      <select id="templateSelect"></select>
+      <div class="timeline-top">
+        <div class="timeline-clock">
+          <span id="currentTimeDisplay">--:--</span>
+          <span class="period" id="currentPeriodDisplay"></span>
+        </div>
+        <span class="timeline-badge" id="timelineBadge">⏰ 今日</span>
+      </div>
+
+      <div class="timeline-list" id="timelineList">
+        <div class="timeline-empty">⏰ 还没有任务，点「管理」添加</div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <button id="manageTimelineBtn" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text-secondary);font-size:0.8rem;cursor:pointer;min-height:40px;font-weight:500;">📋 管理时间线</button>
+      </div>
     </div>
 
+    <!-- ==========================================================
+    卡片：模板
+    ========================================================== -->
     <div class="card">
+      <div class="card-header">
+        <span class="title">📝 模板</span>
+        <button class="action-btn" id="manageBtn">管理</button>
+      </div>
+
+      <div class="template-select-wrap">
+        <select id="templateSelect"></select>
+      </div>
+
       <div id="groupHintBox" class="group-hint" style="display:none;"></div>
       <div id="inputsContainer"></div>
-      <div style="margin-top:10px;">
-        <label>预览效果</label>
-        <div id="previewBox" class="preview-box empty">💡 选择模板后，填写内容会在这里实时预览</div>
-        <button id="copyBtn" class="block">📋 复制结果</button>
+
+      <div class="divider"></div>
+
+      <div style="margin-top:2px;">
+        <label style="font-size:0.8rem;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">预览</label>
+        <div id="previewBox" class="preview-box empty">💡 选择模板后填写内容，预览将显示在这里</div>
+        <button id="copyBtn" class="copy-btn">📋 复制结果</button>
       </div>
     </div>
+
   </div>
 
-  <!-- ========================================================== -->
-  <!-- TAB 2: 时间线 -->
-  <!-- ========================================================== -->
-  <div class="tab-content" id="tabTimeline">
-    <div class="card">
-      <div class="timeline-current-time">
-        <span id="currentTimeDisplay">--:--:--</span>
-        <small id="currentPeriodDisplay"></small>
-      </div>
-      <div id="timelineList">
-        <div class="timeline-empty">⏰ 还没有时间线任务，点击下方「管理时间线」添加</div>
-      </div>
-      <button id="manageTimelineBtn" class="block secondary" style="margin-top:8px;">📋 管理时间线</button>
-    </div>
-  </div>
-
-  <!-- ========================================================== -->
-  <!-- 模态框：管理模板 -->
-  <!-- ========================================================== -->
+  <!-- ============================================================
+  模态框：管理模板
+  ============================================================ -->
   <div id="manageModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-handle"></div>
@@ -531,40 +1117,44 @@
         <h2>管理模板</h2>
         <button class="close-btn" id="closeManageBtn">&times;</button>
       </div>
-      <div class="flex-row mb-8">
-        <button id="addTemplateBtn" class="small">➕ 新建</button>
-        <button id="exportBtn" class="secondary small">📤 导出</button>
-        <button id="importBtn" class="secondary small">📥 导入</button>
+
+      <div class="flex-wrap gap-6" style="margin-bottom:12px;">
+        <button id="addTemplateBtn" style="padding:8px 16px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;min-height:38px;">➕ 新建</button>
+        <button id="exportBtn" style="padding:8px 16px;border:none;border-radius:8px;background:var(--bg);color:var(--text);font-size:0.8rem;font-weight:500;cursor:pointer;min-height:38px;">📤 导出</button>
+        <button id="importBtn" style="padding:8px 16px;border:none;border-radius:8px;background:var(--bg);color:var(--text);font-size:0.8rem;font-weight:500;cursor:pointer;min-height:38px;">📥 导入</button>
       </div>
-      <div id="templateList" class="tag-list"></div>
-      <div id="templateEditor" class="hidden">
-        <div class="flex-row">
-          <input type="text" id="editTemplateName" placeholder="模板名称" style="flex:2;">
-          <input type="text" id="editGroupHint" placeholder="发往群提示（选填）" style="flex:3;">
+
+      <div id="templateList" class="modal-list" style="margin-bottom:10px;"></div>
+
+      <div id="templateEditor" class="hidden modal-form">
+        <div class="flex-wrap gap-6">
+          <input type="text" id="editTemplateName" placeholder="模板名称" style="flex:2;min-width:100px;">
+          <input type="text" id="editGroupHint" placeholder="群提示（选填）" style="flex:3;min-width:120px;">
         </div>
-        <label style="margin-top:6px;">模板内容 <span class="text-muted">（用 <code>*变量*</code> 标记）</span></label>
-        <textarea id="editTemplateContent" rows="4" placeholder="例如：*班长*你好，*时间*在*安检点*发现*违禁品件数*件违禁品"></textarea>
-        <div id="varTagList" class="tag-list"></div>
-        <div class="btn-row">
-          <button id="saveTemplateBtn" class="small">💾 保存</button>
-          <button id="deleteTemplateBtn" class="danger small">🗑 删除</button>
-          <button id="duplicateTemplateBtn" class="secondary small">📋 复制</button>
+        <label>模板内容 <span class="text-muted">（用 <code>*变量*</code> 标记）</span></label>
+        <textarea id="editTemplateContent" rows="3" placeholder="例如：*班长*你好，*时间*在*安检点*发现*违禁品件数*件违禁品"></textarea>
+        <div id="varTagList" class="modal-tag-list"></div>
+        <div class="modal-btn-row">
+          <button id="saveTemplateBtn" class="primary">💾 保存</button>
+          <button id="deleteTemplateBtn" class="danger">🗑 删除</button>
+          <button id="duplicateTemplateBtn" class="secondary">📋 复制</button>
         </div>
       </div>
-      <div class="border-top hidden" id="importArea">
-        <label>粘贴 JSON 配置</label>
-        <textarea id="importExportText" rows="4" placeholder="粘贴从本工具导出的 JSON"></textarea>
-        <div class="btn-row">
-          <button id="confirmImportBtn" class="small">确认导入</button>
-          <button id="cancelImportBtn" class="secondary small">取消</button>
+
+      <div id="importArea" class="modal-import-area hidden">
+        <label style="font-size:0.8rem;font-weight:500;color:var(--text-secondary);">粘贴 JSON 配置</label>
+        <textarea id="importExportText" rows="3" placeholder="粘贴从本工具导出的 JSON"></textarea>
+        <div class="modal-btn-row">
+          <button id="confirmImportBtn" class="primary">确认导入</button>
+          <button id="cancelImportBtn" class="secondary">取消</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ========================================================== -->
-  <!-- 模态框：管理时间线 -->
-  <!-- ========================================================== -->
+  <!-- ============================================================
+  模态框：管理时间线
+  ============================================================ -->
   <div id="timelineModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-handle"></div>
@@ -573,46 +1163,56 @@
         <button class="close-btn" id="closeTimelineBtn">&times;</button>
       </div>
       <div id="timelineEditorList"></div>
-      <button id="addTimelineItemBtn" class="block secondary small">+ 添加任务</button>
+      <button id="addTimelineItemBtn" style="width:100%;padding:10px;border:1px dashed var(--border);border-radius:10px;background:transparent;color:var(--primary);font-size:0.85rem;cursor:pointer;min-height:44px;font-weight:500;">+ 添加任务</button>
       <div class="border-top">
-        <div class="btn-row">
-          <button id="saveTimelineBtn" class="block">💾 保存时间线</button>
-        </div>
+        <button id="saveTimelineBtn" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;min-height:48px;">💾 保存时间线</button>
       </div>
     </div>
   </div>
 
-  <!-- ========================================================== -->
-  <!-- 模态框：设置 -->
-  <!-- ========================================================== -->
+  <!-- ============================================================
+  模态框：设置
+  ============================================================ -->
   <div id="settingsModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <h2>个人设置</h2>
+        <h2>设置</h2>
         <button class="close-btn" id="closeSettingsBtn">&times;</button>
       </div>
-      <div class="flex-row"><input type="text" id="settingLine" placeholder="所属线路，如：3号线"><input type="text" id="settingStation" placeholder="所属站点，如：广州塔"></div>
-      <div class="flex-row"><input type="text" id="settingLeader" placeholder="班长姓名"><input type="text" id="settingLeaderPhone" placeholder="班长电话"></div>
-      <div class="border-top">
-        <label>🚪 安检点列表</label>
-        <div id="entranceList"></div>
-        <button id="addEntranceBtn" class="secondary small">+ 添加安检点</button>
-        <div class="text-muted" style="margin-top:4px;">添加后可在模板中用 <code>*安检点*</code> 或 <code>*多安检点*</code> 引用</div>
+
+      <div class="modal-form">
+        <div class="flex-wrap gap-6">
+          <input type="text" id="settingLine" placeholder="线路，如 3号线" style="flex:1;min-width:80px;">
+          <input type="text" id="settingStation" placeholder="站点，如 广州塔" style="flex:1;min-width:80px;">
+        </div>
+        <div class="flex-wrap gap-6">
+          <input type="text" id="settingLeader" placeholder="班长姓名" style="flex:1;min-width:80px;">
+          <input type="text" id="settingLeaderPhone" placeholder="班长电话" style="flex:1;min-width:80px;">
+        </div>
+
+        <div class="border-top">
+          <label style="font-size:0.8rem;font-weight:500;color:var(--text-secondary);">🚪 安检点</label>
+          <div id="entranceList"></div>
+          <button id="addEntranceBtn" style="padding:6px 14px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--primary);font-size:0.8rem;cursor:pointer;min-height:34px;">+ 添加</button>
+          <div class="text-muted" style="margin-top:4px;">添加后可在模板中用 <code>*安检点*</code> 或 <code>*多安检点*</code></div>
+        </div>
+
+        <div class="border-top">
+          <label style="font-size:0.8rem;font-weight:500;color:var(--text-secondary);">🔧 自定义预设项</label>
+          <div id="customSettingsList"></div>
+          <button id="addCustomSettingBtn" style="padding:6px 14px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--primary);font-size:0.8rem;cursor:pointer;min-height:34px;">+ 添加</button>
+          <div class="text-muted" style="margin-top:4px;">预设项直接替换模板中的对应变量，不显示输入框</div>
+        </div>
+
+        <button id="saveSettingsBtn" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;min-height:48px;">💾 保存设置</button>
       </div>
-      <div class="border-top">
-        <label>🔧 自定义预设项</label>
-        <div id="customSettingsList"></div>
-        <button id="addCustomSettingBtn" class="secondary small">+ 添加预设项</button>
-        <div class="text-muted" style="margin-top:4px;">预设项直接替换模板中的对应变量，不显示输入框</div>
-      </div>
-      <button id="saveSettingsBtn" class="block" style="margin-top:16px;">保存设置</button>
     </div>
   </div>
 
-  <!-- ========================================================== -->
-  <!-- 模态框：帮助 -->
-  <!-- ========================================================== -->
+  <!-- ============================================================
+  模态框：帮助
+  ============================================================ -->
   <div id="helpModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-handle"></div>
@@ -620,1088 +1220,1196 @@
         <h2>使用说明</h2>
         <button class="close-btn" id="closeHelpBtn">&times;</button>
       </div>
-      <div style="font-size:0.9rem;line-height:1.7;">
-        <p><strong>📝 信息替换</strong></p>
-        <ul style="padding-left:18px;margin:4px 0 12px;">
+      <div class="help-content">
+        <div class="section-title">📝 模板</div>
+        <ul>
           <li>用 <code>*变量*</code> 标记占位，自动生成输入框</li>
           <li><code>*年*</code> <code>*月*</code> <code>*日*</code> 自动填充</li>
-          <li>含“时间”的变量自动填充当前时间</li>
-          <li><code>{?变量}...{/变量}</code> 条件隐藏</li>
+          <li>含"时间"的变量自动填充，输入 <code>5.12</code> → <code>5:12</code></li>
+          <li><code>{?变量}...{/变量}</code> 变量为空时隐藏内容</li>
           <li>动态件数：<code>*违禁品件数*</code> + <code>*违禁品信息*</code></li>
         </ul>
-        <p><strong>⏰ 时间线</strong></p>
-        <ul style="padding-left:18px;margin:4px 0 12px;">
-          <li>自定义每天的时间任务，系统自动高亮当前进行中的任务</li>
-          <li>支持时间点（如 08:30）和时间范围（如 08:00-09:00）</li>
-          <li>已过任务置灰，当前任务高亮，未来任务正常显示</li>
+
+        <div class="section-title">⏰ 时间线</div>
+        <ul>
+          <li>自定义每日任务，自动高亮进行中的任务</li>
+          <li>支持时间点（08:30）或范围（08:00-09:00）</li>
         </ul>
-        <p class="text-muted" style="font-size:0.8rem;">所有数据保存在浏览器本地，导出配置可分享给同事</p>
+
+        <div class="section-title">💾 数据</div>
+        <ul>
+          <li>所有数据保存在浏览器本地</li>
+          <li>在「管理模板」中导出/导入完整配置</li>
+        </ul>
       </div>
     </div>
   </div>
 
-  <!-- ====== Toast ====== -->
+  <!-- ============================================================
+  Toast
+  ============================================================ -->
   <div id="toast" class="toast"></div>
 
   <script>
-  (function() {
-    'use strict';
+    (function() {
+      'use strict';
 
-    // ============================================================
-    //  数据层
-    // ============================================================
-    const STORAGE_KEY = 'infoAssistantData';
+      // ============================================================
+      //  数据层
+      // ============================================================
+      const STORAGE_KEY = 'infoAssistantV4';
 
-    function defaultData() {
-      return {
-        templates: [],
-        settings: { line: '', station: '', leader: '', leaderphone: '', entrances: [], custom: [] },
-        timeline: []  // { id, start, end, task, desc }  start/end 格式 "HH:MM"
-      };
-    }
+      function defaultData() {
+        return {
+          templates: [],
+          settings: { line: '', station: '', leader: '', leaderphone: '', entrances: [], custom: [] },
+          timeline: []
+        };
+      }
 
-    let data = loadData();
-    let currentTemplateId = null;
-    let editingTemplateId = null;
-    let formValues = {};
-    let timelineEditItems = [];
+      let data = loadData();
+      let currentTemplateId = null;
+      let editingTemplateId = null;
+      let formValues = {};
+      let timelineEditItems = [];
 
-    // ============================================================
-    //  存储
-    // ============================================================
-    function loadData() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const d = JSON.parse(raw);
-          if (d && Array.isArray(d.templates) && d.settings) {
-            if (!Array.isArray(d.settings.custom)) {
-              const old = d.settings.custom || {};
-              d.settings.custom = Object.keys(old).map(k => ({ key: k, type: 'text', value: old[k] }));
+      function loadData() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const d = JSON.parse(raw);
+            if (d && Array.isArray(d.templates) && d.settings) {
+              if (!Array.isArray(d.settings.custom)) {
+                const old = d.settings.custom || {};
+                d.settings.custom = Object.keys(old).map(k => ({ key: k, type: 'text', value: old[k] }));
+              }
+              d.templates.forEach(t => { if (!t.groupHint) t.groupHint = ''; });
+              if (!Array.isArray(d.timeline)) d.timeline = [];
+              return d;
             }
-            d.templates.forEach(t => { if (!t.groupHint) t.groupHint = ''; });
-            if (!Array.isArray(d.timeline)) d.timeline = [];
-            return d;
+          }
+        } catch (_) {}
+        return defaultData();
+      }
+
+      function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+
+      function genId() {
+        return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+      }
+
+      function getTemplate(id) {
+        return data.templates.find(t => t.id === id);
+      }
+
+      // ============================================================
+      //  工具
+      // ============================================================
+      function escHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.classList.remove('show'), 2000);
+      }
+
+      // ============================================================
+      //  模板引擎
+      // ============================================================
+      function extractVars(content) {
+        const set = new Set();
+        let m;
+        const re = /\*([^*]+)\*/g;
+        while ((m = re.exec(content)) !== null) set.add(m[1].trim());
+        const re2 = /\{\?([^}]+)\}/g;
+        while ((m = re2.exec(content)) !== null) set.add(m[1].trim());
+        return Array.from(set);
+      }
+
+      function getDefaultVal(name) {
+        const d = new Date();
+        if (name.includes('时间')) {
+          return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        }
+        if (name === '年') return String(d.getFullYear());
+        if (name === '月') return String(d.getMonth() + 1);
+        if (name === '日') return String(d.getDate());
+        if (name === '时') return String(d.getHours()).padStart(2, '0');
+        if (name === '分') return String(d.getMinutes()).padStart(2, '0');
+        return '';
+      }
+
+      function getPreset(name) {
+        const s = data.settings;
+        if (name === '线路' && s.line) return s.line;
+        if (name === '站点' && s.station) return s.station;
+        if (name === '班长' && s.leader) return s.leader;
+        if (name === '电话号码' && s.leaderphone) return s.leaderphone;
+        const c = s.custom.find(x => x.key === name);
+        if (c) {
+          if (c.type === 'text') return c.value;
+          if (c.type === 'single' || c.type === 'multi') {
+            const opts = c.value.split('|').map(s => s.trim()).filter(Boolean);
+            return opts.length ? opts[0] : '';
           }
         }
-      } catch (_) {}
-      return defaultData();
-    }
+        return '';
+      }
 
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
+      function getPresetType(name) {
+        const c = data.settings.custom.find(x => x.key === name);
+        return c ? c.type : null;
+      }
 
-    function genId() { return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6); }
+      function getEntranceOptions() {
+        return data.settings.entrances.filter(Boolean);
+      }
 
-    function getTemplate(id) { return data.templates.find(t => t.id === id); }
+      function isDynamicInfoVar(name) {
+        return name === '违禁品信息' || name === '限带品信息';
+      }
 
-    // ============================================================
-    //  工具函数
-    // ============================================================
-    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      function getCountVar(name) {
+        if (name === '违禁品信息') return '违禁品件数';
+        if (name === '限带品信息') return '限带品件数';
+        return null;
+      }
 
-    function showToast(msg) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      clearTimeout(el._timer);
-      el._timer = setTimeout(() => el.classList.remove('show'), 2200);
-    }
+      function buildDynamicText(items) {
+        if (!items || !items.length) return '';
+        return items.filter(it => it.name || it.spec || it.count)
+          .map(it => `${it.name || ''}${it.spec || ''}×${it.count || '1'}${it.method ? '（' + it.method + '）' : ''}`)
+          .join('\n');
+      }
 
-    // ============================================================
-    //  模板引擎
-    // ============================================================
-    function extractVars(content) {
-      const set = new Set();
-      let m;
-      const re = /\*([^*]+)\*/g;
-      while ((m = re.exec(content)) !== null) set.add(m[1].trim());
-      const re2 = /\{\?([^}]+)\}/g;
-      while ((m = re2.exec(content)) !== null) set.add(m[1].trim());
-      return Array.from(set);
-    }
+      function applyConditionals(content, values) {
+        return content.replace(/\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g, (_, name, inner) => {
+          const v = values[name] || '';
+          return v.trim() === '' ? '' : inner;
+        });
+      }
 
-    function getDefaultVal(name) {
-      const d = new Date();
-      if (name.includes('时间')) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-      if (name === '年') return String(d.getFullYear());
-      if (name === '月') return String(d.getMonth()+1);
-      if (name === '日') return String(d.getDate());
-      if (name === '时') return String(d.getHours()).padStart(2,'0');
-      if (name === '分') return String(d.getMinutes()).padStart(2,'0');
-      return '';
-    }
+      function renderPreview(template, values) {
+        if (!template || !template.content) return '';
+        let out = template.content;
+        ['违禁品信息', '限带品信息'].forEach(d => {
+          if (values[d + '_items']) {
+            values[d] = buildDynamicText(values[d + '_items']);
+          }
+        });
+        out = applyConditionals(out, values);
+        const vars = extractVars(template.content);
+        vars.forEach(name => {
+          let val = values[name] || '';
+          if ((name === '年' || name === '月' || name === '日') && val) val += name;
+          if (name.includes('时间') && val.includes('.')) val = val.replace('.', ':');
+          out = out.replace(new RegExp(`\\*${name}\\*`, 'g'), val);
+        });
+        return out;
+      }
 
-    function getPreset(name) {
-      const s = data.settings;
-      if (name === '线路' && s.line) return s.line;
-      if (name === '站点' && s.station) return s.station;
-      if (name === '班长' && s.leader) return s.leader;
-      if (name === '电话号码' && s.leaderphone) return s.leaderphone;
-      const c = s.custom.find(x => x.key === name);
-      if (c) {
-        if (c.type === 'text') return c.value;
-        if (c.type === 'single' || c.type === 'multi') {
-          const opts = c.value.split('|').map(s=>s.trim()).filter(Boolean);
-          return opts.length ? opts[0] : '';
+      // ============================================================
+      //  步进器工具
+      // ============================================================
+      function buildStepper(value, min, max, dataAttrs) {
+        const attrs = dataAttrs || '';
+        return `<div class="stepper">
+          <button class="stepper-btn" data-dir="-1" ${attrs}>−</button>
+          <input type="number" class="stepper-input" value="${value}" min="${min || 0}" max="${max || 999}" ${attrs}>
+          <button class="stepper-btn" data-dir="1" ${attrs}>+</button>
+        </div>`;
+      }
+
+      function bindStepperEvents(container) {
+        container.querySelectorAll('.stepper').forEach(group => {
+          const input = group.querySelector('.stepper-input');
+          const minus = group.querySelector('.stepper-btn[data-dir="-1"]');
+          const plus = group.querySelector('.stepper-btn[data-dir="1"]');
+          if (!input || !minus || !plus) return;
+
+          const update = () => {
+            let val = parseInt(input.value) || 0;
+            const min = parseInt(input.min) || 0;
+            const max = parseInt(input.max) || 999;
+            if (val < min) val = min;
+            if (val > max) val = max;
+            input.value = val;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          };
+
+          minus.addEventListener('click', (e) => {
+            e.preventDefault();
+            let val = parseInt(input.value) || 0;
+            const min = parseInt(input.min) || 0;
+            if (val > min) { val--;
+              input.value = val;
+              update(); }
+          });
+
+          plus.addEventListener('click', (e) => {
+            e.preventDefault();
+            let val = parseInt(input.value) || 0;
+            const max = parseInt(input.max) || 999;
+            if (val < max) { val++;
+              input.value = val;
+              update(); }
+          });
+
+          input.addEventListener('change', update);
+          input.addEventListener('input', update);
+        });
+      }
+
+      // ============================================================
+      //  DOM 引用
+      // ============================================================
+      const $ = id => document.getElementById(id);
+      const templateSelect = $('templateSelect');
+      const inputsContainer = $('inputsContainer');
+      const previewBox = $('previewBox');
+      const groupHintBox = $('groupHintBox');
+      const copyBtn = $('copyBtn');
+
+      const manageBtn = $('manageBtn');
+      const manageModal = $('manageModal');
+      const closeManageBtn = $('closeManageBtn');
+      const templateList = $('templateList');
+      const addTemplateBtn = $('addTemplateBtn');
+      const templateEditor = $('templateEditor');
+      const editTemplateName = $('editTemplateName');
+      const editGroupHint = $('editGroupHint');
+      const editTemplateContent = $('editTemplateContent');
+      const varTagList = $('varTagList');
+      const saveTemplateBtn = $('saveTemplateBtn');
+      const deleteTemplateBtn = $('deleteTemplateBtn');
+      const duplicateTemplateBtn = $('duplicateTemplateBtn');
+      const exportBtn = $('exportBtn');
+      const importBtn = $('importBtn');
+      const importArea = $('importArea');
+      const importExportText = $('importExportText');
+      const confirmImportBtn = $('confirmImportBtn');
+      const cancelImportBtn = $('cancelImportBtn');
+
+      const settingsBtn = $('settingsBtn');
+      const settingsModal = $('settingsModal');
+      const closeSettingsBtn = $('closeSettingsBtn');
+      const settingLine = $('settingLine');
+      const settingStation = $('settingStation');
+      const settingLeader = $('settingLeader');
+      const settingLeaderPhone = $('settingLeaderPhone');
+      const entranceList = $('entranceList');
+      const addEntranceBtn = $('addEntranceBtn');
+      const customSettingsList = $('customSettingsList');
+      const addCustomSettingBtn = $('addCustomSettingBtn');
+      const saveSettingsBtn = $('saveSettingsBtn');
+
+      const helpBtn = $('helpBtn');
+      const helpModal = $('helpModal');
+      const closeHelpBtn = $('closeHelpBtn');
+
+      const timelineList = $('timelineList');
+      const manageTimelineBtn = $('manageTimelineBtn');
+      const timelineModal = $('timelineModal');
+      const closeTimelineBtn = $('closeTimelineBtn');
+      const timelineEditorList = $('timelineEditorList');
+      const addTimelineItemBtn = $('addTimelineItemBtn');
+      const saveTimelineBtn = $('saveTimelineBtn');
+      const currentTimeDisplay = $('currentTimeDisplay');
+      const currentPeriodDisplay = $('currentPeriodDisplay');
+      const timelineBadge = $('timelineBadge');
+
+      // ============================================================
+      //  渲染：模板
+      // ============================================================
+      function renderTemplateSelect() {
+        templateSelect.innerHTML = '';
+        if (!data.templates.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = '还没有模板，点「管理」新建';
+          templateSelect.appendChild(opt);
+          currentTemplateId = null;
+          return;
+        }
+        data.templates.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.textContent = t.name;
+          if (t.id === currentTemplateId) opt.selected = true;
+          templateSelect.appendChild(opt);
+        });
+        if (!currentTemplateId || !getTemplate(currentTemplateId)) {
+          currentTemplateId = data.templates[0].id;
+          templateSelect.value = currentTemplateId;
+        }
+        updateGroupHint();
+      }
+
+      function updateGroupHint() {
+        const t = getTemplate(currentTemplateId);
+        if (t && t.groupHint) {
+          groupHintBox.textContent = '📢 发往群：' + t.groupHint;
+          groupHintBox.style.display = 'block';
+        } else {
+          groupHintBox.style.display = 'none';
         }
       }
-      return '';
-    }
 
-    function getPresetType(name) {
-      const c = data.settings.custom.find(x => x.key === name);
-      return c ? c.type : null;
-    }
-
-    function getEntranceOptions() { return data.settings.entrances.filter(Boolean); }
-
-    function isDynamicInfoVar(name) { return name === '违禁品信息' || name === '限带品信息'; }
-    function getCountVar(name) {
-      if (name === '违禁品信息') return '违禁品件数';
-      if (name === '限带品信息') return '限带品件数';
-      return null;
-    }
-
-    function buildDynamicText(items) {
-      if (!items || !items.length) return '';
-      return items.filter(it => it.name || it.spec || it.count)
-        .map(it => `${it.name||''}${it.spec||''}×${it.count||'1'}${it.method ? '（'+it.method+'）' : ''}`)
-        .join('\n');
-    }
-
-    function applyConditionals(content, values) {
-      return content.replace(/\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g, (_, name, inner) => {
-        const v = values[name] || '';
-        return v.trim() === '' ? '' : inner;
-      });
-    }
-
-    function renderPreview(template, values) {
-      if (!template || !template.content) return '';
-      let out = template.content;
-      ['违禁品信息','限带品信息'].forEach(d => {
-        if (values[d + '_items']) {
-          values[d] = buildDynamicText(values[d + '_items']);
+      function renderInputs() {
+        const template = getTemplate(currentTemplateId);
+        if (!template) {
+          inputsContainer.innerHTML = '<div class="text-muted">💡 请选择或创建模板</div>';
+          previewBox.textContent = '💡 选择模板后，预览将显示在这里';
+          previewBox.className = 'preview-box empty';
+          return;
         }
-      });
-      out = applyConditionals(out, values);
-      const vars = extractVars(template.content);
-      vars.forEach(name => {
-        let val = values[name] || '';
-        if ((name === '年' || name === '月' || name === '日') && val) val += name;
-        if (name.includes('时间') && val.includes('.')) val = val.replace('.', ':');
-        out = out.replace(new RegExp(`\\*${name}\\*`, 'g'), val);
-      });
-      return out;
-    }
 
-    // ============================================================
-    //  DOM 引用
-    // ============================================================
-    const $ = id => document.getElementById(id);
-    const templateSelect = $('templateSelect');
-    const inputsContainer = $('inputsContainer');
-    const previewBox = $('previewBox');
-    const groupHintBox = $('groupHintBox');
-    const copyBtn = $('copyBtn');
+        const vars = extractVars(template.content);
+        vars.forEach(name => {
+          if (!(name in formValues)) {
+            const preset = getPreset(name);
+            formValues[name] = preset || getDefaultVal(name) || '';
+          }
+        });
 
-    const manageBtn = $('manageBtn');
-    const manageModal = $('manageModal');
-    const closeManageBtn = $('closeManageBtn');
-    const templateList = $('templateList');
-    const addTemplateBtn = $('addTemplateBtn');
-    const templateEditor = $('templateEditor');
-    const editTemplateName = $('editTemplateName');
-    const editGroupHint = $('editGroupHint');
-    const editTemplateContent = $('editTemplateContent');
-    const varTagList = $('varTagList');
-    const saveTemplateBtn = $('saveTemplateBtn');
-    const deleteTemplateBtn = $('deleteTemplateBtn');
-    const duplicateTemplateBtn = $('duplicateTemplateBtn');
-    const exportBtn = $('exportBtn');
-    const importBtn = $('importBtn');
-    const importArea = $('importArea');
-    const importExportText = $('importExportText');
-    const confirmImportBtn = $('confirmImportBtn');
-    const cancelImportBtn = $('cancelImportBtn');
+        ['违禁品信息', '限带品信息'].forEach(d => {
+          if (vars.includes(d)) {
+            const cv = getCountVar(d);
+            if (vars.includes(cv)) {
+              if (!(cv in formValues)) formValues[cv] = '0';
+              if (!formValues[d + '_items']) formValues[d + '_items'] = [];
+              const cnt = parseInt(formValues[cv]) || 0;
+              const items = formValues[d + '_items'];
+              while (items.length < cnt) items.push({ name: '', spec: '', count: '1', method: '换乘' });
+              if (items.length > cnt) items.length = cnt;
+            }
+          }
+        });
 
-    const settingsBtn = $('settingsBtn');
-    const settingsModal = $('settingsModal');
-    const closeSettingsBtn = $('closeSettingsBtn');
-    const settingLine = $('settingLine');
-    const settingStation = $('settingStation');
-    const settingLeader = $('settingLeader');
-    const settingLeaderPhone = $('settingLeaderPhone');
-    const entranceList = $('entranceList');
-    const addEntranceBtn = $('addEntranceBtn');
-    const customSettingsList = $('customSettingsList');
-    const addCustomSettingBtn = $('addCustomSettingBtn');
-    const saveSettingsBtn = $('saveSettingsBtn');
+        let html = '';
+        let hasInput = false;
 
-    const helpBtn = $('helpBtn');
-    const helpModal = $('helpModal');
-    const closeHelpBtn = $('closeHelpBtn');
+        vars.forEach(name => {
+          if (['年', '月', '日'].includes(name)) return;
+          if (getPreset(name) && !isDynamicInfoVar(name)) return;
 
-    const timelineList = $('timelineList');
-    const manageTimelineBtn = $('manageTimelineBtn');
-    const timelineModal = $('timelineModal');
-    const closeTimelineBtn = $('closeTimelineBtn');
-    const timelineEditorList = $('timelineEditorList');
-    const addTimelineItemBtn = $('addTimelineItemBtn');
-    const saveTimelineBtn = $('saveTimelineBtn');
-    const currentTimeDisplay = $('currentTimeDisplay');
-    const currentPeriodDisplay = $('currentPeriodDisplay');
+          const customType = getPresetType(name);
+          const isTime = name.includes('时间');
+          const isEntrance = name === '安检点';
+          const isMultiEntrance = name === '多安检点';
+          const isDynamic = isDynamicInfoVar(name);
 
-    // ============================================================
-    //  Tab 切换
-    // ============================================================
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        const target = document.getElementById('tab' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1));
-        if (target) target.classList.add('active');
-        if (tab.dataset.tab === 'timeline') renderTimeline();
-      });
-    });
-
-    // ============================================================
-    //  信息替换 - 渲染
-    // ============================================================
-    function renderTemplateSelect() {
-      templateSelect.innerHTML = '';
-      if (!data.templates.length) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = '还没有模板，点「管理模板」新建';
-        templateSelect.appendChild(opt);
-        currentTemplateId = null;
-        return;
-      }
-      data.templates.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.id;
-        opt.textContent = t.name;
-        if (t.id === currentTemplateId) opt.selected = true;
-        templateSelect.appendChild(opt);
-      });
-      if (!currentTemplateId || !getTemplate(currentTemplateId)) {
-        currentTemplateId = data.templates[0].id;
-        templateSelect.value = currentTemplateId;
-      }
-      updateGroupHint();
-    }
-
-    function updateGroupHint() {
-      const t = getTemplate(currentTemplateId);
-      if (t && t.groupHint) {
-        groupHintBox.textContent = '📢 发往群：' + t.groupHint;
-        groupHintBox.style.display = 'block';
-      } else {
-        groupHintBox.style.display = 'none';
-      }
-    }
-
-    function renderInputs() {
-      const template = getTemplate(currentTemplateId);
-      if (!template) {
-        inputsContainer.innerHTML = '<div class="text-muted">💡 请先选择或创建一个模板</div>';
-        previewBox.textContent = '💡 选择模板后，这里会显示预览效果';
-        previewBox.className = 'preview-box empty';
-        return;
-      }
-      const vars = extractVars(template.content);
-
-      vars.forEach(name => {
-        if (!(name in formValues)) {
-          const preset = getPreset(name);
-          formValues[name] = preset || getDefaultVal(name) || '';
-        }
-      });
-      ['违禁品信息','限带品信息'].forEach(d => {
-        if (vars.includes(d)) {
-          const cv = getCountVar(d);
-          if (vars.includes(cv)) {
-            if (!(cv in formValues)) formValues[cv] = '0';
-            if (!formValues[d + '_items']) formValues[d + '_items'] = [];
+          if (isDynamic) {
+            const cv = getCountVar(name);
+            if (!vars.includes(cv)) return;
+            hasInput = true;
             const cnt = parseInt(formValues[cv]) || 0;
-            const items = formValues[d + '_items'];
+            const items = formValues[name + '_items'] || [];
+            html += `<div class="var-group"><label>${name}</label>`;
+            html += `<div class="stepper-row" style="margin-bottom:6px;">
+              <span style="font-size:0.8rem;color:var(--text-secondary);">${cv}</span>
+              ${buildStepper(cnt, 0, 99, `data-dyn-count="${name}"`)}
+            </div>`;
+            html += `<div data-dyn-items="${name}">`;
+            items.forEach((item, idx) => {
+              html += `<div class="dyn-group">
+                <div class="head"><span>第${idx + 1}件</span>
+                  <button class="ghost" style="background:none;border:none;color:var(--danger);font-size:0.8rem;cursor:pointer;padding:0 4px;min-height:30px;" data-dyn-del="${name}" data-idx="${idx}">✕</button>
+                </div>
+                <div class="fields">
+                  <div class="row"><input type="text" placeholder="名称" value="${escHtml(item.name)}" data-dyn-field="${name}" data-idx="${idx}" data-key="name"></div>
+                  <div class="row"><input type="text" placeholder="规格" value="${escHtml(item.spec)}" data-dyn-field="${name}" data-idx="${idx}" data-key="spec"></div>
+                  <div class="row">${buildStepper(item.count || 1, 1, 999, `data-dyn-field="${name}" data-idx="${idx}" data-key="count"`)}</div>
+                  <div class="row"><select data-dyn-field="${name}" data-idx="${idx}" data-key="method">
+                    ${['换乘', '自弃'].map(o => `<option value="${o}" ${item.method === o ? 'selected' : ''}>${o}</option>`).join('')}
+                  </select></div>
+                </div>
+              </div>`;
+            });
+            html += `</div>`;
+            if (items.length) {
+              html +=
+                `<button class="ghost" style="background:none;border:1px dashed var(--border);border-radius:8px;color:var(--primary);font-size:0.8rem;cursor:pointer;padding:6px 12px;min-height:34px;margin-top:4px;" data-dyn-add="${name}">+ 添加一件</button>`;
+            }
+            html += `</div>`;
+            return;
+          }
+
+          if (customType === 'single') {
+            hasInput = true;
+            const opts = (data.settings.custom.find(c => c.key === name)?.value || '').split('|').map(s => s.trim())
+              .filter(Boolean);
+            html += `<div class="var-group"><label>${name}</label><select data-var="${name}">`;
+            opts.forEach(o => {
+              html += `<option value="${escHtml(o)}" ${formValues[name] === o ? 'selected' : ''}>${escHtml(o)}</option>`;
+            });
+            html += `</select></div>`;
+            return;
+          }
+
+          if (customType === 'multi') {
+            hasInput = true;
+            const opts = (data.settings.custom.find(c => c.key === name)?.value || '').split('|').map(s => s.trim())
+              .filter(Boolean);
+            const selected = (formValues[name] || '').split('、').filter(Boolean);
+            html += `<div class="var-group"><label>${name}</label><div class="flex-wrap gap-6">`;
+            opts.forEach(o => {
+              const checked = selected.includes(o);
+              html += `<label style="display:flex;align-items:center;gap:4px;font-weight:400;font-size:0.9rem;cursor:pointer;">
+                <input type="checkbox" data-var-multi="${name}" value="${escHtml(o)}" ${checked ? 'checked' : ''}> ${escHtml(o)}
+              </label>`;
+            });
+            html += `</div></div>`;
+            return;
+          }
+
+          if (isEntrance && getEntranceOptions().length) {
+            hasInput = true;
+            const opts = getEntranceOptions();
+            html += `<div class="var-group"><label>安检点</label><select data-var="安检点">`;
+            html += `<option value="">请选择</option>`;
+            opts.forEach(o => {
+              html += `<option value="${escHtml(o)}" ${formValues[name] === o ? 'selected' : ''}>${escHtml(o)}</option>`;
+            });
+            html += `</select></div>`;
+            return;
+          }
+
+          if (isMultiEntrance && getEntranceOptions().length) {
+            hasInput = true;
+            const opts = getEntranceOptions();
+            const selected = (formValues[name] || '').split('、').filter(Boolean);
+            html += `<div class="var-group"><label>多安检点</label><div class="flex-wrap gap-6">`;
+            opts.forEach(o => {
+              const checked = selected.includes(o);
+              html += `<label style="display:flex;align-items:center;gap:4px;font-weight:400;font-size:0.9rem;cursor:pointer;">
+                <input type="checkbox" data-var-multi="${name}" value="${escHtml(o)}" ${checked ? 'checked' : ''}> ${escHtml(o)}
+              </label>`;
+            });
+            html += `</div></div>`;
+            return;
+          }
+
+          if (isTime) {
+            hasInput = true;
+            html += `<div class="var-group"><label>${name}</label>`;
+            html +=
+              `<input type="text" data-var="${name}" value="${escHtml(formValues[name] || '')}" placeholder="如 5.12 → 5:12" style="min-height:48px;">`;
+            html += `</div>`;
+            return;
+          }
+
+          hasInput = true;
+          html += `<div class="var-group"><label>${name}</label>`;
+          html +=
+            `<input type="text" data-var="${name}" value="${escHtml(formValues[name] || '')}" placeholder="请输入${name}" style="min-height:48px;">`;
+          html += `</div>`;
+        });
+
+        if (!hasInput && vars.length) {
+          html = '<div class="text-muted">✅ 所有变量已通过「设置」预设填充</div>';
+        }
+        if (!vars.length) {
+          html = '<div class="text-muted">💡 模板中没有变量，用 <code>*变量*</code> 标记占位</div>';
+        }
+
+        inputsContainer.innerHTML = html;
+
+        // ---- 绑定事件 ----
+        bindStepperEvents(inputsContainer);
+
+        inputsContainer.querySelectorAll('input[data-var], select[data-var]').forEach(el => {
+          const name = el.dataset.var;
+          if (el.tagName === 'SELECT') {
+            el.addEventListener('change', () => { formValues[name] = el.value;
+              updatePreview(); });
+          } else {
+            el.addEventListener('input', function() {
+              let val = this.value;
+              if (name.includes('时间') && val.includes('.')) {
+                val = val.replace('.', ':');
+                this.value = val;
+              }
+              formValues[name] = val;
+              updatePreview();
+            });
+          }
+        });
+
+        inputsContainer.querySelectorAll('input[data-var-multi]').forEach(cb => {
+          const name = cb.dataset.varMulti;
+          cb.addEventListener('change', () => {
+            const checked = Array.from(inputsContainer.querySelectorAll(`input[data-var-multi="${name}"]:checked`))
+              .map(c => c.value);
+            formValues[name] = checked.join('、');
+            updatePreview();
+          });
+        });
+
+        inputsContainer.querySelectorAll('.stepper-input[data-dyn-count]').forEach(el => {
+          el.addEventListener('input', function() {
+            const name = this.dataset.dynCount;
+            const cnt = parseInt(this.value) || 0;
+            formValues[name] = String(cnt);
+            const items = formValues[name + '_items'] || [];
             while (items.length < cnt) items.push({ name: '', spec: '', count: '1', method: '换乘' });
             if (items.length > cnt) items.length = cnt;
-          }
-        }
-      });
-
-      let html = '';
-      let hasInput = false;
-
-      vars.forEach(name => {
-        if (['年','月','日'].includes(name)) return;
-        if (getPreset(name) && !isDynamicInfoVar(name)) return;
-
-        const customType = getPresetType(name);
-        const isTime = name.includes('时间');
-        const isEntrance = name === '安检点';
-        const isMultiEntrance = name === '多安检点';
-        const isDynamic = isDynamicInfoVar(name);
-
-        if (isDynamic) {
-          const cv = getCountVar(name);
-          if (!vars.includes(cv)) return;
-          hasInput = true;
-          const cnt = parseInt(formValues[cv]) || 0;
-          const items = formValues[name + '_items'] || [];
-          html += `<div style="margin-bottom:12px;"><label>${name}</label>`;
-          html += `<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <label style="font-weight:400;font-size:0.85rem;margin:0;">${cv}</label>
-            <input type="number" min="0" value="${cnt}" data-dyn-count="${name}" style="width:70px;padding:8px 10px;margin:0;font-size:16px;">
-            <span class="text-muted" style="font-size:0.75rem;">填写件数后自动生成</span>
-          </div>`;
-          html += `<div data-dyn-items="${name}">`;
-          items.forEach((item, idx) => {
-            html += `<div class="dyn-item-group">
-              <div class="head"><span>第${idx+1}件</span>
-                <button class="ghost small" data-dyn-del="${name}" data-idx="${idx}">✕ 删除</button>
-              </div>
-              <div class="fields">
-                <div class="row"><input type="text" placeholder="名称" value="${escHtml(item.name)}" data-dyn-field="${name}" data-idx="${idx}" data-key="name"></div>
-                <div class="row"><input type="text" placeholder="规格" value="${escHtml(item.spec)}" data-dyn-field="${name}" data-idx="${idx}" data-key="spec"></div>
-                <div class="row"><input type="text" placeholder="数量" value="${escHtml(item.count)}" data-dyn-field="${name}" data-idx="${idx}" data-key="count"></div>
-                <div class="row"><select data-dyn-field="${name}" data-idx="${idx}" data-key="method">
-                  ${['换乘','自弃'].map(o => `<option value="${o}" ${item.method===o?'selected':''}>${o}</option>`).join('')}
-                </select></div>
-              </div>
-            </div>`;
-          });
-          html += `</div>`;
-          if (items.length) {
-            html += `<button class="ghost small" data-dyn-add="${name}">+ 添加一件</button>`;
-          }
-          html += `</div>`;
-          return;
-        }
-
-        if (customType === 'single') {
-          hasInput = true;
-          const opts = (data.settings.custom.find(c=>c.key===name)?.value || '').split('|').map(s=>s.trim()).filter(Boolean);
-          html += `<div style="margin-bottom:10px;"><label>${name}</label><select data-var="${name}">`;
-          opts.forEach(o => {
-            html += `<option value="${escHtml(o)}" ${formValues[name]===o?'selected':''}>${escHtml(o)}</option>`;
-          });
-          html += `</select></div>`;
-          return;
-        }
-        if (customType === 'multi') {
-          hasInput = true;
-          const opts = (data.settings.custom.find(c=>c.key===name)?.value || '').split('|').map(s=>s.trim()).filter(Boolean);
-          const selected = (formValues[name]||'').split('、').filter(Boolean);
-          html += `<div style="margin-bottom:10px;"><label>${name}</label><div class="flex-row" style="gap:6px;">`;
-          opts.forEach(o => {
-            const checked = selected.includes(o);
-            html += `<label style="font-weight:400;font-size:0.9rem;display:flex;align-items:center;gap:4px;">
-              <input type="checkbox" data-var-multi="${name}" value="${escHtml(o)}" ${checked?'checked':''}> ${escHtml(o)}
-            </label>`;
-          });
-          html += `</div></div>`;
-          return;
-        }
-
-        if (isEntrance && getEntranceOptions().length) {
-          hasInput = true;
-          const opts = getEntranceOptions();
-          html += `<div style="margin-bottom:10px;"><label>安检点</label><select data-var="安检点">`;
-          html += `<option value="">请选择安检点</option>`;
-          opts.forEach(o => {
-            html += `<option value="${escHtml(o)}" ${formValues[name]===o?'selected':''}>${escHtml(o)}</option>`;
-          });
-          html += `</select></div>`;
-          return;
-        }
-        if (isMultiEntrance && getEntranceOptions().length) {
-          hasInput = true;
-          const opts = getEntranceOptions();
-          const selected = (formValues[name]||'').split('、').filter(Boolean);
-          html += `<div style="margin-bottom:10px;"><label>多安检点</label><div class="flex-row" style="gap:6px;">`;
-          opts.forEach(o => {
-            const checked = selected.includes(o);
-            html += `<label style="font-weight:400;font-size:0.9rem;display:flex;align-items:center;gap:4px;">
-              <input type="checkbox" data-var-multi="${name}" value="${escHtml(o)}" ${checked?'checked':''}> ${escHtml(o)}
-            </label>`;
-          });
-          html += `</div></div>`;
-          return;
-        }
-
-        if (isTime) {
-          hasInput = true;
-          html += `<div style="margin-bottom:10px;"><label>${name}</label>`;
-          html += `<input type="text" data-var="${name}" value="${escHtml(formValues[name]||'')}" placeholder="如：5.12 或 5:12"></div>`;
-          return;
-        }
-
-        hasInput = true;
-        html += `<div style="margin-bottom:10px;"><label>${name}</label>`;
-        html += `<input type="text" data-var="${name}" value="${escHtml(formValues[name]||'')}" placeholder="请输入${name}"></div>`;
-      });
-
-      if (!hasInput && vars.length) {
-        html = '<div class="text-muted">✅ 所有变量已通过「设置」预设填充，无需手动填写</div>';
-      }
-      if (!vars.length) {
-        html = '<div class="text-muted">💡 当前模板没有变量，在「管理模板」中用 <code>*变量*</code> 标记占位</div>';
-      }
-
-      inputsContainer.innerHTML = html;
-
-      // ---- 绑定事件 ----
-      inputsContainer.querySelectorAll('input[data-var], select[data-var]').forEach(el => {
-        const name = el.dataset.var;
-        if (el.tagName === 'SELECT') {
-          el.addEventListener('change', () => { formValues[name] = el.value; updatePreview(); });
-        } else {
-          el.addEventListener('input', () => {
-            let val = el.value;
-            if (name.includes('时间') && val.includes('.')) val = val.replace('.', ':');
-            formValues[name] = val;
-            updatePreview();
-          });
-        }
-      });
-
-      inputsContainer.querySelectorAll('input[data-var-multi]').forEach(cb => {
-        const name = cb.dataset.varMulti;
-        cb.addEventListener('change', () => {
-          const checked = Array.from(inputsContainer.querySelectorAll(`input[data-var-multi="${name}"]:checked`)).map(c => c.value);
-          formValues[name] = checked.join('、');
-          updatePreview();
-        });
-      });
-
-      inputsContainer.querySelectorAll('input[data-dyn-count]').forEach(el => {
-        const name = el.dataset.dynCount;
-        el.addEventListener('input', () => {
-          const cnt = parseInt(el.value) || 0;
-          formValues[name] = String(cnt);
-          const items = formValues[name + '_items'] || [];
-          while (items.length < cnt) items.push({ name: '', spec: '', count: '1', method: '换乘' });
-          if (items.length > cnt) items.length = cnt;
-          renderInputs();
-          updatePreview();
-        });
-      });
-
-      inputsContainer.querySelectorAll('input[data-dyn-field], select[data-dyn-field]').forEach(el => {
-        const name = el.dataset.dynField;
-        const idx = parseInt(el.dataset.idx);
-        const key = el.dataset.key;
-        const items = formValues[name + '_items'] || [];
-        if (el.tagName === 'SELECT') {
-          el.addEventListener('change', () => {
-            if (items[idx]) items[idx][key] = el.value;
-            updatePreview();
-          });
-        } else {
-          el.addEventListener('input', () => {
-            if (items[idx]) items[idx][key] = el.value;
-            updatePreview();
-          });
-        }
-      });
-
-      inputsContainer.querySelectorAll('button[data-dyn-del]').forEach(btn => {
-        const name = btn.dataset.dynDel;
-        const idx = parseInt(btn.dataset.idx);
-        btn.addEventListener('click', () => {
-          const items = formValues[name + '_items'] || [];
-          if (idx < items.length) {
-            items.splice(idx, 1);
-            const cnt = items.length;
-            formValues[getCountVar(name)] = String(cnt);
             renderInputs();
             updatePreview();
-          }
+          });
         });
-      });
 
-      inputsContainer.querySelectorAll('button[data-dyn-add]').forEach(btn => {
-        const name = btn.dataset.dynAdd;
-        btn.addEventListener('click', () => {
+        inputsContainer.querySelectorAll('input[data-dyn-field], select[data-dyn-field]').forEach(el => {
+          const name = el.dataset.dynField;
+          const idx = parseInt(el.dataset.idx);
+          const key = el.dataset.key;
           const items = formValues[name + '_items'] || [];
-          items.push({ name: '', spec: '', count: '1', method: '换乘' });
-          formValues[getCountVar(name)] = String(items.length);
-          renderInputs();
-          updatePreview();
-        });
-      });
-
-      updatePreview();
-    }
-
-    function updatePreview() {
-      const template = getTemplate(currentTemplateId);
-      if (!template) {
-        previewBox.textContent = '💡 请先选择或创建一个模板';
-        previewBox.className = 'preview-box empty';
-        return;
-      }
-      const out = renderPreview(template, formValues);
-      if (!out || !out.trim()) {
-        previewBox.textContent = '💡 填写内容后，这里会实时显示预览效果';
-        previewBox.className = 'preview-box empty';
-      } else {
-        previewBox.textContent = out;
-        previewBox.className = 'preview-box';
-      }
-    }
-
-    // ============================================================
-    //  信息替换 - 管理
-    // ============================================================
-    function renderManage() {
-      renderTemplateList();
-      if (editingTemplateId && getTemplate(editingTemplateId)) {
-        templateEditor.classList.remove('hidden');
-        const t = getTemplate(editingTemplateId);
-        editTemplateName.value = t.name;
-        editGroupHint.value = t.groupHint || '';
-        editTemplateContent.value = t.content;
-        renderVarTags(t.content);
-      } else {
-        templateEditor.classList.add('hidden');
-      }
-    }
-
-    function renderTemplateList() {
-      templateList.innerHTML = '';
-      if (!data.templates.length) {
-        templateList.innerHTML = '<span class="text-muted" style="font-size:0.85rem;">还没有模板，点击「新建」开始</span>';
-        return;
-      }
-      data.templates.forEach((t, idx) => {
-        const wrap = document.createElement('span');
-        wrap.style.display = 'inline-flex';
-        wrap.style.alignItems = 'center';
-        wrap.style.gap = '2px';
-        const btn = document.createElement('span');
-        btn.className = 'tag' + (t.id === editingTemplateId ? ' tag-sm' : '');
-        btn.textContent = t.name;
-        if (t.id === editingTemplateId) { btn.style.background = 'var(--primary)'; btn.style.color = '#fff'; }
-        btn.addEventListener('click', () => { editingTemplateId = t.id; renderManage(); });
-        wrap.appendChild(btn);
-        const up = document.createElement('button');
-        up.textContent = '↑';
-        up.className = 'ghost small';
-        up.style.fontSize = '0.7rem';
-        up.disabled = idx === 0;
-        up.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (idx > 0) {
-            [data.templates[idx-1], data.templates[idx]] = [data.templates[idx], data.templates[idx-1]];
-            saveData();
-            renderManage();
-            renderMain();
+          if (el.tagName === 'SELECT') {
+            el.addEventListener('change', () => {
+              if (items[idx]) items[idx][key] = el.value;
+              updatePreview();
+            });
+          } else if (el.type === 'number' && el.classList.contains('stepper-input')) {
+            el.addEventListener('input', () => {
+              if (items[idx]) items[idx][key] = el.value;
+              updatePreview();
+            });
+          } else {
+            el.addEventListener('input', () => {
+              if (items[idx]) items[idx][key] = el.value;
+              updatePreview();
+            });
           }
         });
-        wrap.appendChild(up);
-        const down = document.createElement('button');
-        down.textContent = '↓';
-        down.className = 'ghost small';
-        down.style.fontSize = '0.7rem';
-        down.disabled = idx === data.templates.length - 1;
-        down.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (idx < data.templates.length - 1) {
-            [data.templates[idx], data.templates[idx+1]] = [data.templates[idx+1], data.templates[idx]];
-            saveData();
-            renderManage();
-            renderMain();
-          }
+
+        inputsContainer.querySelectorAll('button[data-dyn-del]').forEach(btn => {
+          const name = btn.dataset.dynDel;
+          const idx = parseInt(btn.dataset.idx);
+          btn.addEventListener('click', () => {
+            const items = formValues[name + '_items'] || [];
+            if (idx < items.length) {
+              items.splice(idx, 1);
+              formValues[getCountVar(name)] = String(items.length);
+              renderInputs();
+              updatePreview();
+            }
+          });
         });
-        wrap.appendChild(down);
-        templateList.appendChild(wrap);
-        templateList.appendChild(document.createTextNode(' '));
-      });
-    }
 
-    function renderVarTags(content) {
-      const vars = extractVars(content);
-      varTagList.innerHTML = '';
-      if (!vars.length) {
-        varTagList.innerHTML = '<span class="text-muted" style="font-size:0.8rem;">💡 用 <code>*变量*</code> 标记占位，点击下方变量快速插入</span>';
-        return;
-      }
-      vars.forEach(v => {
-        const tag = document.createElement('span');
-        tag.className = 'tag tag-sm';
-        tag.textContent = '*' + v + '*';
-        tag.addEventListener('click', () => {
-          const ta = editTemplateContent;
-          const start = ta.selectionStart;
-          const ins = '*' + v + '*';
-          ta.value = ta.value.slice(0, start) + ins + ta.value.slice(start);
-          ta.focus();
-          ta.selectionStart = ta.selectionEnd = start + ins.length;
-          renderVarTags(ta.value);
+        inputsContainer.querySelectorAll('button[data-dyn-add]').forEach(btn => {
+          const name = btn.dataset.dynAdd;
+          btn.addEventListener('click', () => {
+            const items = formValues[name + '_items'] || [];
+            items.push({ name: '', spec: '', count: '1', method: '换乘' });
+            formValues[getCountVar(name)] = String(items.length);
+            renderInputs();
+            updatePreview();
+          });
         });
-        varTagList.appendChild(tag);
-      });
-    }
 
-    function renderMain() {
-      renderTemplateSelect();
-      renderInputs();
-    }
-
-    // ============================================================
-    //  时间线
-    // ============================================================
-    function getCurrentTime() {
-      const d = new Date();
-      return {
-        hh: String(d.getHours()).padStart(2,'0'),
-        mm: String(d.getMinutes()).padStart(2,'0'),
-        ss: String(d.getSeconds()).padStart(2,'0'),
-        total: d.getHours() * 60 + d.getMinutes()
-      };
-    }
-
-    function timeToMinutes(t) {
-      if (!t) return -1;
-      const parts = t.split(':');
-      if (parts.length !== 2) return -1;
-      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-    }
-
-    function getTimelineStatus(item) {
-      const now = getCurrentTime().total;
-      const start = timeToMinutes(item.start);
-      const end = item.end ? timeToMinutes(item.end) : start;
-      if (start < 0) return 'future';
-      if (now >= start && now <= end) return 'current';
-      if (now > end) return 'past';
-      return 'future';
-    }
-
-    function renderTimeline() {
-      const now = getCurrentTime();
-      currentTimeDisplay.textContent = now.hh + ':' + now.mm + ':' + now.ss;
-      // 时段描述
-      const h = parseInt(now.hh);
-      let period = '🌙 深夜';
-      if (h >= 5 && h < 8) period = '🌅 清晨';
-      else if (h >= 8 && h < 12) period = '☀️ 上午';
-      else if (h >= 12 && h < 14) period = '🌤 中午';
-      else if (h >= 14 && h < 18) period = '🌇 下午';
-      else if (h >= 18 && h < 21) period = '🌆 傍晚';
-      else if (h >= 21 && h < 24) period = '🌙 夜间';
-      currentPeriodDisplay.textContent = period;
-
-      if (!data.timeline || !data.timeline.length) {
-        timelineList.innerHTML = '<div class="timeline-empty">⏰ 还没有时间线任务，点击「管理时间线」添加</div>';
-        return;
+        updatePreview();
       }
 
-      // 按开始时间排序
-      const sorted = [...data.timeline].sort((a,b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
-      let html = '';
-      sorted.forEach(item => {
-        const status = getTimelineStatus(item);
-        const statusLabel = { past: '已完成', current: '● 进行中', future: '待执行' }[status] || '';
-        const cls = status === 'current' ? 'current' : (status === 'past' ? 'past' : 'future');
-        const timeDisplay = item.end ? `${item.start} - ${item.end}` : item.start;
-        html += `<div class="timeline-item ${cls}">
-          <div class="time-col">
-            <span>${timeDisplay}</span>
-            <span class="range">${statusLabel}</span>
-          </div>
-          <div class="content-col">
-            <div class="task">${escHtml(item.task)}</div>
-            ${item.desc ? `<div class="desc">${escHtml(item.desc)}</div>` : ''}
-          </div>
-          <div class="status-dot"></div>
-        </div>`;
-      });
-      timelineList.innerHTML = html;
-    }
-
-    // ============================================================
-    //  时间线 - 管理
-    // ============================================================
-    function renderTimelineEditor() {
-      timelineEditorList.innerHTML = '';
-      if (!timelineEditItems.length) {
-        timelineEditorList.innerHTML = '<div class="text-muted text-center" style="padding:16px 0;">还没有任务，点击下方添加</div>';
-        return;
-      }
-      timelineEditItems.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'dyn-item-group';
-        div.style.marginBottom = '10px';
-        div.innerHTML = `
-          <div class="head">
-            <span>任务 ${idx+1}</span>
-            <button class="ghost small" data-tl-del="${idx}">✕ 删除</button>
-          </div>
-          <div class="fields">
-            <div class="row"><input type="time" value="${item.start||''}" data-tl-field="${idx}" data-key="start" placeholder="开始时间"></div>
-            <div class="row"><input type="time" value="${item.end||''}" data-tl-field="${idx}" data-key="end" placeholder="结束时间（选填）"></div>
-            <div class="row"><input type="text" value="${escHtml(item.task||'')}" data-tl-field="${idx}" data-key="task" placeholder="任务名称"></div>
-            <div class="row"><input type="text" value="${escHtml(item.desc||'')}" data-tl-field="${idx}" data-key="desc" placeholder="备注（选填）"></div>
-          </div>
-        `;
-        timelineEditorList.appendChild(div);
-      });
-
-      // 绑定事件
-      timelineEditorList.querySelectorAll('input[data-tl-field]').forEach(el => {
-        const idx = parseInt(el.dataset.tlField);
-        const key = el.dataset.key;
-        el.addEventListener('input', () => {
-          if (timelineEditItems[idx]) {
-            timelineEditItems[idx][key] = el.value;
-          }
-        });
-      });
-
-      timelineEditorList.querySelectorAll('button[data-tl-del]').forEach(btn => {
-        const idx = parseInt(btn.dataset.tlDel);
-        btn.addEventListener('click', () => {
-          timelineEditItems.splice(idx, 1);
-          renderTimelineEditor();
-        });
-      });
-    }
-
-    // ============================================================
-    //  设置
-    // ============================================================
-    function renderSettings() {
-      settingLine.value = data.settings.line || '';
-      settingStation.value = data.settings.station || '';
-      settingLeader.value = data.settings.leader || '';
-      settingLeaderPhone.value = data.settings.leaderphone || '';
-      renderEntrances();
-      renderCustomSettingsUI();
-    }
-
-    function renderEntrances() {
-      entranceList.innerHTML = '';
-      if (!data.settings.entrances.length) {
-        entranceList.innerHTML = '<div class="text-muted" style="font-size:0.8rem;padding:4px 0;">还没有安检点</div>';
-      }
-      data.settings.entrances.forEach((ent, idx) => {
-        const row = document.createElement('div');
-        row.className = 'flex-row';
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.value = ent;
-        inp.placeholder = '如：A口';
-        inp.style.margin = '0';
-        inp.addEventListener('input', () => { data.settings.entrances[idx] = inp.value; saveData(); });
-        row.appendChild(inp);
-        const del = document.createElement('button');
-        del.textContent = '删除';
-        del.className = 'danger small shrink';
-        del.addEventListener('click', () => {
-          data.settings.entrances.splice(idx, 1);
-          renderEntrances();
-          saveData();
-          renderMain();
-        });
-        row.appendChild(del);
-        entranceList.appendChild(row);
-      });
-    }
-
-    function renderCustomSettingsUI() {
-      customSettingsList.innerHTML = '';
-      if (!data.settings.custom.length) {
-        customSettingsList.innerHTML = '<div class="text-muted" style="font-size:0.8rem;padding:4px 0;">还没有自定义预设项</div>';
-      }
-      data.settings.custom.forEach((item, idx) => {
-        const row = document.createElement('div');
-        row.className = 'flex-row';
-        const keyInp = document.createElement('input');
-        keyInp.type = 'text';
-        keyInp.placeholder = '变量名';
-        keyInp.value = item.key;
-        keyInp.style.flex = '1.5';
-        keyInp.addEventListener('input', () => { item.key = keyInp.value.trim(); saveData(); });
-        row.appendChild(keyInp);
-
-        const typeSel = document.createElement('select');
-        typeSel.style.flex = '1';
-        ['text','single','multi'].forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t;
-          opt.textContent = { text:'固定文本', single:'单选', multi:'多选' }[t];
-          if (item.type === t) opt.selected = true;
-          typeSel.appendChild(opt);
-        });
-        typeSel.addEventListener('change', () => { item.type = typeSel.value; saveData(); });
-        row.appendChild(typeSel);
-
-        const valInp = document.createElement('input');
-        valInp.type = 'text';
-        valInp.placeholder = item.type === 'text' ? '固定值' : '选项1|选项2|选项3';
-        valInp.value = item.value;
-        valInp.style.flex = '2';
-        valInp.addEventListener('input', () => { item.value = valInp.value; saveData(); });
-        row.appendChild(valInp);
-
-        const up = document.createElement('button');
-        up.textContent = '↑';
-        up.className = 'small shrink';
-        up.disabled = idx === 0;
-        up.addEventListener('click', () => {
-          if (idx > 0) {
-            [data.settings.custom[idx-1], data.settings.custom[idx]] = [data.settings.custom[idx], data.settings.custom[idx-1]];
-            saveData();
-            renderCustomSettingsUI();
-          }
-        });
-        row.appendChild(up);
-        const down = document.createElement('button');
-        down.textContent = '↓';
-        down.className = 'small shrink';
-        down.disabled = idx === data.settings.custom.length - 1;
-        down.addEventListener('click', () => {
-          if (idx < data.settings.custom.length - 1) {
-            [data.settings.custom[idx], data.settings.custom[idx+1]] = [data.settings.custom[idx+1], data.settings.custom[idx]];
-            saveData();
-            renderCustomSettingsUI();
-          }
-        });
-        row.appendChild(down);
-
-        const del = document.createElement('button');
-        del.textContent = '删除';
-        del.className = 'danger small shrink';
-        del.addEventListener('click', () => {
-          data.settings.custom.splice(idx, 1);
-          renderCustomSettingsUI();
-          saveData();
-          renderMain();
-        });
-        row.appendChild(del);
-        customSettingsList.appendChild(row);
-      });
-    }
-
-    // ============================================================
-    //  事件绑定
-    // ============================================================
-
-    // --- 模板选择 ---
-    templateSelect.addEventListener('change', () => {
-      currentTemplateId = templateSelect.value;
-      formValues = {};
-      renderInputs();
-      updateGroupHint();
-    });
-
-    // --- 复制 ---
-    copyBtn.addEventListener('click', async () => {
-      const text = previewBox.textContent;
-      if (!text || previewBox.classList.contains('empty')) {
-        showToast('暂无内容可复制');
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast('✅ 已复制到剪贴板');
-      } catch {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-        showToast('✅ 已复制到剪贴板');
-      }
-    });
-
-    // --- 管理模板 ---
-    document.getElementById('manageBtn').addEventListener('click', () => {
-      if (!editingTemplateId && data.templates.length) editingTemplateId = data.templates[0].id;
-      renderManage();
-      manageModal.classList.add('active');
-    });
-    closeManageBtn.addEventListener('click', () => { manageModal.classList.remove('active'); renderMain(); });
-    manageModal.addEventListener('click', (e) => { if (e.target === manageModal) { manageModal.classList.remove('active'); renderMain(); } });
-
-    addTemplateBtn.addEventListener('click', () => {
-      const t = { id: genId(), name: '新模板', content: '', groupHint: '' };
-      data.templates.push(t);
-      editingTemplateId = t.id;
-      saveData();
-      renderManage();
-      renderMain();
-    });
-
-    saveTemplateBtn.addEventListener('click', () => {
-      const t = getTemplate(editingTemplateId);
-      if (!t) return;
-      t.name = editTemplateName.value.trim() || '未命名模板';
-      t.groupHint = editGroupHint.value.trim();
-      t.content = editTemplateContent.value;
-      saveData();
-      renderManage();
-      renderMain();
-      showToast('✅ 模板已保存');
-    });
-
-    deleteTemplateBtn.addEventListener('click', () => {
-      const t = getTemplate(editingTemplateId);
-      if (!t) return;
-      if (!confirm(`确定删除「${t.name}」吗？`)) return;
-      data.templates = data.templates.filter(x => x.id !== editingTemplateId);
-      if (currentTemplateId === editingTemplateId) currentTemplateId = data.templates[0]?.id || null;
-      editingTemplateId = data.templates[0]?.id || null;
-      saveData();
-      renderManage();
-      renderMain();
-      showToast('🗑 已删除');
-    });
-
-    duplicateTemplateBtn.addEventListener('click', () => {
-      const t = getTemplate(editingTemplateId);
-      if (!t) return;
-      const nt = { id: genId(), name: t.name + '（副本）', content: t.content, groupHint: t.groupHint || '' };
-      data.templates.push(nt);
-      editingTemplateId = nt.id;
-      saveData();
-      renderManage();
-      renderMain();
-      showToast('📋 已复制模板');
-    });
-
-    // --- 导入导出 ---
-    let importMode = false;
-    importBtn.addEventListener('click', () => {
-      importMode = !importMode;
-      importArea.classList.toggle('hidden', !importMode);
-      if (importMode) { importExportText.value = ''; showToast('📥 粘贴 JSON 后点击确认导入'); }
-    });
-    cancelImportBtn.addEventListener('click', () => { importMode = false; importArea.classList.add('hidden'); });
-    confirmImportBtn.addEventListener('click', () => {
-      try {
-        const raw = importExportText.value.trim();
-        if (!raw) throw new Error('请粘贴 JSON 数据');
-        const d = JSON.parse(raw);
-        if (!d || !Array.isArray(d.templates) || !d.settings) throw new Error('数据格式不正确');
-        if (!Array.isArray(d.settings.custom)) {
-          const old = d.settings.custom || {};
-          d.settings.custom = Object.keys(old).map(k => ({ key: k, type: 'text', value: old[k] }));
+      function updatePreview() {
+        const template = getTemplate(currentTemplateId);
+        if (!template) {
+          previewBox.textContent = '💡 请选择或创建模板';
+          previewBox.className = 'preview-box empty';
+          return;
         }
-        d.templates.forEach(t => { if (!t.groupHint) t.groupHint = ''; });
-        if (!Array.isArray(d.timeline)) d.timeline = [];
-        data = d;
-        saveData();
-        currentTemplateId = data.templates[0]?.id || null;
-        editingTemplateId = data.templates[0]?.id || null;
+        const out = renderPreview(template, formValues);
+        if (!out || !out.trim()) {
+          previewBox.textContent = '💡 填写内容后，预览将显示在这里';
+          previewBox.className = 'preview-box empty';
+        } else {
+          previewBox.textContent = out;
+          previewBox.className = 'preview-box';
+        }
+      }
+
+      function renderMain() {
+        renderTemplateSelect();
+        renderInputs();
+      }
+
+      // ============================================================
+      //  渲染：时间线
+      // ============================================================
+      function getCurrentTime() {
+        const d = new Date();
+        return {
+          hh: String(d.getHours()).padStart(2, '0'),
+          mm: String(d.getMinutes()).padStart(2, '0'),
+          ss: String(d.getSeconds()).padStart(2, '0'),
+          total: d.getHours() * 60 + d.getMinutes()
+        };
+      }
+
+      function timeToMinutes(t) {
+        if (!t) return -1;
+        const parts = t.split(':');
+        if (parts.length !== 2) return -1;
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      }
+
+      function getTimelineStatus(item) {
+        const now = getCurrentTime().total;
+        const start = timeToMinutes(item.start);
+        const end = item.end ? timeToMinutes(item.end) : start;
+        if (start < 0) return 'future';
+        if (now >= start && now <= end) return 'current';
+        if (now > end) return 'past';
+        return 'future';
+      }
+
+      function renderTimeline() {
+        const now = getCurrentTime();
+        currentTimeDisplay.textContent = now.hh + ':' + now.mm;
+
+        const h = parseInt(now.hh);
+        let period = '🌙';
+        if (h >= 5 && h < 8) period = '🌅';
+        else if (h >= 8 && h < 12) period = '☀️';
+        else if (h >= 12 && h < 14) period = '🌤';
+        else if (h >= 14 && h < 18) period = '🌇';
+        else if (h >= 18 && h < 21) period = '🌆';
+        else if (h >= 21 && h < 24) period = '🌙';
+        currentPeriodDisplay.textContent = period;
+
+        const hasCurrent = data.timeline.some(item => getTimelineStatus(item) === 'current');
+        timelineBadge.textContent = hasCurrent ? '● 进行中' : '⏰ 今日';
+        timelineBadge.className = 'timeline-badge' + (hasCurrent ? ' active' : '');
+
+        if (!data.timeline || !data.timeline.length) {
+          timelineList.innerHTML = '<div class="timeline-empty">⏰ 还没有任务，点「管理时间线」添加</div>';
+          return;
+        }
+
+        const sorted = [...data.timeline].sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+        let html = '';
+        sorted.forEach(item => {
+          const status = getTimelineStatus(item);
+          const statusMap = { past: '已过', current: '进行中', future: '' };
+          const cls = status;
+          const timeDisplay = item.end ? `${item.start} - ${item.end}` : item.start;
+          html += `<div class="timeline-item ${cls}">
+            <div class="t-time">
+              ${timeDisplay}
+              ${statusMap[status] ? `<span class="t-range">${statusMap[status]}</span>` : ''}
+            </div>
+            <div class="t-content">
+              <div class="t-task">${escHtml(item.task)}</div>
+              ${item.desc ? `<div class="t-desc">${escHtml(item.desc)}</div>` : ''}
+            </div>
+            <div class="t-dot"></div>
+          </div>`;
+        });
+        timelineList.innerHTML = html;
+      }
+
+      // ============================================================
+      //  管理：模板
+      // ============================================================
+      function renderManage() {
+        renderTemplateList();
+        if (editingTemplateId && getTemplate(editingTemplateId)) {
+          templateEditor.classList.remove('hidden');
+          const t = getTemplate(editingTemplateId);
+          editTemplateName.value = t.name;
+          editGroupHint.value = t.groupHint || '';
+          editTemplateContent.value = t.content;
+          renderVarTags(t.content);
+        } else {
+          templateEditor.classList.add('hidden');
+        }
+      }
+
+      function renderTemplateList() {
+        templateList.innerHTML = '';
+        if (!data.templates.length) {
+          templateList.innerHTML = '<div class="text-muted" style="padding:8px 0;">还没有模板，点击「新建」</div>';
+          return;
+        }
+        data.templates.forEach((t, idx) => {
+          const div = document.createElement('div');
+          div.className = 'modal-list-item';
+          const tag = document.createElement('span');
+          tag.className = 'tag' + (t.id === editingTemplateId ? ' active' : '');
+          tag.textContent = t.name;
+          tag.addEventListener('click', () => { editingTemplateId = t.id;
+            renderManage(); });
+          div.appendChild(tag);
+
+          const up = document.createElement('button');
+          up.className = 'order-btn';
+          up.textContent = '↑';
+          up.disabled = idx === 0;
+          up.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (idx > 0) {
+              [data.templates[idx - 1], data.templates[idx]] = [data.templates[idx], data.templates[idx - 1]];
+              saveData();
+              renderManage();
+              renderMain();
+            }
+          });
+          div.appendChild(up);
+
+          const down = document.createElement('button');
+          down.className = 'order-btn';
+          down.textContent = '↓';
+          down.disabled = idx === data.templates.length - 1;
+          down.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (idx < data.templates.length - 1) {
+              [data.templates[idx], data.templates[idx + 1]] = [data.templates[idx + 1], data.templates[idx]];
+              saveData();
+              renderManage();
+              renderMain();
+            }
+          });
+          div.appendChild(down);
+
+          templateList.appendChild(div);
+        });
+      }
+
+      function renderVarTags(content) {
+        const vars = extractVars(content);
+        varTagList.innerHTML = '';
+        if (!vars.length) {
+          varTagList.innerHTML = '<span class="text-muted" style="font-size:0.75rem;">用 <code>*变量*</code> 标记，点击下方快速插入</span>';
+          return;
+        }
+        vars.forEach(v => {
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = '*' + v + '*';
+          tag.addEventListener('click', () => {
+            const ta = editTemplateContent;
+            const start = ta.selectionStart;
+            const ins = '*' + v + '*';
+            ta.value = ta.value.slice(0, start) + ins + ta.value.slice(start);
+            ta.focus();
+            ta.selectionStart = ta.selectionEnd = start + ins.length;
+            renderVarTags(ta.value);
+          });
+          varTagList.appendChild(tag);
+        });
+      }
+
+      // ============================================================
+      //  管理：时间线
+      // ============================================================
+      function renderTimelineEditor() {
+        timelineEditorList.innerHTML = '';
+        if (!timelineEditItems.length) {
+          timelineEditorList.innerHTML = '<div class="text-muted text-center" style="padding:16px 0;">还没有任务，点击下方添加</div>';
+          return;
+        }
+        timelineEditItems.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.className = 'dyn-group';
+          div.style.marginBottom = '10px';
+          div.innerHTML = `
+            <div class="head"><span>任务 ${idx + 1}</span>
+              <button class="ghost" style="background:none;border:none;color:var(--danger);font-size:0.8rem;cursor:pointer;padding:0 4px;min-height:30px;" data-tl-del="${idx}">✕</button>
+            </div>
+            <div class="fields">
+              <div class="row"><input type="text" value="${item.start || ''}" data-tl-field="${idx}" data-key="start" placeholder="开始 08:30"></div>
+              <div class="row"><input type="text" value="${item.end || ''}" data-tl-field="${idx}" data-key="end" placeholder="结束（选填）09:00"></div>
+              <div class="row"><input type="text" value="${escHtml(item.task || '')}" data-tl-field="${idx}" data-key="task" placeholder="任务名称"></div>
+              <div class="row"><input type="text" value="${escHtml(item.desc || '')}" data-tl-field="${idx}" data-key="desc" placeholder="备注（选填）"></div>
+            </div>
+          `;
+          timelineEditorList.appendChild(div);
+        });
+
+        timelineEditorList.querySelectorAll('input[data-tl-field]').forEach(el => {
+          const idx = parseInt(el.dataset.tlField);
+          const key = el.dataset.key;
+          el.addEventListener('input', () => {
+            if (timelineEditItems[idx]) {
+              timelineEditItems[idx][key] = el.value;
+            }
+          });
+        });
+
+        timelineEditorList.querySelectorAll('button[data-tl-del]').forEach(btn => {
+          const idx = parseInt(btn.dataset.tlDel);
+          btn.addEventListener('click', () => {
+            timelineEditItems.splice(idx, 1);
+            renderTimelineEditor();
+          });
+        });
+      }
+
+      // ============================================================
+      //  设置
+      // ============================================================
+      function renderSettings() {
+        settingLine.value = data.settings.line || '';
+        settingStation.value = data.settings.station || '';
+        settingLeader.value = data.settings.leader || '';
+        settingLeaderPhone.value = data.settings.leaderphone || '';
+        renderEntrances();
+        renderCustomSettingsUI();
+      }
+
+      function renderEntrances() {
+        entranceList.innerHTML = '';
+        if (!data.settings.entrances.length) {
+          entranceList.innerHTML = '<div class="text-muted" style="padding:4px 0;">还没有安检点</div>';
+        }
+        data.settings.entrances.forEach((ent, idx) => {
+          const row = document.createElement('div');
+          row.className = 'entrance-row';
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.value = ent;
+          inp.placeholder = '如 A口';
+          inp.addEventListener('input', () => { data.settings.entrances[idx] = inp.value;
+            saveData(); });
+          row.appendChild(inp);
+          const del = document.createElement('button');
+          del.className = 'shrink';
+          del.textContent = '删除';
+          del.addEventListener('click', () => {
+            data.settings.entrances.splice(idx, 1);
+            renderEntrances();
+            saveData();
+            renderMain();
+          });
+          row.appendChild(del);
+          entranceList.appendChild(row);
+        });
+      }
+
+      function renderCustomSettingsUI() {
+        customSettingsList.innerHTML = '';
+        if (!data.settings.custom.length) {
+          customSettingsList.innerHTML = '<div class="text-muted" style="padding:4px 0;">还没有自定义预设项</div>';
+        }
+        data.settings.custom.forEach((item, idx) => {
+          const row = document.createElement('div');
+          row.className = 'setting-row';
+
+          const keyInp = document.createElement('input');
+          keyInp.type = 'text';
+          keyInp.placeholder = '变量名';
+          keyInp.value = item.key;
+          keyInp.addEventListener('input', () => { item.key = keyInp.value.trim();
+            saveData(); });
+          row.appendChild(keyInp);
+
+          const typeSel = document.createElement('select');
+          ['text', 'single', 'multi'].forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = { text: '固定文本', single: '单选', multi: '多选' }[t];
+            if (item.type === t) opt.selected = true;
+            typeSel.appendChild(opt);
+          });
+          typeSel.addEventListener('change', () => { item.type = typeSel.value;
+            saveData(); });
+          row.appendChild(typeSel);
+
+          const valInp = document.createElement('input');
+          valInp.type = 'text';
+          valInp.placeholder = item.type === 'text' ? '固定值' : '选项1|选项2|选项3';
+          valInp.value = item.value;
+          valInp.addEventListener('input', () => { item.value = valInp.value;
+            saveData(); });
+          row.appendChild(valInp);
+
+          const up = document.createElement('button');
+          up.className = 'shrink';
+          up.textContent = '↑';
+          up.disabled = idx === 0;
+          up.addEventListener('click', () => {
+            if (idx > 0) {
+              [data.settings.custom[idx - 1], data.settings.custom[idx]] = [data.settings.custom[idx], data.settings
+                .custom[idx - 1]
+              ];
+              saveData();
+              renderCustomSettingsUI();
+            }
+          });
+          row.appendChild(up);
+
+          const down = document.createElement('button');
+          down.className = 'shrink';
+          down.textContent = '↓';
+          down.disabled = idx === data.settings.custom.length - 1;
+          down.addEventListener('click', () => {
+            if (idx < data.settings.custom.length - 1) {
+              [data.settings.custom[idx], data.settings.custom[idx + 1]] = [data.settings.custom[idx + 1], data
+                .settings.custom[idx]
+              ];
+              saveData();
+              renderCustomSettingsUI();
+            }
+          });
+          row.appendChild(down);
+
+          const del = document.createElement('button');
+          del.className = 'shrink danger';
+          del.textContent = '删除';
+          del.addEventListener('click', () => {
+            data.settings.custom.splice(idx, 1);
+            renderCustomSettingsUI();
+            saveData();
+            renderMain();
+          });
+          row.appendChild(del);
+
+          customSettingsList.appendChild(row);
+        });
+      }
+
+      // ============================================================
+      //  事件绑定
+      // ============================================================
+
+      // --- 模板选择 ---
+      templateSelect.addEventListener('change', () => {
+        currentTemplateId = templateSelect.value;
         formValues = {};
-        importMode = false;
-        importArea.classList.add('hidden');
-        renderMain();
+        renderInputs();
+        updateGroupHint();
+      });
+
+      // --- 复制 ---
+      copyBtn.addEventListener('click', async () => {
+        const text = previewBox.textContent;
+        if (!text || previewBox.classList.contains('empty')) {
+          showToast('暂无内容可复制');
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          copyBtn.textContent = '✅ 已复制';
+          copyBtn.classList.add('success');
+          setTimeout(() => {
+            copyBtn.textContent = '📋 复制结果';
+            copyBtn.classList.remove('success');
+          }, 1500);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          copyBtn.textContent = '✅ 已复制';
+          copyBtn.classList.add('success');
+          setTimeout(() => {
+            copyBtn.textContent = '📋 复制结果';
+            copyBtn.classList.remove('success');
+          }, 1500);
+        }
+      });
+
+      // --- 管理模板 ---
+      manageBtn.addEventListener('click', () => {
+        if (!editingTemplateId && data.templates.length) editingTemplateId = data.templates[0].id;
         renderManage();
+        manageModal.classList.add('active');
+      });
+      closeManageBtn.addEventListener('click', () => { manageModal.classList.remove('active');
+        renderMain(); });
+      manageModal.addEventListener('click', (e) => {
+        if (e.target === manageModal) { manageModal.classList.remove('active');
+          renderMain(); }
+      });
+
+      addTemplateBtn.addEventListener('click', () => {
+        const t = { id: genId(), name: '新模板', content: '', groupHint: '' };
+        data.templates.push(t);
+        editingTemplateId = t.id;
+        saveData();
+        renderManage();
+        renderMain();
+      });
+
+      saveTemplateBtn.addEventListener('click', () => {
+        const t = getTemplate(editingTemplateId);
+        if (!t) return;
+        t.name = editTemplateName.value.trim() || '未命名';
+        t.groupHint = editGroupHint.value.trim();
+        t.content = editTemplateContent.value;
+        saveData();
+        renderManage();
+        renderMain();
+        showToast('✅ 模板已保存');
+      });
+
+      deleteTemplateBtn.addEventListener('click', () => {
+        const t = getTemplate(editingTemplateId);
+        if (!t) return;
+        if (!confirm(`确定删除「${t.name}」吗？`)) return;
+        data.templates = data.templates.filter(x => x.id !== editingTemplateId);
+        if (currentTemplateId === editingTemplateId) currentTemplateId = data.templates[0]?.id || null;
+        editingTemplateId = data.templates[0]?.id || null;
+        saveData();
+        renderManage();
+        renderMain();
+        showToast('🗑 已删除');
+      });
+
+      duplicateTemplateBtn.addEventListener('click', () => {
+        const t = getTemplate(editingTemplateId);
+        if (!t) return;
+        const nt = { id: genId(), name: t.name + '（副本）', content: t.content, groupHint: t.groupHint || '' };
+        data.templates.push(nt);
+        editingTemplateId = nt.id;
+        saveData();
+        renderManage();
+        renderMain();
+        showToast('📋 已复制');
+      });
+
+      // --- 导入导出 ---
+      let importMode = false;
+      importBtn.addEventListener('click', () => {
+        importMode = !importMode;
+        importArea.classList.toggle('hidden', !importMode);
+        if (importMode) { importExportText.value = '';
+          showToast('📥 粘贴 JSON 后点击确认'); }
+      });
+      cancelImportBtn.addEventListener('click', () => { importMode = false;
+        importArea.classList.add('hidden'); });
+      confirmImportBtn.addEventListener('click', () => {
+        try {
+          const raw = importExportText.value.trim();
+          if (!raw) throw new Error('请粘贴 JSON 数据');
+          const d = JSON.parse(raw);
+          if (!d || !Array.isArray(d.templates) || !d.settings) throw new Error('格式不正确');
+          if (!Array.isArray(d.settings.custom)) {
+            const old = d.settings.custom || {};
+            d.settings.custom = Object.keys(old).map(k => ({ key: k, type: 'text', value: old[k] }));
+          }
+          d.templates.forEach(t => { if (!t.groupHint) t.groupHint = ''; });
+          if (!Array.isArray(d.timeline)) d.timeline = [];
+          data = d;
+          saveData();
+          currentTemplateId = data.templates[0]?.id || null;
+          editingTemplateId = data.templates[0]?.id || null;
+          formValues = {};
+          importMode = false;
+          importArea.classList.add('hidden');
+          renderMain();
+          renderManage();
+          renderTimeline();
+          showToast('✅ 导入成功（含时间线）');
+        } catch (e) {
+          showToast('❌ 导入失败：' + e.message);
+        }
+      });
+
+      exportBtn.addEventListener('click', () => {
+        importExportText.value = JSON.stringify(data, null, 2);
+        importArea.classList.remove('hidden');
+        importMode = true;
+        showToast('📤 已导出（模板+时间线）');
+      });
+
+      // --- 设置 ---
+      settingsBtn.addEventListener('click', () => { renderSettings();
+        settingsModal.classList.add('active'); });
+      closeSettingsBtn.addEventListener('click', () => { settingsModal.classList.remove('active');
+        renderMain(); });
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) { settingsModal.classList.remove('active');
+          renderMain(); }
+      });
+
+      addEntranceBtn.addEventListener('click', () => {
+        data.settings.entrances.push('');
+        renderEntrances();
+        saveData();
+      });
+
+      addCustomSettingBtn.addEventListener('click', () => {
+        data.settings.custom.push({ key: '', type: 'text', value: '' });
+        renderCustomSettingsUI();
+        saveData();
+      });
+
+      saveSettingsBtn.addEventListener('click', () => {
+        data.settings.line = settingLine.value.trim();
+        data.settings.station = settingStation.value.trim();
+        data.settings.leader = settingLeader.value.trim();
+        data.settings.leaderphone = settingLeaderPhone.value.trim();
+        saveData();
+        settingsModal.classList.remove('active');
+        formValues = {};
+        renderMain();
+        showToast('✅ 设置已保存');
+      });
+
+      // --- 帮助 ---
+      helpBtn.addEventListener('click', () => helpModal.classList.add('active'));
+      closeHelpBtn.addEventListener('click', () => helpModal.classList.remove('active'));
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) helpModal.classList.remove('active');
+      });
+
+      // --- 时间线 ---
+      manageTimelineBtn.addEventListener('click', () => {
+        timelineEditItems = JSON.parse(JSON.stringify(data.timeline || []));
+        renderTimelineEditor();
+        timelineModal.classList.add('active');
+      });
+      closeTimelineBtn.addEventListener('click', () => { timelineModal.classList.remove('active');
+        renderTimeline(); });
+      timelineModal.addEventListener('click', (e) => {
+        if (e.target === timelineModal) { timelineModal.classList.remove('active');
+          renderTimeline(); }
+      });
+
+      addTimelineItemBtn.addEventListener('click', () => {
+        timelineEditItems.push({ id: genId(), start: '', end: '', task: '', desc: '' });
+        renderTimelineEditor();
+      });
+
+      saveTimelineBtn.addEventListener('click', () => {
+        const valid = timelineEditItems.filter(item => item.task && item.task.trim() && item.start);
+        if (!valid.length) {
+          showToast('至少需要一个有名称和开始时间的任务');
+          return;
+        }
+        data.timeline = valid;
+        saveData();
+        timelineModal.classList.remove('active');
         renderTimeline();
-        showToast('✅ 配置导入成功');
-      } catch (e) {
-        showToast('❌ 导入失败：' + e.message);
+        showToast('✅ 时间线已保存');
+      });
+
+      // --- 模板编辑变量标签 ---
+      editTemplateContent.addEventListener('input', function() {
+        renderVarTags(this.value);
+      });
+
+      // --- 时间线实时更新 ---
+      setInterval(renderTimeline, 5000);
+
+      // ============================================================
+      //  启动
+      // ============================================================
+      if (data.templates.length) {
+        currentTemplateId = data.templates[0].id;
+        editingTemplateId = data.templates[0].id;
       }
-    });
-
-    exportBtn.addEventListener('click', () => {
-      importExportText.value = JSON.stringify(data, null, 2);
-      importArea.classList.remove('hidden');
-      importMode = true;
-      showToast('📤 配置已导出，请复制保存');
-    });
-
-    // --- 设置 ---
-    settingsBtn.addEventListener('click', () => { renderSettings(); settingsModal.classList.add('active'); });
-    closeSettingsBtn.addEventListener('click', () => { settingsModal.classList.remove('active'); renderMain(); });
-    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) { settingsModal.classList.remove('active'); renderMain(); } });
-
-    addEntranceBtn.addEventListener('click', () => {
-      data.settings.entrances.push('');
-      renderEntrances();
-      saveData();
-    });
-
-    addCustomSettingBtn.addEventListener('click', () => {
-      data.settings.custom.push({ key: '', type: 'text', value: '' });
-      renderCustomSettingsUI();
-      saveData();
-    });
-
-    saveSettingsBtn.addEventListener('click', () => {
-      data.settings.line = settingLine.value.trim();
-      data.settings.station = settingStation.value.trim();
-      data.settings.leader = settingLeader.value.trim();
-      data.settings.leaderphone = settingLeaderPhone.value.trim();
-      saveData();
-      settingsModal.classList.remove('active');
-      formValues = {};
       renderMain();
-      showToast('✅ 设置已保存');
-    });
-
-    // --- 帮助 ---
-    helpBtn.addEventListener('click', () => helpModal.classList.add('active'));
-    closeHelpBtn.addEventListener('click', () => helpModal.classList.remove('active'));
-    helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.classList.remove('active'); });
-
-    // --- 时间线 ---
-    manageTimelineBtn.addEventListener('click', () => {
-      timelineEditItems = JSON.parse(JSON.stringify(data.timeline || []));
-      renderTimelineEditor();
-      timelineModal.classList.add('active');
-    });
-    closeTimelineBtn.addEventListener('click', () => { timelineModal.classList.remove('active'); renderTimeline(); });
-    timelineModal.addEventListener('click', (e) => { if (e.target === timelineModal) { timelineModal.classList.remove('active'); renderTimeline(); } });
-
-    addTimelineItemBtn.addEventListener('click', () => {
-      timelineEditItems.push({ id: genId(), start: '', end: '', task: '', desc: '' });
-      renderTimelineEditor();
-    });
-
-    saveTimelineBtn.addEventListener('click', () => {
-      // 过滤空任务
-      const valid = timelineEditItems.filter(item => item.task && item.task.trim() && item.start);
-      if (!valid.length) {
-        showToast('至少需要一个有名称和开始时间的任务');
-        return;
-      }
-      data.timeline = valid;
-      saveData();
-      timelineModal.classList.remove('active');
       renderTimeline();
-      showToast('✅ 时间线已保存');
-    });
-
-    // --- 模板编辑实时更新变量标签 ---
-    editTemplateContent.addEventListener('input', () => {
-      renderVarTags(editTemplateContent.value);
-    });
-
-    // --- 时间线实时更新 ---
-    setInterval(renderTimeline, 10000);
-
-    // ============================================================
-    //  启动
-    // ============================================================
-    if (data.templates.length) {
-      currentTemplateId = data.templates[0].id;
-      editingTemplateId = data.templates[0].id;
-    }
-    renderMain();
-    renderTimeline();
-  })();
+    })();
   </script>
 </body>
 </html>
