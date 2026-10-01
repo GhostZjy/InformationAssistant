@@ -171,10 +171,10 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 
 /* SECTION: view-report */
 .tpl-picker{display:flex;flex-direction:column;gap:8px}
-.group-hint{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius-sm);
-  background:var(--warn-soft);color:var(--warn);font-size:.8rem;font-weight:600}
-.group-hint .gh-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.group-hint button{color:inherit;font-size:.75rem;text-decoration:underline;min-height:32px;flex:none}
+.group-hint{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:var(--radius-sm);
+  background:var(--warn-soft);color:var(--warn);font-size:.88rem;font-weight:600;line-height:1.5}
+.group-hint .gh-text{flex:1;min-width:0;word-break:break-word}
+.group-hint button{color:inherit;font-size:.8rem;text-decoration:underline;min-height:36px;flex:none}
 .preview{background:var(--card-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;
   font-size:.92rem;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:var(--text);min-height:92px}
 .preview.placeholder{color:var(--text-3);font-size:.85rem;display:grid;place-items:center;text-align:center}
@@ -441,16 +441,11 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
           <span id="previewTpl"></span>
         </div>
         <div class="report-actions">
-          <button class="btn btn-primary" id="btnCopy" data-primary-action="copy">
+          <button class="btn btn-primary btn-block" id="btnCopy" data-primary-action="copy">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span id="btnCopyText">复制结果</span>
           </button>
-          <button class="btn" id="btnShare" data-primary-action="share">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
-            <span id="btnShareText">分享</span>
-          </button>
         </div>
-        <p class="section-note" style="margin-top:9px" id="shareNote"></p>
       </div>
     </div>
   </div>
@@ -551,6 +546,15 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
     </div>
     <div id="entranceList"></div>
     <p class="section-note" style="margin-top:8px">模板中用 <code>*安检点*</code> 生成下拉单选,<code>*多安检点*</code> 生成多选。</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">发往群名</span>
+      <button class="link-btn" id="btnAddGroup">添加</button>
+    </div>
+    <div id="groupList"></div>
+    <p class="section-note" style="margin-top:8px">在模板管理里为模板选择发往哪个群,上报页会显示提示并支持一键复制群名。</p>
   </div>
 
   <div class="card">
@@ -795,7 +799,6 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
     <div class="hist-text"></div>
     <div class="hist-acts">
       <button type="button" class="btn btn-sm btn-primary hi-copy">复制</button>
-      <button type="button" class="btn btn-sm hi-share">分享</button>
       <button type="button" class="btn btn-sm hi-reuse">复用</button>
       <button type="button" class="btn btn-sm hi-more">展开</button>
     </div>
@@ -1094,7 +1097,7 @@ function seedData() {
     version: 5,
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
-      entrances: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
+      entrances: [], groups: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
       theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 }
     },
     templates: [],
@@ -1118,6 +1121,7 @@ function normalize(d) {
   const s = Object.assign(emptySettings(), d.settings || {});
   s.notify = Object.assign(base.settings.notify, d.settings && d.settings.notify ? d.settings.notify : {});
   if (!Array.isArray(s.entrances)) s.entrances = [];
+  if (!Array.isArray(s.groups)) s.groups = [];
   if (!Array.isArray(s.custom)) s.custom = [];
   if (!Array.isArray(s.dispatchOptions) || !s.dispatchOptions.length) s.dispatchOptions = DISPATCH_DEFAULT.slice();
   if (['auto', 'light', 'dark'].indexOf(s.theme) < 0) s.theme = 'auto';
@@ -1776,7 +1780,7 @@ function renderForm() {
     const e = document.createElement('div');
     e.className = 'empty';
     const all = extractVars(tpl.content);
-    e.textContent = all.length ? '所有变量都已通过「设置」自动填充,直接复制或分享即可' : '这个模板还没有变量,用 *变量名* 标记即可自动生成输入框';
+    e.textContent = all.length ? '所有变量都已通过「设置」自动填充,直接复制即可' : '这个模板还没有变量,用 *变量名* 标记即可自动生成输入框';
     area.appendChild(e);
     return;
   }
@@ -1876,21 +1880,6 @@ async function doCopy(text, btn, labelEl) {
   } else {
     toast('复制失败,请长按预览框手动选择复制');
   }
-}
-async function doShare(text) {
-  if (!text) { toast('暂无内容可分享'); return; }
-  if (Caps.share) {
-    try {
-      await navigator.share({ title: '信息助手', text: text });
-      addHistory(text, tplById(currentTplId));
-      return;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-    }
-  }
-  const ok = await copyText(text);
-  toast(ok ? '当前环境不支持分享面板,已改为复制到剪贴板' : '分享与复制都不可用,请手动选择文本');
-  if (ok) addHistory(text, tplById(currentTplId));
 }
 
 /* SECTION: js-timeline */
@@ -2238,7 +2227,7 @@ function renderHistory() {
   if (!shown.length) {
     const e = document.createElement('div');
     e.className = 'empty';
-    e.textContent = list.length ? '这个筛选下还没有记录' : '还没有上报记录。每次点「复制结果」或「分享」都会自动存到这里,方便回溯和复用。';
+    e.textContent = list.length ? '这个筛选下还没有记录' : '还没有上报记录。每次点「复制结果」都会自动存到这里,方便回溯和复用。';
     box.appendChild(e);
     return;
   }
@@ -2258,7 +2247,6 @@ function renderHistory() {
       const ok = await copyText(h.text);
       toast(ok ? '已复制到剪贴板' : '复制失败,请长按文本手动复制');
     });
-    $('.hi-share', node).addEventListener('click', function () { doShare(h.text); });
     $('.hi-reuse', node).addEventListener('click', function () { reuseHistory(h); });
     $('.hi-del', node).addEventListener('click', function () {
       Sheet.confirmSheet({
@@ -2525,6 +2513,12 @@ function renderEntrances() {
     onChange: function (repaint) { save(); if (repaint) renderEntrances(); renderForm(); }
   });
 }
+function renderGroups() {
+  bindRows($('#groupList'), data.settings.groups, {
+    placeholder: '如 安检工作群 / 应急处置群', label: '群名', emptyText: '还没有群名,添加后可在模板管理里为模板选择发往哪个群',
+    onChange: function (repaint) { save(); if (repaint) renderGroups(); }
+  });
+}
 function renderDispatch() {
   bindRows($('#dispatchList'), data.settings.dispatchOptions, {
     placeholder: '如 劝导自弃后进站', label: '处置方式', emptyText: '还没有处置方式',
@@ -2581,11 +2575,11 @@ function renderSettingsAll() {
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
-  renderEntrances(); renderCustom(); renderDispatch();
+  renderEntrances(); renderGroups(); renderCustom(); renderDispatch();
   renderThemeChips(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
-    + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页为广州现行禁带限带规定的离线摘录,正式认定以运营单位现行文件为准。';
+    + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页内容可自定义,正式认定以运营单位现行文件为准。';
 }
 function bindSettingsInputs() {
   const map = { setLine: 'line', setStation: 'station', setLeader: 'leader', setLeaderPhone: 'leaderPhone' };
@@ -2964,11 +2958,19 @@ function openManageSheet() {
     groupIn.className = 'input'; groupIn.type = 'text'; groupIn.placeholder = '分组(选填)';
     groupIn.value = t.group || '';
     groupIn.setAttribute('aria-label', '模板分组');
-    const hintIn = document.createElement('input');
-    hintIn.className = 'input'; hintIn.type = 'text'; hintIn.placeholder = '发往群名(选填)';
-    hintIn.value = t.groupHint || '';
-    hintIn.setAttribute('aria-label', '发往群名');
-    row.appendChild(groupIn); row.appendChild(hintIn);
+    const hintSel = document.createElement('select');
+    hintSel.className = 'select';
+    hintSel.setAttribute('aria-label', '发往群名');
+    const hintPh = document.createElement('option');
+    hintPh.value = ''; hintPh.textContent = '发往群名(选填)';
+    hintSel.appendChild(hintPh);
+    (data.settings.groups || []).filter(Boolean).forEach(function (g) {
+      const o = document.createElement('option');
+      o.value = g; o.textContent = g;
+      if (t.groupHint === g) o.selected = true;
+      hintSel.appendChild(o);
+    });
+    row.appendChild(groupIn); row.appendChild(hintSel);
     const lab = document.createElement('div');
     lab.className = 'field-label';
     const span = document.createElement('span');
@@ -3039,7 +3041,7 @@ function openManageSheet() {
     content.addEventListener('input', function () { dirty = true; debouncedVT(); });
     nameIn.addEventListener('input', function () { dirty = true; });
     groupIn.addEventListener('input', function () { dirty = true; });
-    hintIn.addEventListener('input', function () { dirty = true; });
+    hintSel.addEventListener('change', function () { dirty = true; });
     editorBox.appendChild(nameIn);
     editorBox.appendChild(row);
     editorBox.appendChild(lab);
@@ -3053,7 +3055,7 @@ function openManageSheet() {
     saveBtn.addEventListener('click', function () {
       t.name = nameIn.value.trim() || '未命名模板';
       t.group = groupIn.value.trim();
-      t.groupHint = hintIn.value.trim();
+      t.groupHint = hintSel.value.trim();
       t.content = content.value;
       t.builtin = false;
       t.updatedAt = Date.now();
@@ -3118,10 +3120,11 @@ function openManageSheet() {
 function openHelpSheet() {
   const node = document.createElement('div');
   const blocks = [
-    { t: '三步生成一条上报', l: ['在「上报」页选模板,填几个空', '预览区实时生成完整文本', '点「复制结果」粘到微信,或点「分享」调起系统分享面板'] },
-    { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天日期', '含「时间」的变量自动填当前时间,可点开重选', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
-    { t: '时间线', l: ['「时间线」页管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
-    { t: '速查', l: ['内置广州现行禁带、限带规定与处置口径,支持搜索', '现场定性以运营单位现行文件和民警意见为准'] },
+    { t: '快速上手', l: ['在「上报」页选模板,填几个空', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送'] },
+    { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
+    { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪个群', '上报页会显示提示条,点「复制群名」一键复制'] },
+    { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
+    { t: '速查', l: ['速查页内容完全可自定义,在设置页点「管理」编辑', '支持添加禁止携带、限制携带、处置口径、便民信息等分类', '支持搜索和筛选'] },
     { t: '数据', l: ['全部数据只存在这台设备的浏览器里,不上传', '设置页可导出 .json 备份,同事导入即可共用配置', '清除浏览器数据会一并删除,请定期导出备份'] }
   ];
   blocks.forEach(function (b) {
@@ -3217,11 +3220,6 @@ function bindGlobal() {
     toast(ok ? '群名已复制:' + g : '复制失败');
   });
   $('#btnCopy').addEventListener('click', function () { doCopy(currentText(), $('#btnCopy'), $('#btnCopyText')); });
-  $('#btnShare').addEventListener('click', function () { doShare(currentText()); });
-  $('#btnShareText').textContent = Caps.share ? '分享' : '复制备用';
-  $('#shareNote').textContent = Caps.share
-    ? '分享会调起系统面板,可直接选择微信、钉钉等应用发送。'
-    : '当前浏览器不支持系统分享面板,点它会改为复制到剪贴板。';
   $('#btnResetForm').addEventListener('click', function () {
     const t = tplById(currentTplId);
     if (!t) { toast('请先选择模板'); return; }
@@ -3246,6 +3244,12 @@ function bindGlobal() {
     data.settings.entrances.push('');
     save(); renderEntrances();
     const rows = $$('#entranceList input');
+    if (rows.length) { try { rows[rows.length - 1].focus(); } catch (e) {} }
+  });
+  $('#btnAddGroup').addEventListener('click', function () {
+    data.settings.groups.push('');
+    save(); renderGroups();
+    const rows = $$('#groupList input');
     if (rows.length) { try { rows[rows.length - 1].focus(); } catch (e) {} }
   });
   $('#btnAddDispatch').addEventListener('click', function () { data.settings.dispatchOptions.push(''); save(); renderDispatch(); });
