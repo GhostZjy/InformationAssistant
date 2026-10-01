@@ -186,6 +186,7 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .dyn-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
 .dyn-item-head .di-title{font-size:.78rem;font-weight:700;color:var(--text-2)}
 .dyn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dyn-grid-custom{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .dyn-grid .full{grid-column:1/-1}
 
 /* SECTION: view-timeline */
@@ -755,6 +756,16 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
   </div>
 </template>
 
+<template id="tpl-dyn-item-custom">
+  <div class="dyn-item">
+    <div class="dyn-item-head">
+      <span class="di-title"></span>
+      <button type="button" class="mini-btn danger di-del" aria-label="删除">删除</button>
+    </div>
+    <div class="dyn-grid-custom"></div>
+  </div>
+</template>
+
 <template id="tpl-tl-item">
   <div class="tl-item">
     <button type="button" class="tl-check" aria-pressed="false" aria-label="标记完成">
@@ -1144,6 +1155,7 @@ function normalize(d) {
     if (typeof t.group !== 'string') t.group = '';
     if (typeof t.groupHint !== 'string') t.groupHint = t.groupHint || '';
     if (!t.varTypes || typeof t.varTypes !== 'object') t.varTypes = {};
+    if (!Array.isArray(t.varOrder)) t.varOrder = [];
     if (typeof t.builtin !== 'boolean') t.builtin = false;
   });
   out.timeline.forEach(function (i) {
@@ -1287,8 +1299,27 @@ function countVarOf(name) {
   const base = name.replace(/(清单|明细|信息)$/, '');
   return base && base !== name ? base + '件数' : name + '件数';
 }
-function itemsToText(items) {
+function getFields(tpl, name) {
+  const declared = tpl && tpl.varTypes && tpl.varTypes[name];
+  if (declared && Array.isArray(declared.fields) && declared.fields.length) return declared.fields;
+  return null; // 使用默认字段
+}
+function itemsToText(items, fields) {
   if (!items || !items.length) return '';
+  if (fields) {
+    // 自定义字段模式
+    return items.filter(function (it) {
+      return fields.some(function (f) { return (it[f.key] || '').trim(); });
+    }).map(function (it, i) {
+      const parts = [];
+      fields.forEach(function (f) {
+        const v = (it[f.key] || '').trim();
+        if (v) parts.push(f.key + ':' + v);
+      });
+      return parts.join(' ');
+    }).join('\n');
+  }
+  // 默认字段模式（兼容旧数据）
   return items.filter(function (it) { return (it.name || '').trim() || (it.spec || '').trim(); })
     .map(function (it, i) {
       const parts = [];
@@ -1301,6 +1332,19 @@ function itemsToText(items) {
       return parts.join('');
     }).join('\n');
 }
+function computeSums(items, fields) {
+  if (!items || !fields) return {};
+  const sums = {};
+  fields.forEach(function (f) {
+    if (f.type !== 'number' || !f.sum) return;
+    let total = 0;
+    items.forEach(function (it) {
+      total += parseInt(it[f.key], 10) || 0;
+    });
+    sums['总' + f.key] = String(total);
+  });
+  return sums;
+}
 function applyConditionals(content, values) {
   return content.replace(/\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g, function (all, name, inner) {
     const v = values[name.trim()];
@@ -1312,16 +1356,24 @@ function renderTemplate(tpl, values) {
   if (!tpl || !tpl.content) return '';
   const vals = Object.assign({}, values);
   const vars = extractVars(tpl.content);
-  /* 物品清单 -> 文本,并回填件数变量 */
+  /* 物品清单 -> 文本,并回填件数变量和汇总变量 */
   vars.forEach(function (name) {
     if (varType(tpl, name) !== 'items') return;
     const items = vals[name + '__items'] || [];
-    const text = itemsToText(items);
+    const fields = getFields(tpl, name);
+    const text = itemsToText(items, fields);
     vals[name] = text;
     const cv = countVarOf(name);
     if (vars.indexOf(cv) >= 0) {
-      const n = items.filter(function (it) { return (it.name || '').trim() || (it.spec || '').trim(); }).length;
+      const n = fields
+        ? items.filter(function (it) { return fields.some(function (f) { return (it[f.key] || '').trim(); }); }).length
+        : items.filter(function (it) { return (it.name || '').trim() || (it.spec || '').trim(); }).length;
       vals[cv] = String(n);
+    }
+    // 计算汇总变量
+    if (fields) {
+      const sums = computeSums(items, fields);
+      Object.keys(sums).forEach(function (k) { vals[k] = sums[k]; });
     }
   });
   let out = applyConditionals(tpl.content, vals);
@@ -1542,13 +1594,37 @@ function visibleVars(tpl) {
   if (!tpl) return [];
   const all = extractVars(tpl.content);
   const derived = {};
+  // 标记自动生成的件数变量
   all.forEach(function (n) { if (varType(tpl, n) === 'items') derived[countVarOf(n)] = 1; });
-  return all.filter(function (name) {
+  // 标记自动生成的汇总变量（总XXX）
+  all.forEach(function (n) {
+    if (varType(tpl, n) === 'items') {
+      const fields = getFields(tpl, n);
+      if (fields) {
+        fields.forEach(function (f) {
+          if (f.type === 'number' && f.sum) derived['总' + f.key] = 1;
+        });
+      }
+    }
+  });
+  let result = all.filter(function (name) {
     if (['年', '月', '日'].indexOf(name) >= 0) return false;
     if (presetValue(name)) return false;
     if (derived[name]) return false;
     return true;
   });
+  // 应用自定义排序
+  if (tpl.varOrder && tpl.varOrder.length) {
+    result.sort(function (a, b) {
+      const ai = tpl.varOrder.indexOf(a);
+      const bi = tpl.varOrder.indexOf(b);
+      if (ai < 0 && bi < 0) return 0;
+      if (ai < 0) return 1;
+      if (bi < 0) return -1;
+      return ai - bi;
+    });
+  }
+  return result;
 }
 function fieldLabel(node, name, type) {
   const l = $('.fl-name', node);
@@ -1711,6 +1787,67 @@ function buildItemsField(tpl, name) {
   const addBtn = $('.items-add', node);
   const stepper = $('.stepper', node);
   const items = values[name + '__items'] || (values[name + '__items'] = []);
+  const fields = getFields(tpl, name);
+
+  if (fields) {
+    // 自定义字段模式
+    function paint() {
+      box.innerHTML = '';
+      items.forEach(function (it, idx) {
+        const row = mk('tpl-dyn-item-custom');
+        $('.di-title', row).textContent = '第 ' + (idx + 1) + ' 条';
+        const grid = $('.dyn-grid-custom', row);
+        fields.forEach(function (f) {
+          const inp = document.createElement('input');
+          inp.className = 'input';
+          inp.type = f.type === 'number' ? 'number' : 'text';
+          inp.inputMode = f.type === 'number' ? 'numeric' : 'text';
+          inp.placeholder = f.key;
+          inp.value = it[f.key] || '';
+          inp.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
+          inp.style.minHeight = '42px';
+          inp.addEventListener('input', function () {
+            it[f.key] = inp.value;
+            queuePreview();
+          });
+          grid.appendChild(inp);
+        });
+        $('.di-del', row).addEventListener('click', function () {
+          items.splice(idx, 1);
+          syncCount(); paint(); queuePreview();
+        });
+        box.appendChild(row);
+      });
+      addBtn.hidden = false;
+      addBtn.textContent = items.length ? '再加一条' : '添加第一条';
+    }
+    function syncCount() { $('.stepper-input', stepper).value = String(items.length); }
+    bindStepper(stepper, {
+      min: 0, max: 99,
+      onChange: function (v) {
+        while (items.length < v) {
+          const item = {};
+          fields.forEach(function (f) { item[f.key] = ''; });
+          items.push(item);
+        }
+        if (items.length > v) items.length = v;
+        syncCount(); paint(); queuePreview();
+      }
+    });
+    addBtn.addEventListener('click', function () {
+      const item = {};
+      fields.forEach(function (f) { item[f.key] = ''; });
+      items.push(item);
+      syncCount(); paint(); queuePreview();
+      const first = box.lastElementChild.querySelector('input');
+      if (first) { try { first.focus({ preventScroll: false }); } catch (e) {} }
+    });
+    syncCount();
+    paint();
+    return node;
+  }
+
+  // 默认字段模式（兼容旧数据）
   const methods = data.settings.dispatchOptions.slice();
   function paint() {
     box.innerHTML = '';
@@ -2990,6 +3127,17 @@ function openManageSheet() {
       const vars = extractVars(content.value).filter(function (n) {
         return ['年', '月', '日'].indexOf(n) < 0 && !presetValue(n);
       });
+      // 应用自定义排序
+      if (t.varOrder && t.varOrder.length) {
+        vars.sort(function (a, b) {
+          const ai = t.varOrder.indexOf(a);
+          const bi = t.varOrder.indexOf(b);
+          if (ai < 0 && bi < 0) return 0;
+          if (ai < 0) return 1;
+          if (bi < 0) return -1;
+          return ai - bi;
+        });
+      }
       const head = document.createElement('div');
       head.className = 'field-label';
       const hs = document.createElement('span');
@@ -3004,7 +3152,7 @@ function openManageSheet() {
         vtWrap.appendChild(e);
         return;
       }
-      vars.forEach(function (name) {
+      vars.forEach(function (name, idx) {
         const node = mk('tpl-vartype-row');
         $('.vt-name', node).textContent = name;
         const sel = $('.vt-type', node);
@@ -3023,6 +3171,7 @@ function openManageSheet() {
           if (!t.varTypes[name]) t.varTypes[name] = {};
           t.varTypes[name].type = sel.value;
           dirty = true; syncOpt();
+          paintFieldsConfig();
         });
         optInput.addEventListener('input', function () {
           if (!t.varTypes[name]) t.varTypes[name] = {};
@@ -3030,11 +3179,129 @@ function openManageSheet() {
           dirty = true;
         });
         vtWrap.appendChild(node);
+        // 排序按钮
+        const sortDiv = document.createElement('div');
+        sortDiv.style.cssText = 'display:flex;gap:4px;margin:-4px 0 8px;justify-content:flex-end';
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button'; upBtn.className = 'mini-btn'; upBtn.textContent = '↑';
+        upBtn.disabled = idx === 0;
+        upBtn.addEventListener('click', function () {
+          if (!t.varOrder) t.varOrder = vars.slice();
+          const ci = t.varOrder.indexOf(name);
+          if (ci > 0) {
+            const tmp = t.varOrder[ci - 1];
+            t.varOrder[ci - 1] = t.varOrder[ci];
+            t.varOrder[ci] = tmp;
+            dirty = true;
+            paintVarTypes();
+          }
+        });
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button'; downBtn.className = 'mini-btn'; downBtn.textContent = '↓';
+        downBtn.disabled = idx === vars.length - 1;
+        downBtn.addEventListener('click', function () {
+          if (!t.varOrder) t.varOrder = vars.slice();
+          const ci = t.varOrder.indexOf(name);
+          if (ci >= 0 && ci < t.varOrder.length - 1) {
+            const tmp = t.varOrder[ci + 1];
+            t.varOrder[ci + 1] = t.varOrder[ci];
+            t.varOrder[ci] = tmp;
+            dirty = true;
+            paintVarTypes();
+          }
+        });
+        sortDiv.appendChild(upBtn);
+        sortDiv.appendChild(downBtn);
+        vtWrap.appendChild(sortDiv);
       });
+      // 物品清单字段配置
+      const fieldsWrap = document.createElement('div');
+      fieldsWrap.id = 'fieldsConfigWrap';
+      vtWrap.appendChild(fieldsWrap);
+      function paintFieldsConfig() {
+        fieldsWrap.innerHTML = '';
+        vars.forEach(function (name) {
+          const declared = t.varTypes[name] || {};
+          if ((declared.type || inferType(name)) !== 'items') return;
+          const label = document.createElement('div');
+          label.className = 'field-label';
+          label.style.marginTop = '12px';
+          label.textContent = '「' + name + '」的字段配置';
+          fieldsWrap.appendChild(label);
+          const fieldsBox = document.createElement('div');
+          fieldsBox.id = 'fieldsBox-' + name;
+          fieldsWrap.appendChild(fieldsBox);
+          const addFieldBtn = document.createElement('button');
+          addFieldBtn.type = 'button'; addFieldBtn.className = 'btn btn-ghost btn-sm';
+          addFieldBtn.textContent = '+ 添加字段';
+          addFieldBtn.addEventListener('click', function () {
+            if (!t.varTypes[name]) t.varTypes[name] = {};
+            if (!t.varTypes[name].fields) t.varTypes[name].fields = [];
+            t.varTypes[name].fields.push({ key: '新字段', type: 'text', sum: false });
+            dirty = true;
+            paintFieldsConfig();
+          });
+          fieldsWrap.appendChild(addFieldBtn);
+          const fields = t.varTypes[name].fields || [];
+          fields.forEach(function (f, fi) {
+            const frow = document.createElement('div');
+            frow.className = 'list-row';
+            frow.style.padding = '6px 0';
+            const keyInp = document.createElement('input');
+            keyInp.className = 'input';
+            keyInp.type = 'text';
+            keyInp.value = f.key;
+            keyInp.placeholder = '字段名';
+            keyInp.style.flex = '2';
+            keyInp.style.minHeight = '40px';
+            keyInp.addEventListener('input', function () { f.key = keyInp.value; dirty = true; });
+            const typeSel = document.createElement('select');
+            typeSel.className = 'select';
+            typeSel.style.width = 'auto';
+            typeSel.style.minWidth = '80px';
+            typeSel.style.minHeight = '40px';
+            ['text', 'number'].forEach(function (tt) {
+              const o = document.createElement('option');
+              o.value = tt; o.textContent = tt === 'text' ? '文本' : '数字';
+              if (f.type === tt) o.selected = true;
+              typeSel.appendChild(o);
+            });
+            typeSel.addEventListener('change', function () { f.type = typeSel.value; dirty = true; });
+            const sumLabel = document.createElement('label');
+            sumLabel.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text-2);cursor:pointer;flex:none';
+            const sumChk = document.createElement('input');
+            sumChk.type = 'checkbox';
+            sumChk.checked = !!f.sum;
+            sumChk.addEventListener('change', function () { f.sum = sumChk.checked; dirty = true; });
+            sumLabel.appendChild(sumChk);
+            sumLabel.appendChild(document.createTextNode('求和'));
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button'; delBtn.className = 'mini-btn danger';
+            delBtn.textContent = '删除';
+            delBtn.addEventListener('click', function () {
+              fields.splice(fi, 1);
+              dirty = true;
+              paintFieldsConfig();
+            });
+            frow.appendChild(keyInp);
+            frow.appendChild(typeSel);
+            frow.appendChild(sumLabel);
+            frow.appendChild(delBtn);
+            fieldsBox.appendChild(frow);
+          });
+          if (!fields.length) {
+            const note = document.createElement('p');
+            note.className = 'section-note';
+            note.textContent = '还没有字段，点「添加字段」开始配置';
+            fieldsBox.appendChild(note);
+          }
+        });
+      }
+      paintFieldsConfig();
       const note = document.createElement('p');
       note.className = 'section-note';
       note.style.marginTop = '9px';
-      note.textContent = '类型决定上报页生成什么控件:时间弹出时间选择器,单选多选生成按钮组,物品清单可逐件登记并自动汇总件数。改完记得点下面的「保存模板」。';
+      note.textContent = '类型决定上报页生成什么控件:时间弹出时间选择器,单选多选生成按钮组,物品清单可配置自定义字段并自动汇总数字列。用↑↓调整输入顺序。改完记得点下面的「保存模板」。';
       vtWrap.appendChild(note);
     }
     const debouncedVT = debounce(paintVarTypes, 320);
