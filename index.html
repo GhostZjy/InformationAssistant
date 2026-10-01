@@ -1153,7 +1153,12 @@ function normalize(d) {
     if (typeof t.name !== 'string') t.name = '未命名模板';
     if (typeof t.content !== 'string') t.content = '';
     if (typeof t.group !== 'string') t.group = '';
-    if (typeof t.groupHint !== 'string') t.groupHint = t.groupHint || '';
+    // groupHint 兼容：string -> array
+    if (typeof t.groupHint === 'string') {
+      t.groupHint = t.groupHint.trim() ? [t.groupHint.trim()] : [];
+    } else if (!Array.isArray(t.groupHint)) {
+      t.groupHint = [];
+    }
     if (!t.varTypes || typeof t.varTypes !== 'object') t.varTypes = {};
     if (!Array.isArray(t.varOrder)) t.varOrder = [];
     if (typeof t.builtin !== 'boolean') t.builtin = false;
@@ -1312,12 +1317,19 @@ function itemsToText(items, fields) {
       return fields.some(function (f) { return (it[f.key] || '').trim(); });
     }).map(function (it, i) {
       const parts = [];
-      fields.forEach(function (f) {
+      fields.forEach(function (f, fi) {
         const v = (it[f.key] || '').trim();
-        if (v) parts.push(f.key + ':' + v);
+        if (v) {
+          if (fi === 0) {
+            // 第一个字段不带前缀
+            parts.push(v);
+          } else {
+            parts.push(f.key + ':' + v);
+          }
+        }
       });
       return parts.join(' ');
-    }).join('\n');
+    }).join('\n\n');  // 每条记录之间加空行
   }
   // 默认字段模式（兼容旧数据）
   return items.filter(function (it) { return (it.name || '').trim() || (it.spec || '').trim(); })
@@ -1585,8 +1597,9 @@ function renderTplChips() {
 function renderGroupHint() {
   const tpl = tplById(currentTplId);
   const wrap = $('#groupHintWrap'), txt = $('#groupHintText');
-  if (tpl && (tpl.groupHint || '').trim()) {
-    txt.textContent = '发往:' + tpl.groupHint.trim();
+  const groups = Array.isArray(tpl && tpl.groupHint) ? tpl.groupHint.filter(Boolean) : [];
+  if (groups.length) {
+    txt.textContent = '发往：' + groups.join('、');
     wrap.hidden = false;
   } else { wrap.hidden = true; }
 }
@@ -1798,19 +1811,61 @@ function buildItemsField(tpl, name) {
         $('.di-title', row).textContent = '第 ' + (idx + 1) + ' 条';
         const grid = $('.dyn-grid-custom', row);
         fields.forEach(function (f) {
-          const inp = document.createElement('input');
-          inp.className = 'input';
-          inp.type = f.type === 'number' ? 'number' : 'text';
-          inp.inputMode = f.type === 'number' ? 'numeric' : 'text';
-          inp.placeholder = f.key;
-          inp.value = it[f.key] || '';
-          inp.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
-          inp.style.minHeight = '42px';
-          inp.addEventListener('input', function () {
-            it[f.key] = inp.value;
-            queuePreview();
-          });
-          grid.appendChild(inp);
+          let el;
+          if (f.source === 'entrances') {
+            // 关联安检点
+            el = document.createElement('select');
+            el.className = 'select';
+            el.style.minHeight = '42px';
+            el.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
+            const ph = document.createElement('option');
+            ph.value = ''; ph.textContent = '请选择' + f.key;
+            el.appendChild(ph);
+            (data.settings.entrances || []).filter(Boolean).forEach(function (e) {
+              const o = document.createElement('option');
+              o.value = e; o.textContent = e;
+              el.appendChild(o);
+            });
+            el.value = it[f.key] || '';
+            el.addEventListener('change', function () {
+              it[f.key] = el.value;
+              queuePreview();
+            });
+          } else if (f.source === 'groups') {
+            // 关联群名
+            el = document.createElement('select');
+            el.className = 'select';
+            el.style.minHeight = '42px';
+            el.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
+            const ph = document.createElement('option');
+            ph.value = ''; ph.textContent = '请选择' + f.key;
+            el.appendChild(ph);
+            (data.settings.groups || []).filter(Boolean).forEach(function (g) {
+              const o = document.createElement('option');
+              o.value = g; o.textContent = g;
+              el.appendChild(o);
+            });
+            el.value = it[f.key] || '';
+            el.addEventListener('change', function () {
+              it[f.key] = el.value;
+              queuePreview();
+            });
+          } else {
+            // 普通文本/数字输入
+            el = document.createElement('input');
+            el.className = 'input';
+            el.type = f.type === 'number' ? 'number' : 'text';
+            el.inputMode = f.type === 'number' ? 'numeric' : 'text';
+            el.placeholder = f.key;
+            el.value = it[f.key] || '';
+            el.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
+            el.style.minHeight = '42px';
+            el.addEventListener('input', function () {
+              it[f.key] = el.value;
+              queuePreview();
+            });
+          }
+          grid.appendChild(el);
         });
         $('.di-del', row).addEventListener('click', function () {
           items.splice(idx, 1);
@@ -3095,19 +3150,31 @@ function openManageSheet() {
     groupIn.className = 'input'; groupIn.type = 'text'; groupIn.placeholder = '分组(选填)';
     groupIn.value = t.group || '';
     groupIn.setAttribute('aria-label', '模板分组');
-    const hintSel = document.createElement('select');
-    hintSel.className = 'select';
-    hintSel.setAttribute('aria-label', '发往群名');
-    const hintPh = document.createElement('option');
-    hintPh.value = ''; hintPh.textContent = '发往群名(选填)';
-    hintSel.appendChild(hintPh);
+    // 发往群名：多选 chips
+    const hintWrap = document.createElement('div');
+    hintWrap.className = 'chip-group';
+    hintWrap.setAttribute('aria-label', '发往群名(多选)');
+    const selectedGroups = Array.isArray(t.groupHint) ? t.groupHint : [];
     (data.settings.groups || []).filter(Boolean).forEach(function (g) {
-      const o = document.createElement('option');
-      o.value = g; o.textContent = g;
-      if (t.groupHint === g) o.selected = true;
-      hintSel.appendChild(o);
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = g;
+      chip.setAttribute('aria-pressed', selectedGroups.indexOf(g) >= 0 ? 'true' : 'false');
+      chip.addEventListener('click', function () {
+        const on = chip.getAttribute('aria-pressed') === 'true';
+        chip.setAttribute('aria-pressed', on ? 'false' : 'true');
+        dirty = true;
+      });
+      hintWrap.appendChild(chip);
     });
-    row.appendChild(groupIn); row.appendChild(hintSel);
+    if (!hintWrap.children.length) {
+      const note = document.createElement('span');
+      note.className = 'section-note';
+      note.textContent = '还没配置群名,去设置页添加';
+      hintWrap.appendChild(note);
+    }
+    row.appendChild(groupIn); row.appendChild(hintWrap);
     const lab = document.createElement('div');
     lab.className = 'field-label';
     const span = document.createElement('span');
@@ -3267,6 +3334,19 @@ function openManageSheet() {
               typeSel.appendChild(o);
             });
             typeSel.addEventListener('change', function () { f.type = typeSel.value; dirty = true; });
+            // 关联来源选择
+            const sourceSel = document.createElement('select');
+            sourceSel.className = 'select';
+            sourceSel.style.width = 'auto';
+            sourceSel.style.minWidth = '90px';
+            sourceSel.style.minHeight = '40px';
+            [['', '手动输入'], ['entrances', '安检点'], ['groups', '群名']].forEach(function (s) {
+              const o = document.createElement('option');
+              o.value = s[0]; o.textContent = s[1];
+              if ((f.source || '') === s[0]) o.selected = true;
+              sourceSel.appendChild(o);
+            });
+            sourceSel.addEventListener('change', function () { f.source = sourceSel.value; dirty = true; });
             const sumLabel = document.createElement('label');
             sumLabel.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text-2);cursor:pointer;flex:none';
             const sumChk = document.createElement('input');
@@ -3285,6 +3365,7 @@ function openManageSheet() {
             });
             frow.appendChild(keyInp);
             frow.appendChild(typeSel);
+            frow.appendChild(sourceSel);
             frow.appendChild(sumLabel);
             frow.appendChild(delBtn);
             fieldsBox.appendChild(frow);
@@ -3301,14 +3382,13 @@ function openManageSheet() {
       const note = document.createElement('p');
       note.className = 'section-note';
       note.style.marginTop = '9px';
-      note.textContent = '类型决定上报页生成什么控件:时间弹出时间选择器,单选多选生成按钮组,物品清单可配置自定义字段并自动汇总数字列。用↑↓调整输入顺序。改完记得点下面的「保存模板」。';
+      note.textContent = '类型决定上报页生成什么控件:时间弹出时间选择器,单选多选生成按钮组,物品清单可配置自定义字段并自动汇总数字列。字段可关联「安检点」或「群名」实现下拉选择。用↑↓调整输入顺序。改完记得点下面的「保存模板」。';
       vtWrap.appendChild(note);
     }
     const debouncedVT = debounce(paintVarTypes, 320);
     content.addEventListener('input', function () { dirty = true; debouncedVT(); });
     nameIn.addEventListener('input', function () { dirty = true; });
     groupIn.addEventListener('input', function () { dirty = true; });
-    hintSel.addEventListener('change', function () { dirty = true; });
     editorBox.appendChild(nameIn);
     editorBox.appendChild(row);
     editorBox.appendChild(lab);
@@ -3322,7 +3402,8 @@ function openManageSheet() {
     saveBtn.addEventListener('click', function () {
       t.name = nameIn.value.trim() || '未命名模板';
       t.group = groupIn.value.trim();
-      t.groupHint = hintSel.value.trim();
+      // 收集选中的群名
+      t.groupHint = Array.from(hintWrap.querySelectorAll('.chip[aria-pressed="true"]')).map(function (c) { return c.textContent; });
       t.content = content.value;
       t.builtin = false;
       t.updatedAt = Date.now();
@@ -3340,7 +3421,7 @@ function openManageSheet() {
     dup.type = 'button'; dup.className = 'btn'; dup.textContent = '复制为新模板';
     dup.addEventListener('click', function () {
       const nt = {
-        id: uid(), name: t.name + '(副本)', group: t.group || '', groupHint: t.groupHint || '',
+        id: uid(), name: t.name + '(副本)', group: t.group || '', groupHint: deepCopy(t.groupHint || []),
         content: t.content, varTypes: deepCopy(t.varTypes || {}), builtin: false, createdAt: Date.now(), updatedAt: Date.now()
       };
       data.templates.push(nt);
@@ -3366,7 +3447,7 @@ function openManageSheet() {
   addBtn.type = 'button'; addBtn.className = 'btn btn-primary'; addBtn.textContent = '新建模板';
   addBtn.addEventListener('click', function () {
     const t = {
-      id: uid(), name: '新模板 ' + (data.templates.length + 1), group: '', groupHint: '',
+      id: uid(), name: '新模板 ' + (data.templates.length + 1), group: '', groupHint: [],
       content: '', varTypes: {}, builtin: false, createdAt: Date.now(), updatedAt: Date.now()
     };
     data.templates.push(t);
@@ -3389,9 +3470,10 @@ function openHelpSheet() {
   const blocks = [
     { t: '快速上手', l: ['在「上报」页选模板,填几个空', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
-    { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪个群', '上报页会显示提示条,点「复制群名」一键复制'] },
+    { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
     { t: '速查', l: ['速查页内容完全可自定义,在设置页点「管理」编辑', '支持添加禁止携带、限制携带、处置口径、便民信息等分类', '支持搜索和筛选'] },
+    { t: '数据统计', l: ['物品清单类型支持自定义字段,可配置「数字」类型并勾选「求和」自动汇总', '字段可关联「安检点」或「群名」,填数据时直接下拉选择不用手输', '模板里用 *总字段名* 引用汇总值,如 *总过机数*'] },
     { t: '数据', l: ['全部数据只存在这台设备的浏览器里,不上传', '设置页可导出 .json 备份,同事导入即可共用配置', '清除浏览器数据会一并删除,请定期导出备份'] }
   ];
   blocks.forEach(function (b) {
@@ -3481,10 +3563,11 @@ function bindGlobal() {
   $('#btnManageLookup').addEventListener('click', openLookupSheet);
   $('#btnCopyGroup').addEventListener('click', async function () {
     const t = tplById(currentTplId);
-    const g = t ? (t.groupHint || '').trim() : '';
-    if (!g) { toast('这个模板没有设置群名'); return; }
-    const ok = await copyText(g);
-    toast(ok ? '群名已复制:' + g : '复制失败');
+    const groups = t && Array.isArray(t.groupHint) ? t.groupHint.filter(Boolean) : [];
+    if (!groups.length) { toast('这个模板没有设置群名'); return; }
+    const text = groups.join('、');
+    const ok = await copyText(text);
+    toast(ok ? '群名已复制：' + text : '复制失败');
   });
   $('#btnCopy').addEventListener('click', function () { doCopy(currentText(), $('#btnCopy'), $('#btnCopyText')); });
   $('#btnResetForm').addEventListener('click', function () {
