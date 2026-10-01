@@ -501,6 +501,10 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
       </span>
       <button class="link-btn" id="btnClearHistory">清空</button>
     </div>
+    <div class="search-box" style="margin-bottom:9px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input class="input" type="search" id="histSearch" placeholder="搜索上报记录" autocomplete="off">
+    </div>
     <div class="chip-scroll" id="histFilterBar"></div>
     <div id="historyList"></div>
   </div>
@@ -732,7 +736,10 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
       </div>
     </div>
     <div class="items-box"></div>
-    <button type="button" class="btn btn-ghost btn-sm btn-block items-add">添加一件</button>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="btn btn-ghost btn-sm items-add" style="flex:1">添加一条</button>
+      <button type="button" class="btn btn-sm items-clear" style="flex:none;display:none">清空全部</button>
+    </div>
   </div>
 </template>
 
@@ -919,7 +926,6 @@ const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const deepCopy = (o) => JSON.parse(JSON.stringify(o));
 const mk = (id) => { const t = document.getElementById(id); return t ? t.content.firstElementChild.cloneNode(true) : null; };
-function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function pad2(n) { return String(n).padStart(2, '0'); }
 function todayStr(d) { d = d || new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function nowHM(d) { d = d || new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
@@ -1307,29 +1313,41 @@ function countVarOf(name) {
 function getFields(tpl, name) {
   const declared = tpl && tpl.varTypes && tpl.varTypes[name];
   if (declared && Array.isArray(declared.fields) && declared.fields.length) return declared.fields;
-  return null; // 使用默认字段
+  return null;
 }
-function itemsToText(items, fields) {
+function getRowFormat(tpl, name) {
+  const declared = tpl && tpl.varTypes && tpl.varTypes[name];
+  return (declared && declared.rowFormat) || '';
+}
+function itemsToText(items, fields, rowFormat) {
   if (!items || !items.length) return '';
   if (fields) {
-    // 自定义字段模式
-    return items.filter(function (it) {
+    const filtered = items.filter(function (it) {
       return fields.some(function (f) { return (it[f.key] || '').trim(); });
-    }).map(function (it, i) {
+    });
+    if (rowFormat) {
+      // 自定义行格式
+      return filtered.map(function (it) {
+        let line = rowFormat;
+        fields.forEach(function (f) {
+          const v = (it[f.key] || '').trim();
+          line = line.split('*' + f.key + '*').join(v);
+        });
+        return line;
+      }).join('\n\n');
+    }
+    // 默认格式：第一个字段无前缀，其余带前缀
+    return filtered.map(function (it) {
       const parts = [];
       fields.forEach(function (f, fi) {
         const v = (it[f.key] || '').trim();
         if (v) {
-          if (fi === 0) {
-            // 第一个字段不带前缀
-            parts.push(v);
-          } else {
-            parts.push(f.key + ':' + v);
-          }
+          if (fi === 0) parts.push(v);
+          else parts.push(f.key + ':' + v);
         }
       });
       return parts.join(' ');
-    }).join('\n\n');  // 每条记录之间加空行
+    }).join('\n\n');
   }
   // 默认字段模式（兼容旧数据）
   return items.filter(function (it) { return (it.name || '').trim() || (it.spec || '').trim(); })
@@ -1373,7 +1391,8 @@ function renderTemplate(tpl, values) {
     if (varType(tpl, name) !== 'items') return;
     const items = vals[name + '__items'] || [];
     const fields = getFields(tpl, name);
-    const text = itemsToText(items, fields);
+    const rowFormat = getRowFormat(tpl, name);
+    const text = itemsToText(items, fields, rowFormat);
     vals[name] = text;
     const cv = countVarOf(name);
     if (vars.indexOf(cv) >= 0) {
@@ -1512,7 +1531,7 @@ const Sheet = (function () {
 /* SECTION: js-report */
 let currentTplId = null;
 let values = {};
-let activeGroup = '全部';
+const collapsedGroups = new Set();
 let previewQueued = false;
 
 function saveFormCache() {
@@ -1567,32 +1586,70 @@ function renderTplChips() {
   if (!data.templates.length) {
     const e = document.createElement('div');
     e.className = 'section-note';
-    e.textContent = '还没有模板,点右上角「管理模板」新建,或在设置里恢复内置模板。';
+    e.textContent = '还没有模板,点右上角「管理模板」新建。';
     chipBox.appendChild(e);
+    groupBox.hidden = true;
     return;
   }
+  // 分组折叠模式
   if (groups.length > 1) {
-    ['全部'].concat(groups).forEach(function (g) {
-      const c = mk('tpl-chip');
-      c.textContent = g;
-      c.setAttribute('aria-pressed', g === activeGroup ? 'true' : 'false');
-      c.addEventListener('click', function () { activeGroup = g; renderTplChips(); });
-      groupBox.appendChild(c);
+    groupBox.hidden = false;
+    // 显示分组折叠按钮
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'chip';
+    toggleBtn.style.cssText = 'font-size:.72rem;min-height:30px;padding:3px 10px';
+    toggleBtn.textContent = collapsedGroups.size ? '展开全部' : '折叠全部';
+    toggleBtn.addEventListener('click', function () {
+      if (collapsedGroups.size) {
+        collapsedGroups.clear();
+      } else {
+        groups.forEach(function (g) { collapsedGroups.add(g); });
+      }
+      save();
+      renderTplChips();
+    });
+    groupBox.appendChild(toggleBtn);
+    groups.forEach(function (g) {
+      const header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'chip';
+      header.style.cssText = 'font-size:.75rem;min-height:30px;padding:3px 10px;font-weight:600';
+      const isCollapsed = collapsedGroups.has(g);
+      header.textContent = (isCollapsed ? '▶ ' : '▼ ') + g;
+      header.setAttribute('aria-pressed', !isCollapsed ? 'true' : 'false');
+      header.addEventListener('click', function () {
+        if (collapsedGroups.has(g)) collapsedGroups.delete(g);
+        else collapsedGroups.add(g);
+        save();
+        renderTplChips();
+      });
+      groupBox.appendChild(header);
+    });
+    // 显示未折叠分组的模板
+    groups.forEach(function (g) {
+      if (collapsedGroups.has(g)) return;
+      const groupTemplates = data.templates.filter(function (t) { return (t.group || '').trim() === g; });
+      groupTemplates.forEach(function (t) {
+        const c = mk('tpl-chip');
+        c.textContent = t.name;
+        c.dataset.id = t.id;
+        c.setAttribute('aria-pressed', t.id === currentTplId ? 'true' : 'false');
+        c.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
+        chipBox.appendChild(c);
+      });
     });
   } else {
-    groupBox.hidden = false;
+    groupBox.hidden = true;
+    data.templates.forEach(function (t) {
+      const c = mk('tpl-chip');
+      c.textContent = t.name;
+      c.dataset.id = t.id;
+      c.setAttribute('aria-pressed', t.id === currentTplId ? 'true' : 'false');
+      c.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
+      chipBox.appendChild(c);
+    });
   }
-  const list = data.templates.filter(function (t) {
-    return activeGroup === '全部' || (t.group || '').trim() === activeGroup;
-  });
-  list.forEach(function (t) {
-    const c = mk('tpl-chip');
-    c.textContent = t.name;
-    c.dataset.id = t.id;
-    c.setAttribute('aria-pressed', t.id === currentTplId ? 'true' : 'false');
-    c.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
-    chipBox.appendChild(c);
-  });
 }
 function renderGroupHint() {
   const tpl = tplById(currentTplId);
@@ -1875,6 +1932,7 @@ function buildItemsField(tpl, name) {
       });
       addBtn.hidden = false;
       addBtn.textContent = items.length ? '再加一条' : '添加第一条';
+      clearBtn.style.display = items.length ? '' : 'none';
     }
     function syncCount() { $('.stepper-input', stepper).value = String(items.length); }
     bindStepper(stepper, {
@@ -1897,8 +1955,15 @@ function buildItemsField(tpl, name) {
       const first = box.lastElementChild.querySelector('input');
       if (first) { try { first.focus({ preventScroll: false }); } catch (e) {} }
     });
+    const clearBtn = $('.items-clear', node);
+    clearBtn.addEventListener('click', function () {
+      if (!items.length) return;
+      items.length = 0;
+      syncCount(); paint(); queuePreview();
+    });
     syncCount();
     paint();
+    clearBtn.style.display = items.length ? '' : 'none';
     return node;
   }
 
@@ -1936,6 +2001,7 @@ function buildItemsField(tpl, name) {
     });
     addBtn.hidden = false;
     addBtn.textContent = items.length ? '再加一件' : '添加第一件';
+    clearBtn.style.display = items.length ? '' : 'none';
   }
   function syncCount() { $('.stepper-input', stepper).value = String(items.length); }
   bindStepper(stepper, {
@@ -1952,8 +2018,15 @@ function buildItemsField(tpl, name) {
     const last = $('.di-name', box.lastElementChild);
     if (last) { try { last.focus({ preventScroll: false }); } catch (e) {} }
   });
+  const clearBtn = $('.items-clear', node);
+  clearBtn.addEventListener('click', function () {
+    if (!items.length) return;
+    items.length = 0;
+    syncCount(); paint(); queuePreview();
+  });
   syncCount();
   paint();
+  clearBtn.style.display = items.length ? '' : 'none';
   return node;
 }
 function renderForm() {
@@ -2392,6 +2465,7 @@ function renderRemindBar() {
 }
 /* SECTION: js-history */
 let histFilter = '全部';
+let histQuery = '';
 function renderHistory() {
   const list = data.history || [];
   const today = todayStr();
@@ -2415,7 +2489,11 @@ function renderHistory() {
   } else { bar.hidden = true; }
   const box = $('#historyList');
   box.innerHTML = '';
-  const shown = list.filter(function (h) { return histFilter === '全部' || h.templateName === histFilter; });
+  const shown = list.filter(function (h) {
+    if (histFilter !== '全部' && h.templateName !== histFilter) return false;
+    if (histQuery && h.text.toLowerCase().indexOf(histQuery.toLowerCase()) < 0) return false;
+    return true;
+  });
   if (!shown.length) {
     const e = document.createElement('div');
     e.className = 'empty';
@@ -2799,13 +2877,19 @@ function exportJSON() {
   payload.app = '信息助手';
   const text = JSON.stringify(payload, null, 2);
   const stamp = todayStr().replace(/-/g, '') + '-' + nowHM().replace(':', '');
+  const station = (data.settings.station || '').trim();
+  const line = (data.settings.line || '').trim();
+  let prefix = '信息助手配置';
+  if (line && station) prefix = '信息助手配置-' + line + station;
+  else if (station) prefix = '信息助手配置-' + station;
+  else if (line) prefix = '信息助手配置-' + line;
   if (Caps.download) {
     try {
       const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = '信息助手配置-' + stamp + '.json';
+      a.download = prefix + '-' + stamp + '.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2861,7 +2945,6 @@ function applyImported(parsed) {
       currentTplId = data.templates.length ? data.templates[0].id : null;
       data.lastTplId = currentTplId || '';
       values = {};
-      activeGroup = '全部';
       bootRender();
       toast('导入成功');
     }
@@ -3187,6 +3270,48 @@ function openManageSheet() {
     content.value = t.content;
     content.placeholder = '例如:\n【违禁品查获上报】\n时间:*月**日* *发现时间*\n地点:*线路* *站点* *安检点*\n查获 *违禁品件数* 件:\n*违禁品清单*\n{?备注}备注:*备注*{/备注}';
     content.setAttribute('aria-label', '模板内容');
+    // 快速插入变量栏
+    const quickBar = document.createElement('div');
+    quickBar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center';
+    const quickLabel = document.createElement('span');
+    quickLabel.className = 'section-note';
+    quickLabel.textContent = '快速插入：';
+    quickLabel.style.flex = 'none';
+    quickBar.appendChild(quickLabel);
+    const quickChips = document.createElement('div');
+    quickChips.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap';
+    quickBar.appendChild(quickChips);
+    function paintQuickChips() {
+      quickChips.innerHTML = '';
+      const vars = extractVars(content.value);
+      if (!vars.length) {
+        const note = document.createElement('span');
+        note.className = 'section-note';
+        note.textContent = '在下方写 *变量名* 后会自动出现';
+        quickChips.appendChild(note);
+        return;
+      }
+      vars.forEach(function (v) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.style.cssText = 'font-size:.75rem;min-height:30px;padding:3px 10px';
+        chip.textContent = '+' + v;
+        chip.title = '点击在光标处插入 *' + v + '*';
+        chip.addEventListener('click', function () {
+          const start = content.selectionStart;
+          const end = content.selectionEnd;
+          const ins = '*' + v + '*';
+          content.value = content.value.slice(0, start) + ins + content.value.slice(end);
+          content.selectionStart = content.selectionEnd = start + ins.length;
+          content.focus();
+          content.dispatchEvent(new Event('input'));
+        });
+        quickChips.appendChild(chip);
+      });
+    }
+    paintQuickChips();
+    content.addEventListener('input', debounce(paintQuickChips, 300));
     const vtWrap = document.createElement('div');
     vtWrap.style.marginTop = '12px';
     function paintVarTypes() {
@@ -3376,6 +3501,60 @@ function openManageSheet() {
             note.textContent = '还没有字段，点「添加字段」开始配置';
             fieldsBox.appendChild(note);
           }
+          // 字段排序按钮
+          if (fields.length > 1) {
+            const sortRow = document.createElement('div');
+            sortRow.style.cssText = 'display:flex;gap:4px;margin-top:6px;flex-wrap:wrap';
+            fields.forEach(function (f, fi) {
+              const chip = document.createElement('span');
+              chip.className = 'chip';
+              chip.style.cssText = 'font-size:.75rem;min-height:32px;padding:4px 8px';
+              chip.textContent = f.key;
+              const upB = document.createElement('button');
+              upB.type = 'button'; upB.className = 'mini-btn'; upB.textContent = '↑';
+              upB.style.cssText = 'min-height:28px;min-width:28px;padding:0;font-size:.7rem;margin-left:3px';
+              upB.disabled = fi === 0;
+              upB.addEventListener('click', function () {
+                const tmp = fields[fi - 1]; fields[fi - 1] = fields[fi]; fields[fi] = tmp;
+                dirty = true; paintFieldsConfig();
+              });
+              const dnB = document.createElement('button');
+              dnB.type = 'button'; dnB.className = 'mini-btn'; dnB.textContent = '↓';
+              dnB.style.cssText = 'min-height:28px;min-width:28px;padding:0;font-size:.7rem';
+              dnB.disabled = fi === fields.length - 1;
+              dnB.addEventListener('click', function () {
+                const tmp = fields[fi + 1]; fields[fi + 1] = fields[fi]; fields[fi] = tmp;
+                dirty = true; paintFieldsConfig();
+              });
+              const wrap = document.createElement('span');
+              wrap.style.cssText = 'display:inline-flex;align-items:center;gap:2px';
+              wrap.appendChild(chip); wrap.appendChild(upB); wrap.appendChild(dnB);
+              sortRow.appendChild(wrap);
+            });
+            fieldsWrap.appendChild(sortRow);
+          }
+          // 行格式输入
+          const fmtLabel = document.createElement('div');
+          fmtLabel.className = 'field-label';
+          fmtLabel.style.marginTop = '12px';
+          fmtLabel.textContent = '行格式（选填）';
+          fieldsWrap.appendChild(fmtLabel);
+          const fmtInput = document.createElement('input');
+          fmtInput.className = 'input';
+          fmtInput.type = 'text';
+          fmtInput.value = declared.rowFormat || '';
+          fmtInput.placeholder = '如 *口名* 过机数:*过机数* 过门数:*过门数*';
+          fmtInput.style.marginBottom = '4px';
+          fmtInput.addEventListener('input', function () {
+            if (!t.varTypes[name]) t.varTypes[name] = {};
+            t.varTypes[name].rowFormat = fmtInput.value;
+            dirty = true;
+          });
+          fieldsWrap.appendChild(fmtInput);
+          const fmtNote = document.createElement('p');
+          fmtNote.className = 'section-note';
+          fmtNote.textContent = '用 *字段名* 引用字段值，留空则用默认格式（第一个字段无前缀，其余带前缀）';
+          fieldsWrap.appendChild(fmtNote);
         });
       }
       paintFieldsConfig();
@@ -3393,6 +3572,7 @@ function openManageSheet() {
     editorBox.appendChild(row);
     editorBox.appendChild(lab);
     editorBox.appendChild(content);
+    editorBox.appendChild(quickBar);
     editorBox.appendChild(vtWrap);
     paintVarTypes();
     const saveBtn = document.createElement('button');
@@ -3618,7 +3798,7 @@ function bindGlobal() {
         data = seedData();
         currentTplId = data.templates.length ? data.templates[0].id : null;
         data.lastTplId = currentTplId;
-        values = {}; activeGroup = '全部';
+        values = {};
         saveNow(); bootRender(); toast('已恢复初始状态');
       }
     });
@@ -3626,6 +3806,9 @@ function bindGlobal() {
   const lkSearch = $('#lookupSearch');
   const onSearch = debounce(function () { lookupQuery = lkSearch.value; renderLookup(); }, 200);
   lkSearch.addEventListener('input', onSearch);
+  const histSearch = $('#histSearch');
+  const onHistSearch = debounce(function () { histQuery = histSearch.value; renderHistory(); }, 200);
+  histSearch.addEventListener('input', onHistSearch);
   document.addEventListener('pointerdown', function () { Sound.unlock(); }, { once: true });
   window.addEventListener('error', function (e) {
     if (e && e.message) toast('出现异常:' + e.message);
