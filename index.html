@@ -564,6 +564,15 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
 
   <div class="card">
     <div class="card-head">
+      <span class="card-title">队员</span>
+      <button class="link-btn" id="btnAddMember">添加</button>
+    </div>
+    <div id="memberList"></div>
+    <p class="section-note" style="margin-top:8px">模板中用 <code>*队员*</code> 生成单选，<code>*多队员*</code> 生成多选，输出格式为「姓名（工号）」。</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
       <span class="card-title">自定义变量</span>
       <button class="link-btn" id="btnAddCustom">添加</button>
     </div>
@@ -888,6 +897,8 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
         <option value="multi">多选</option>
         <option value="entrance">安检点</option>
         <option value="entrances">多安检点</option>
+        <option value="member">队员</option>
+        <option value="members">多队员</option>
         <option value="items">物品清单</option>
       </select>
     </div>
@@ -1114,7 +1125,7 @@ function seedData() {
     version: 5,
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
-      entrances: [], groups: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
+      entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
       theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 }
     },
     templates: [],
@@ -1139,6 +1150,7 @@ function normalize(d) {
   s.notify = Object.assign(base.settings.notify, d.settings && d.settings.notify ? d.settings.notify : {});
   if (!Array.isArray(s.entrances)) s.entrances = [];
   if (!Array.isArray(s.groups)) s.groups = [];
+  if (!Array.isArray(s.members)) s.members = [];
   if (!Array.isArray(s.custom)) s.custom = [];
   if (!Array.isArray(s.dispatchOptions) || !s.dispatchOptions.length) s.dispatchOptions = DISPATCH_DEFAULT.slice();
   if (['auto', 'light', 'dark'].indexOf(s.theme) < 0) s.theme = 'auto';
@@ -1255,6 +1267,8 @@ function inferType(name) {
   if (name.indexOf('时间') >= 0) return 'time';
   if (name === '多安检点') return 'entrances';
   if (name === '安检点') return 'entrance';
+  if (name === '多队员') return 'members';
+  if (name === '队员') return 'member';
   if (/(件数|数量|人数|次数)$/.test(name)) return 'number';
   if (/(清单|明细)$/.test(name)) return 'items';
   return 'text';
@@ -1282,6 +1296,11 @@ function varOptions(tpl, name) {
   if (name === '处置结果') return data.settings.dispatchOptions.slice();
   if (name === '安检点') return data.settings.entrances.filter(Boolean);
   if (name === '多安检点') return data.settings.entrances.filter(Boolean);
+  if (name === '队员' || name === '多队员') {
+    return (data.settings.members || []).filter(function (m) { return m.name; }).map(function (m) {
+      return m.name + (m.id ? '（' + m.id + '）' : '');
+    });
+  }
   return [];
 }
 /* 预设值:基本信息与固定文本型自定义变量,直接替换、不生成输入框 */
@@ -1774,7 +1793,7 @@ function buildField(tpl, name) {
     input.addEventListener('change', function () { values[name] = input.value; queuePreview(); });
     return node;
   }
-  if (type === 'single' || type === 'entrance') {
+  if (type === 'single' || type === 'entrance' || type === 'member') {
     const opts = varOptions(tpl, name);
     const node = mk('tpl-field-select');
     fieldLabel(node, name, type);
@@ -1798,11 +1817,12 @@ function buildField(tpl, name) {
     if (!opts.length) {
       const hint = $('.field-hint', node);
       hint.hidden = false;
-      hint.textContent = '还没有可选项,去「设置」里添加' + (type === 'entrance' ? '安检点' : '该变量的选项') + ',或在模板管理里为此变量配置选项';
+      const hintMap = { entrance: '安检点', member: '队员' };
+      hint.textContent = '还没有可选项,去「设置」里添加' + (hintMap[type] || '该变量的选项') + ',或在模板管理里为此变量配置选项';
     }
     return node;
   }
-  if (type === 'multi' || type === 'entrances') {
+  if (type === 'multi' || type === 'entrances' || type === 'members') {
     const opts = varOptions(tpl, name);
     const node = mk('tpl-field-multi');
     fieldLabel(node, name, type);
@@ -1811,7 +1831,8 @@ function buildField(tpl, name) {
     if (!opts.length) {
       const hint = $('.field-hint', node);
       hint.hidden = false;
-      hint.textContent = '还没有可选项,去「设置」里添加安检点或为该变量配置选项';
+      const hintMap = { entrances: '安检点', members: '队员' };
+      hint.textContent = '还没有可选项,去「设置」里添加' + (hintMap[type] || '该变量的选项');
     }
     opts.forEach(function (o) {
       const c = mk('tpl-chip');
@@ -2789,6 +2810,78 @@ function renderGroups() {
     onChange: function (repaint) { save(); if (repaint) renderGroups(); }
   });
 }
+function renderMembers() {
+  const host = $('#memberList');
+  host.innerHTML = '';
+  if (!data.settings.members.length) {
+    const e = document.createElement('div');
+    e.className = 'section-note';
+    e.style.padding = '6px 0';
+    e.textContent = '还没有队员,添加后在模板里用 *队员* 生成单选、*多队员* 生成多选';
+    host.appendChild(e);
+    return;
+  }
+  data.settings.members.forEach(function (m, idx) {
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    const nameInp = document.createElement('input');
+    nameInp.className = 'input';
+    nameInp.type = 'text';
+    nameInp.value = m.name || '';
+    nameInp.placeholder = '姓名';
+    nameInp.style.flex = '1';
+    nameInp.style.minHeight = '40px';
+    nameInp.setAttribute('aria-label', '队员 ' + (idx + 1) + ' 姓名');
+    nameInp.addEventListener('input', function () { m.name = nameInp.value; save(); });
+    const idInp = document.createElement('input');
+    idInp.className = 'input';
+    idInp.type = 'text';
+    idInp.value = m.id || '';
+    idInp.placeholder = '工号';
+    idInp.style.flex = '1';
+    idInp.style.minHeight = '40px';
+    idInp.setAttribute('aria-label', '队员 ' + (idx + 1) + ' 工号');
+    idInp.addEventListener('input', function () { m.id = idInp.value; save(); });
+    const up = document.createElement('button');
+    up.type = 'button'; up.className = 'mini-btn'; up.textContent = '↑';
+    up.disabled = idx === 0;
+    up.setAttribute('aria-label', '上移');
+    up.addEventListener('click', function () {
+      if (idx > 0) {
+        const t = data.settings.members[idx - 1];
+        data.settings.members[idx - 1] = data.settings.members[idx];
+        data.settings.members[idx] = t;
+        save(); renderMembers(); renderForm();
+      }
+    });
+    const down = document.createElement('button');
+    down.type = 'button'; down.className = 'mini-btn'; down.textContent = '↓';
+    down.disabled = idx === data.settings.members.length - 1;
+    down.setAttribute('aria-label', '下移');
+    down.addEventListener('click', function () {
+      if (idx < data.settings.members.length - 1) {
+        const t = data.settings.members[idx + 1];
+        data.settings.members[idx + 1] = data.settings.members[idx];
+        data.settings.members[idx] = t;
+        save(); renderMembers(); renderForm();
+      }
+    });
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'mini-btn danger';
+    del.textContent = '删除';
+    del.setAttribute('aria-label', '删除队员');
+    del.addEventListener('click', function () {
+      data.settings.members.splice(idx, 1);
+      save(); renderMembers(); renderForm();
+    });
+    row.appendChild(nameInp);
+    row.appendChild(idInp);
+    row.appendChild(up);
+    row.appendChild(down);
+    row.appendChild(del);
+    host.appendChild(row);
+  });
+}
 function renderDispatch() {
   bindRows($('#dispatchList'), data.settings.dispatchOptions, {
     placeholder: '如 劝导自弃后进站', label: '处置方式', emptyText: '还没有处置方式',
@@ -2845,7 +2938,7 @@ function renderSettingsAll() {
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
-  renderEntrances(); renderGroups(); renderCustom(); renderDispatch();
+  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderDispatch();
   renderThemeChips(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
@@ -3781,6 +3874,12 @@ function bindGlobal() {
     save(); renderGroups();
     const rows = $$('#groupList input');
     if (rows.length) { try { rows[rows.length - 1].focus(); } catch (e) {} }
+  });
+  $('#btnAddMember').addEventListener('click', function () {
+    data.settings.members.push({ name: '', id: '' });
+    save(); renderMembers();
+    const rows = $$('#memberList input');
+    if (rows.length) { try { rows[rows.length - 2].focus(); } catch (e) {} }
   });
   $('#btnAddDispatch').addEventListener('click', function () { data.settings.dispatchOptions.push(''); save(); renderDispatch(); });
   $('#btnAddCustom').addEventListener('click', function () { data.settings.custom.push({ id: uid(), key: '', type: 'text', value: '' }); save(); renderCustom(); });
