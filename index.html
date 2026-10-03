@@ -91,6 +91,15 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .card-title{font-size:.82rem;font-weight:700;color:var(--text-2);display:flex;align-items:center;gap:6px;
   letter-spacing:.3px}
 .card-title svg{width:15px;height:15px;color:var(--primary)}
+.card-head{gap:8px}
+.collapse-toggle{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:var(--text-3);flex:none;margin:-4px 0 -4px -6px;padding:0}
+.collapse-toggle svg{width:17px;height:17px;transition:transform .18s ease}
+.collapse-toggle:active{background:var(--primary-soft)}
+.card.collapsed .card-head{margin-bottom:0}
+.card.collapsed .card-body{display:none}
+.card.collapsed .collapse-toggle svg{transform:rotate(-90deg)}
+.content-textarea{width:100%;min-height:230px;padding:12px 13px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--card-2);font-size:15px;line-height:1.7;color:var(--text);resize:vertical;box-sizing:border-box}
+.content-textarea:focus{outline:none;border-color:var(--primary);background:var(--card)}
 .section-note{font-size:.75rem;color:var(--text-3);line-height:1.6}
 .divider{height:1px;background:var(--border);margin:13px 0}
 
@@ -544,57 +553,100 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
     <p class="section-note">填写后可在模板中用 <code>*线路*</code> <code>*站点*</code> <code>*班长*</code> <code>*电话号码*</code> 自动带入,不再显示输入框。</p>
   </div>
 
-  <div class="card">
+  <div class="card card-collapsible" data-collapse="entrance">
     <div class="card-head">
-      <span class="card-title">安检点</span>
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开安检点"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">安检点</span>
+      </div>
       <button class="link-btn" id="btnAddEntrance">添加</button>
     </div>
-    <div id="entranceList"></div>
-    <p class="section-note" style="margin-top:8px">模板中用 <code>*安检点*</code> 生成下拉单选,<code>*多安检点*</code> 生成多选。</p>
+    <div class="card-body">
+      <div id="entranceList"></div>
+      <p class="section-note" style="margin-top:8px">模板中用 <code>*安检点*</code> 生成下拉单选,<code>*多安检点*</code> 生成多选。</p>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card card-collapsible" data-collapse="group">
     <div class="card-head">
-      <span class="card-title">发往群名</span>
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开发往群名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">发往群名</span>
+      </div>
       <button class="link-btn" id="btnAddGroup">添加</button>
     </div>
-    <div id="groupList"></div>
-    <p class="section-note" style="margin-top:8px">在模板管理里为模板选择发往哪个群,上报页会显示提示并支持一键复制群名。</p>
+    <div class="card-body">
+      <div id="groupList"></div>
+      <p class="section-note" style="margin-top:8px">在模板管理里为模板选择发往哪个群,上报页会显示提示并支持一键复制群名。</p>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card card-collapsible" data-collapse="member">
     <div class="card-head">
-      <span class="card-title">队员</span>
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开队员"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">队员</span>
+      </div>
       <button class="link-btn" id="btnAddMember">添加</button>
     </div>
-    <div id="memberList"></div>
-    <p class="section-note" style="margin-top:8px">模板中用 <code>*队员*</code> 生成单选，<code>*多队员*</code> 生成多选，输出格式为「姓名（工号）」。</p>
+    <div class="card-body">
+      <div id="memberList"></div>
+      <p class="section-note" style="margin-top:8px">模板中用 <code>*队员*</code> 生成单选，<code>*多队员*</code> 生成多选，输出格式为「姓名（工号）」。</p>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card card-collapsible" data-collapse="content">
     <div class="card-head">
-      <span class="card-title">自定义变量</span>
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开内容"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">内容</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea class="content-textarea" id="contentInput" placeholder="在此填写每次上报要传达的固定内容，例如班前会传达指令。模板中用 *内容* 带入，上报页会自动预填，可再修改。"></textarea>
+      <p class="section-note" style="margin-top:8px">模板中用 <code>*内容*</code> 带入。此处填写的多行文本会自动预填到上报页的 <code>*内容*</code> 输入框，可再按当天情况修改；<strong>保留换行原格式</strong>。</p>
+    </div>
+  </div>
+
+  <div class="card card-collapsible" data-collapse="custom">
+    <div class="card-head">
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开自定义变量"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">自定义变量</span>
+      </div>
       <button class="link-btn" id="btnAddCustom">添加</button>
     </div>
-    <div id="customList"></div>
-    <p class="section-note" style="margin-top:8px">固定文本直接替换不显示输入框;单选、多选、数字会在上报页生成对应控件。</p>
+    <div class="card-body">
+      <div id="customList"></div>
+      <p class="section-note" style="margin-top:8px">固定文本直接替换不显示输入框;单选、多选、数字会在上报页生成对应控件。</p>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card card-collapsible" data-collapse="dispatch">
     <div class="card-head">
-      <span class="card-title">限带品处置方式</span>
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开限带品处置方式"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">限带品处置方式</span>
+      </div>
       <button class="link-btn" id="btnAddDispatch">添加</button>
     </div>
-    <div id="dispatchList"></div>
-    <p class="section-note" style="margin-top:8px">物品清单里可选的处置去向,默认依据广州地铁安检处置口径。</p>
+    <div class="card-body">
+      <div id="dispatchList"></div>
+      <p class="section-note" style="margin-top:8px">物品清单里可选的处置去向,默认依据广州地铁安检处置口径。</p>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card card-collapsible" data-collapse="lookup">
     <div class="card-head">
-      <span class="card-title">速查内容</span>
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开速查内容"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">速查内容</span>
+      </div>
       <button class="link-btn" id="btnManageLookup">管理</button>
     </div>
-    <p class="section-note">自定义速查页的内容,可添加、编辑、删除条目。支持禁止携带、限制携带、处置口径、便民信息四种分类。</p>
+    <div class="card-body">
+      <p class="section-note">自定义速查页的内容,可添加、编辑、删除条目。支持禁止携带、限制携带、处置口径、便民信息四种分类。</p>
+    </div>
   </div>
 
   <div class="card">
@@ -1125,7 +1177,7 @@ function seedData() {
     version: 5,
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
-      entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
+      content: '', entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
       theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 }
     },
     templates: [],
@@ -1574,6 +1626,8 @@ function ensureValues(tpl) {
     if (name in values && String(values[name] || '').length) return;
     const p = presetValue(name);
     if (p) { values[name] = p; return; }
+    /* 内容变量:从设置页「内容」预填,可再修改;保留换行 */
+    if (name === '内容' && data.settings.content) { values[name] = data.settings.content; return; }
     const d = defaultByType(name, type);
     if (!(name in values)) values[name] = d;
     /* 单选/多选不预选,避免误报;由「待填」提示引导用户选择 */
@@ -1853,11 +1907,13 @@ function buildField(tpl, name) {
   const node = mk('tpl-field-text');
   fieldLabel(node, name, type);
   const input = $('.input', node);
-  const long = /(情况|现象|措施|事项|备注|说明|描述)$/.test(name);
+  const isContent = name === '内容';
+  const long = /(情况|现象|措施|事项|备注|说明|描述)$/.test(name) || isContent;
   if (long) {
     const ta = document.createElement('textarea');
-    ta.className = 'input';
-    ta.rows = 2;
+    ta.className = 'input' + (isContent ? ' textarea' : '');
+    ta.rows = isContent ? 9 : 2;
+    if (isContent) ta.style.minHeight = '200px';
     ta.placeholder = '请输入' + name;
     ta.value = values[name] || '';
     ta.setAttribute('aria-label', name);
@@ -2938,6 +2994,8 @@ function renderSettingsAll() {
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
+  const contentInp = $('#contentInput');
+  if (contentInp) contentInp.value = s.content || '';
   renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderDispatch();
   renderThemeChips(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
@@ -2959,6 +3017,38 @@ function bindSettingsInputs() {
       data.settings[key] = el.value.trim();
       el.value = data.settings[key];
       save(); renderHeaderSub(); renderForm(); renderPreview();
+    });
+  });
+  const contentInp = document.getElementById('contentInput');
+  if (contentInp) {
+    const writeContent = debounce(function () {
+      data.settings.content = contentInp.value;
+      save(); renderForm(); renderPreview();
+    }, 260);
+    contentInp.addEventListener('input', writeContent);
+  }
+}
+function bindCollapse() {
+  const COL_KEY = 'infoAssistant.v5.collapse';
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(COL_KEY) || '{}') || {}; } catch (e) { state = {}; }
+  function saveState() {
+    try { localStorage.setItem(COL_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  $$('.card-collapsible').forEach(function (card) {
+    const key = card.getAttribute('data-collapse');
+    const toggle = $('.collapse-toggle', card);
+    if (!toggle) return;
+    function setState(collapsed) {
+      card.classList.toggle('collapsed', collapsed);
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
+    setState(!!state[key]);
+    toggle.addEventListener('click', function () {
+      const collapsed = !card.classList.contains('collapsed');
+      state[key] = collapsed;
+      setState(collapsed);
+      saveState();
     });
   });
 }
@@ -3819,6 +3909,7 @@ function bootRender() {
   renderSettingsAll();
 }
 function bindGlobal() {
+  bindCollapse();
   $$('.tab').forEach(function (t) {
     t.addEventListener('click', function () { switchView(t.dataset.view); });
   });
