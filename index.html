@@ -687,23 +687,23 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
 <!-- SECTION: tabbar -->
 <nav class="tabbar" role="tablist" aria-label="主导航">
   <div class="wrap">
-    <button class="tab" id="tab-report" role="tab" aria-selected="true" aria-controls="view-report" data-view="report">
+    <button class="tab" id="tab-report" role="tab" aria-selected="true" aria-controls="view-report" data-view="report" tabindex="0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
       <span>上报</span>
     </button>
-    <button class="tab" id="tab-timeline" role="tab" aria-selected="false" aria-controls="view-timeline" data-view="timeline">
+    <button class="tab" id="tab-timeline" role="tab" aria-selected="false" aria-controls="view-timeline" data-view="timeline" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       <span>时间线</span>
     </button>
-    <button class="tab" id="tab-history" role="tab" aria-selected="false" aria-controls="view-history" data-view="history">
+    <button class="tab" id="tab-history" role="tab" aria-selected="false" aria-controls="view-history" data-view="history" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
       <span>历史</span>
     </button>
-    <button class="tab" id="tab-lookup" role="tab" aria-selected="false" aria-controls="view-lookup" data-view="lookup">
+    <button class="tab" id="tab-lookup" role="tab" aria-selected="false" aria-controls="view-lookup" data-view="lookup" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
       <span>速查</span>
     </button>
-    <button class="tab" id="tab-settings" role="tab" aria-selected="false" aria-controls="view-settings" data-view="settings">
+    <button class="tab" id="tab-settings" role="tab" aria-selected="false" aria-controls="view-settings" data-view="settings" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>设置</span>
     </button>
@@ -1246,6 +1246,12 @@ function normalize(d) {
     if (!Array.isArray(t.varOrder)) t.varOrder = [];
     if (typeof t.builtin !== 'boolean') t.builtin = false;
   });
+  /* 清理孤儿表单缓存:模板已删除的 formCache 条目会永久残留在 localStorage */
+  (function () {
+    const validIds = {};
+    out.templates.forEach(function (t) { validIds[t.id] = 1; });
+    Object.keys(out.formCache).forEach(function (k) { if (!validIds[k]) delete out.formCache[k]; });
+  })();
   out.timeline.forEach(function (i) {
     if (!i.id) i.id = uid();
     i.start = normalizeTime(i.start) || '';
@@ -1384,7 +1390,7 @@ function defaultByType(name, type) {
     if (name === '年') return String(d.getFullYear());
     if (name === '月') return String(d.getMonth() + 1);
     if (name === '日') return String(d.getDate());
-    if (name === '日期') return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    /* 日期变量内部统一使用 ISO,输出时再转中文,避免控件与预览不一致 */
     return todayStr(d);
   }
   if (type === 'number') return /件数|数量|人数|次数/.test(name) ? '0' : '1';
@@ -1502,7 +1508,15 @@ function renderTemplate(tpl, values) {
     }
     if (v == null) v = '';
     v = String(v);
-    if (vt === 'date' && v && ['年', '月', '日'].indexOf(name) >= 0) v = v + name;
+    if (vt === 'date' && v) {
+      if (['年', '月', '日'].indexOf(name) >= 0) {
+        v = v + name;
+      } else {
+        /* 内部存 ISO,输出转回中文,控件与预览保持一致 */
+        const dm = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (dm) v = parseInt(dm[1], 10) + '年' + parseInt(dm[2], 10) + '月' + parseInt(dm[3], 10) + '日';
+      }
+    }
     out = out.split('*' + name + '*').join(v);
   });
   /* 收尾:压缩空行 */
@@ -1865,7 +1879,13 @@ function buildField(tpl, name) {
     fieldLabel(node, name, type);
     const input = $('.input', node);
     input.type = 'date';
-    input.value = /^\d{4}-\d{2}-\d{2}$/.test(values[name] || '') ? values[name] : todayStr();
+    let iso = String(values[name] || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      const m = iso.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);   // 兼容旧的 2026年10月2日
+      iso = m ? (m[1] + '-' + pad2(m[2]) + '-' + pad2(m[3])) : todayStr();
+    }
+    values[name] = iso;          // 关键：回写，保证控件与预览一致
+    input.value = iso;
     input.setAttribute('aria-label', name);
     input.addEventListener('change', function () { values[name] = input.value; queuePreview(); });
     return node;
@@ -2341,7 +2361,7 @@ function renderTimeline(force) {
   const badge = $('#clockBadge');
   badge.textContent = current ? '进行中' : (list.length ? '今日 ' + list.length + ' 项' : '今日无任务');
   const nowWrap = $('#clockNow');
-  $('.cn-label').textContent = '进行中';
+  $('.cn-label', nowWrap).textContent = '进行中';
   if (current) {
     nowWrap.hidden = false;
     $('#clockNowTask').textContent = current.task + (current.end ? '(至 ' + current.end + ')' : '');
@@ -2350,7 +2370,7 @@ function renderTimeline(force) {
     if (next) {
       nowWrap.hidden = false;
       $('#clockNowTask').textContent = '下一项 ' + next.start + ' ' + next.task;
-      $('.cn-label').textContent = '待开始';
+      $('.cn-label', nowWrap).textContent = '待开始';
     } else {
       nowWrap.hidden = !list.length;
       if (list.length) $('#clockNowTask').textContent = '今日任务已全部结束';
@@ -3266,11 +3286,18 @@ function openImportSheet() {
 let editingId = null;
 
 function openLookupSheet() {
-  let dirty = false;
+  let editing = false;                              // 仅表示"编辑器内有未保存内容"
   const items = deepCopy(data.lookup);
   const bodyNode = document.createElement('div');
   const listBox = document.createElement('div');
+  const editorHost = document.createElement('div'); // 固定宿主，杜绝面板堆叠
+  editorHost.style.cssText = 'margin-top:14px;border-top:1px solid var(--border);padding-top:14px';
   bodyNode.appendChild(listBox);
+  bodyNode.appendChild(editorHost);
+
+  const KIND_TEXT = { ban: '禁止携带', limit: '限制携带', rule: '处置口径', info: '便民信息' };
+  function commit() { data.lookup = items; save(); renderLookup(); }
+  function closeEditor() { editing = false; editorHost.innerHTML = ''; }
 
   function paintList() {
     listBox.innerHTML = '';
@@ -3287,10 +3314,11 @@ function openLookupSheet() {
       btn.textContent = item.name + '(' + item.kindText + ')';
       btn.setAttribute('aria-pressed', 'false');
       btn.addEventListener('click', function () {
-        if (dirty) {
+        if (editing) {
           Sheet.confirmSheet({
-            title: '放弃未保存的修改?', message: '当前编辑内容尚未保存,关闭后会丢失。', okText: '放弃并切换', danger: true, closeParent: true,
-            onOk: function () { dirty = false; editItem(idx); }
+            title: '放弃未保存的修改?', message: '当前编辑内容尚未保存,切换后会丢失。',
+            okText: '放弃并切换', danger: true,
+            onOk: function () { closeEditor(); editItem(idx); }
           });
           return;
         }
@@ -3298,12 +3326,22 @@ function openLookupSheet() {
       });
       const up = $('.mi-up', node), down = $('.mi-down', node);
       up.disabled = idx === 0; down.disabled = idx === items.length - 1;
-      up.addEventListener('click', function () { const p = items[idx - 1]; items[idx - 1] = items[idx]; items[idx] = p; dirty = true; paintList(); });
-      down.addEventListener('click', function () { const n = items[idx + 1]; items[idx + 1] = items[idx]; items[idx] = n; dirty = true; paintList(); });
+      up.addEventListener('click', function () {
+        const p = items[idx - 1]; items[idx - 1] = items[idx]; items[idx] = p;
+        closeEditor(); paintList(); commit();
+      });
+      down.addEventListener('click', function () {
+        const n = items[idx + 1]; items[idx + 1] = items[idx]; items[idx] = n;
+        closeEditor(); paintList(); commit();
+      });
       $('.mi-del', node).addEventListener('click', function () {
         Sheet.confirmSheet({
           title: '删除「' + item.name + '」?', message: '删除后无法恢复。', okText: '删除', danger: true,
-          onOk: function () { items.splice(idx, 1); dirty = true; paintList(); toast('已删除'); }
+          onOk: function () {
+            items.splice(idx, 1);
+            closeEditor(); paintList(); commit();
+            toast('已删除');
+          }
         });
       });
       listBox.appendChild(node);
@@ -3311,113 +3349,98 @@ function openLookupSheet() {
   }
 
   function editItem(idx) {
+    editorHost.innerHTML = '';
     const item = items[idx];
-    const editorBox = document.createElement('div');
-    editorBox.style.marginTop = '14px';
-    editorBox.style.borderTop = '1px solid var(--border)';
-    editorBox.style.paddingTop = '14px';
 
-    const nameLabel = document.createElement('div');
-    nameLabel.className = 'field-label';
-    nameLabel.textContent = '条目名称';
+    function field(labelText, el) {
+      const lab = document.createElement('div');
+      lab.className = 'field-label';
+      lab.textContent = labelText;
+      editorHost.appendChild(lab);
+      editorHost.appendChild(el);
+    }
+
     const nameInput = document.createElement('input');
-    nameInput.className = 'input';
-    nameInput.type = 'text';
-    nameInput.value = item.name;
-    nameInput.placeholder = '如:管制刀具';
+    nameInput.className = 'input'; nameInput.type = 'text';
+    nameInput.value = item.name; nameInput.placeholder = '如:管制刀具';
     nameInput.style.marginBottom = '9px';
 
-    const kindLabel = document.createElement('div');
-    kindLabel.className = 'field-label';
-    kindLabel.textContent = '分类';
     const kindSelect = document.createElement('select');
-    kindSelect.className = 'select';
-    kindSelect.style.marginBottom = '9px';
-    [['ban', '禁止携带'], ['limit', '限制携带'], ['rule', '处置口径'], ['info', '便民信息']].forEach(function (opt) {
+    kindSelect.className = 'select'; kindSelect.style.marginBottom = '9px';
+    Object.keys(KIND_TEXT).forEach(function (k) {
       const o = document.createElement('option');
-      o.value = opt[0];
-      o.textContent = opt[1];
-      if (item.kind === opt[0]) o.selected = true;
+      o.value = k; o.textContent = KIND_TEXT[k];
+      if (item.kind === k) o.selected = true;
       kindSelect.appendChild(o);
     });
 
-    const itemsLabel = document.createElement('div');
-    itemsLabel.className = 'field-label';
-    itemsLabel.textContent = '内容项(每行一条)';
     const itemsInput = document.createElement('textarea');
-    itemsInput.className = 'textarea';
-    itemsInput.rows = 6;
+    itemsInput.className = 'textarea'; itemsInput.rows = 6;
     itemsInput.value = item.items.join('\n');
     itemsInput.placeholder = '每行一条内容';
     itemsInput.style.marginBottom = '9px';
 
-    const warnLabel = document.createElement('div');
-    warnLabel.className = 'field-label';
-    warnLabel.textContent = '警告提示(选填)';
     const warnInput = document.createElement('input');
-    warnInput.className = 'input';
-    warnInput.type = 'text';
+    warnInput.className = 'input'; warnInput.type = 'text';
     warnInput.value = item.warn || '';
     warnInput.placeholder = '如:注意区分管制刀具与非管制刀具';
     warnInput.style.marginBottom = '14px';
 
     const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'btn btn-primary btn-block';
+    saveBtn.type = 'button'; saveBtn.className = 'btn btn-primary btn-block';
     saveBtn.textContent = '保存条目';
     saveBtn.addEventListener('click', function () {
       item.name = nameInput.value.trim() || '未命名';
       item.kind = kindSelect.value;
-      item.kindText = { ban: '禁止携带', limit: '限制携带', rule: '处置口径', info: '便民信息' }[item.kind];
+      item.kindText = KIND_TEXT[item.kind];
       item.items = itemsInput.value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
       item.warn = warnInput.value.trim();
-      dirty = false;
-      editorBox.remove();
-      paintList();
+      closeEditor(); paintList(); commit();
       toast('条目已保存');
     });
 
-    editorBox.appendChild(nameLabel);
-    editorBox.appendChild(nameInput);
-    editorBox.appendChild(kindLabel);
-    editorBox.appendChild(kindSelect);
-    editorBox.appendChild(itemsLabel);
-    editorBox.appendChild(itemsInput);
-    editorBox.appendChild(warnLabel);
-    editorBox.appendChild(warnInput);
-    editorBox.appendChild(saveBtn);
-    listBox.parentElement.appendChild(editorBox);
+    [nameInput, itemsInput, warnInput].forEach(function (el) {
+      el.addEventListener('input', function () { editing = true; });
+    });
+    kindSelect.addEventListener('change', function () { editing = true; });
+
+    field('条目名称', nameInput);
+    field('分类', kindSelect);
+    field('内容项(每行一条)', itemsInput);
+    field('警告提示(选填)', warnInput);
+    editorHost.appendChild(saveBtn);
+  }
+
+  function doAdd() {
+    items.push({ kind: 'ban', kindText: '禁止携带', name: '新条目', items: [], warn: '' });
+    paintList(); commit();
+    editItem(items.length - 1);
+    const f = editorHost.querySelector('input');
+    if (f) { try { f.focus(); } catch (e) {} }
   }
 
   const footNode = document.createElement('div');
   footNode.className = 'btn-row';
   const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'btn btn-primary';
+  addBtn.type = 'button'; addBtn.className = 'btn btn-primary';
   addBtn.textContent = '添加条目';
   addBtn.addEventListener('click', function () {
-    const newItem = { kind: 'ban', kindText: '禁止携带', name: '新条目', items: [], warn: '' };
-    items.push(newItem);
-    dirty = true;
-    paintList();
-    editItem(items.length - 1);
+    if (editing) {
+      Sheet.confirmSheet({
+        title: '放弃未保存的修改?', message: '当前编辑内容尚未保存,新增后会丢失。',
+        okText: '放弃并新增', danger: true, onOk: doAdd
+      });
+      return;
+    }
+    doAdd();
   });
   footNode.appendChild(addBtn);
 
   paintList();
   Sheet.open({
-    title: '管理速查内容',
-    bodyNode: bodyNode,
-    footNode: footNode,
-    dirty: function () { return dirty; },
-    onClose: function () {
-      if (dirty) {
-        data.lookup = items;
-        save();
-        renderLookup();
-        toast('速查内容已更新');
-      }
-    }
+    title: '管理速查内容', bodyNode: bodyNode, footNode: footNode,
+    dirty: function () { return editing; },
+    onClose: function () { editing = false; }
   });
 }
 
@@ -3944,7 +3967,11 @@ function openHelpSheet() {
 /* SECTION: js-boot */
 function switchView(name) {
   $$('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
-  $$('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === name ? 'true' : 'false'); });
+  $$('.tab').forEach(function (t) {
+    const on = t.dataset.view === name;
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+    t.tabIndex = on ? 0 : -1;
+  });
   if (name === 'report') {
     const chg = applyTimelineTpl();
     renderTplChips();
@@ -3996,8 +4023,20 @@ function bootRender() {
 }
 function bindGlobal() {
   bindCollapse();
-  $$('.tab').forEach(function (t) {
+  const tabs = $$('.tab');
+  tabs.forEach(function (t, i) {
     t.addEventListener('click', function () { switchView(t.dataset.view); });
+    t.addEventListener('keydown', function (e) {
+      let d = 0;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') d = 1;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') d = -1;
+      else if (e.key === 'Home') { e.preventDefault(); tabs[0].focus(); switchView(tabs[0].dataset.view); return; }
+      else if (e.key === 'End') { e.preventDefault(); tabs[tabs.length - 1].focus(); switchView(tabs[tabs.length - 1].dataset.view); return; }
+      else return;
+      e.preventDefault();
+      const n = tabs[(i + d + tabs.length) % tabs.length];
+      n.focus(); switchView(n.dataset.view);
+    });
   });
   const themeNames = { auto: '跟随系统', light: '浅色', dark: '深色' };
   $('#btnTheme').addEventListener('click', function () {
@@ -4086,7 +4125,11 @@ function bindGlobal() {
   const onHistSearch = debounce(function () { histQuery = histSearch.value; renderHistory(); }, 200);
   histSearch.addEventListener('input', onHistSearch);
   document.addEventListener('pointerdown', function () { Sound.unlock(); }, { once: true });
+  let errToastAt = 0;
   window.addEventListener('error', function (e) {
+    const now = Date.now();
+    if (now - errToastAt < 5000) return;
+    errToastAt = now;
     if (e && e.message) toast('出现异常:' + e.message);
   });
 }
