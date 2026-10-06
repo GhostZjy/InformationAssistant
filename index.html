@@ -588,8 +588,8 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
   <div class="card card-collapsible" data-collapse="member">
     <div class="card-head">
       <div style="display:flex;align-items:center;gap:2px;min-width:0">
-        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开队员"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <span class="card-title">队员</span>
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开人员"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">人员</span>
       </div>
       <div style="display:flex;gap:0">
         <button class="link-btn" id="btnImportMembers">批量导入</button>
@@ -598,7 +598,7 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
     </div>
     <div class="card-body">
       <div id="memberList"></div>
-      <p class="section-note" style="margin-top:8px">模板中用 <code>*队员*</code> 生成单选，<code>*多队员*</code> 生成多选，输出格式为「姓名（工号）」。也可用「批量导入」一次粘贴一整份名单。</p>
+      <p class="section-note" style="margin-top:8px">模板中用 <code>*人员*</code> 生成单选，<code>*多人员*</code> 生成多选，输出格式为「姓名（工号）」。也可用「批量导入」一次粘贴一整份名单。</p>
     </div>
   </div>
 
@@ -959,8 +959,8 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
         <option value="multi">多选</option>
         <option value="entrance">安检点</option>
         <option value="entrances">多安检点</option>
-        <option value="member">队员</option>
-        <option value="members">多队员</option>
+        <option value="member">人员</option>
+        <option value="members">多人员</option>
         <option value="items">物品清单</option>
       </select>
     </div>
@@ -1342,8 +1342,8 @@ function inferType(name) {
   if (name.indexOf('时间') >= 0) return 'time';
   if (name === '多安检点') return 'entrances';
   if (name === '安检点') return 'entrance';
-  if (name === '多队员') return 'members';
-  if (name === '队员') return 'member';
+  if (name === '多人员') return 'members';
+  if (name === '人员') return 'member';
   if (/(件数|数量|人数|次数)$/.test(name)) return 'number';
   if (/(清单|明细)$/.test(name)) return 'items';
   return 'text';
@@ -1371,7 +1371,7 @@ function varOptions(tpl, name) {
   if (name === '处置结果') return data.settings.dispatchOptions.slice();
   if (name === '安检点') return data.settings.entrances.filter(Boolean);
   if (name === '多安检点') return data.settings.entrances.filter(Boolean);
-  if (name === '队员' || name === '多队员') {
+  if (name === '人员' || name === '多人员') {
     return (data.settings.members || []).filter(function (m) { return m.name; }).map(function (m) {
       return m.name + (m.id ? '（' + m.id + '）' : '');
     });
@@ -1936,7 +1936,7 @@ function buildField(tpl, name) {
     if (!opts.length) {
       const hint = $('.field-hint', node);
       hint.hidden = false;
-      const hintMap = { entrance: '安检点', member: '队员' };
+      const hintMap = { entrance: '安检点', member: '人员' };
       hint.textContent = '还没有可选项,去「设置」里添加' + (hintMap[type] || '该变量的选项') + ',或在模板管理里为此变量配置选项';
     }
     return node;
@@ -1950,7 +1950,7 @@ function buildField(tpl, name) {
     if (!opts.length) {
       const hint = $('.field-hint', node);
       hint.hidden = false;
-      const hintMap = { entrances: '安检点', members: '队员' };
+      const hintMap = { entrances: '安检点', members: '人员' };
       hint.textContent = '还没有可选项,去「设置」里添加' + (hintMap[type] || '该变量的选项');
     }
     opts.forEach(function (o) {
@@ -3052,7 +3052,7 @@ function renderMembers() {
     const e = document.createElement('div');
     e.className = 'section-note';
     e.style.padding = '6px 0';
-    e.textContent = '还没有队员,可以点上方「批量导入」一次粘贴一整份名单,或用「添加」逐个录入。';
+    e.textContent = '还没有人员,可以点上方「批量导入」一次粘贴一整份名单,或用「添加」逐个录入。';
     host.appendChild(e);
     return;
   }
@@ -3066,7 +3066,7 @@ function renderMembers() {
     nameInp.placeholder = '姓名';
     nameInp.style.flex = '1';
     nameInp.style.minHeight = '40px';
-    nameInp.setAttribute('aria-label', '队员 ' + (idx + 1) + ' 姓名');
+    nameInp.setAttribute('aria-label', '人员 ' + (idx + 1) + ' 姓名');
     nameInp.addEventListener('input', function () { m.name = nameInp.value; save(); });
     const idInp = document.createElement('input');
     idInp.className = 'input';
@@ -3075,7 +3075,7 @@ function renderMembers() {
     idInp.placeholder = '工号';
     idInp.style.flex = '1';
     idInp.style.minHeight = '40px';
-    idInp.setAttribute('aria-label', '队员 ' + (idx + 1) + ' 工号');
+    idInp.setAttribute('aria-label', '人员 ' + (idx + 1) + ' 工号');
     idInp.addEventListener('input', function () { m.id = idInp.value; save(); });
     const up = document.createElement('button');
     up.type = 'button'; up.className = 'mini-btn'; up.textContent = '↑';
@@ -3104,7 +3104,7 @@ function renderMembers() {
     const del = document.createElement('button');
     del.type = 'button'; del.className = 'mini-btn danger';
     del.textContent = '删除';
-    del.setAttribute('aria-label', '删除队员');
+    del.setAttribute('aria-label', '删除人员');
     del.addEventListener('click', function () {
       data.settings.members.splice(idx, 1);
       save(); renderMembers(); renderForm();
@@ -3117,7 +3117,7 @@ function renderMembers() {
     host.appendChild(row);
   });
 }
-/* 解析批量粘贴的队员名单:支持 空格、逗号、制表符、分号、竖线、括号 等分隔 */
+/* 解析批量粘贴的人员名单:支持 空格、逗号、制表符、分号、竖线、括号 等分隔 */
 function parseMembersText(raw) {
   const out = [];
   const lines = String(raw || '').split(/\r?\n/);
@@ -3162,7 +3162,7 @@ function openMemberImportSheet() {
   tip.className = 'section-note';
   tip.style.marginBottom = '9px';
   tip.style.lineHeight = '1.9';
-  tip.innerHTML = '每行一个队员,支持以下写法(可混用,自动识别):<br>'
+  tip.innerHTML = '每行一个人员,支持以下写法(可混用,自动识别):<br>'
     + '<code>张三 001</code> &nbsp; <code>张三,001</code> &nbsp; <code>张三，001</code><br>'
     + '<code>张三（001）</code> &nbsp; <code>张三(001)</code> &nbsp; <code>张三</code><br>'
     + '行首序号会忽略,例如 <code>1. 张三 001</code>';
@@ -3174,7 +3174,7 @@ function openMemberImportSheet() {
   ta.style.fontFamily = 'ui-monospace,SFMono-Regular,Menlo,monospace';
   ta.style.fontSize = '14px';
   ta.placeholder = '张三 001\n李四 002\n王五,003\n赵六（004）\n孙七';
-  ta.setAttribute('aria-label', '队员名单');
+  ta.setAttribute('aria-label', '人员名单');
   bodyNode.appendChild(ta);
 
   const preview = document.createElement('div');
@@ -3205,7 +3205,7 @@ function openMemberImportSheet() {
     const list = getParsed();
     if (!list.length) {
       preview.classList.add('placeholder');
-      preview.textContent = '还没有解析到队员,把名单粘到上面的输入框';
+      preview.textContent = '还没有解析到人员,把名单粘到上面的输入框';
       appendBtn.disabled = true;
       replaceBtn.disabled = true;
       appendBtn.textContent = '追加到现有';
@@ -3216,7 +3216,7 @@ function openMemberImportSheet() {
     preview.textContent = '';
     const head = document.createElement('div');
     head.style.cssText = 'font-weight:700;color:var(--primary);margin-bottom:6px';
-    head.textContent = '共解析到 ' + list.length + ' 名队员：';
+    head.textContent = '共解析到 ' + list.length + ' 名人员：';
     preview.appendChild(head);
     const showAll = document.createElement('div');
     showAll.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
@@ -3254,7 +3254,7 @@ function openMemberImportSheet() {
     save(); renderMembers(); renderForm();
     Sheet.closeNow();
     if (added && skipped) toast('已追加 ' + added + ' 人,跳过 ' + skipped + ' 个重复');
-    else if (added) toast('已追加 ' + added + ' 名队员');
+    else if (added) toast('已追加 ' + added + ' 名人员');
     else toast('全部 ' + skipped + ' 人都已存在,未新增');
   });
 
@@ -3266,12 +3266,12 @@ function openMemberImportSheet() {
       data.settings.members = list;
       save(); renderMembers(); renderForm();
       Sheet.closeNow();
-      toast('已导入 ' + list.length + ' 名队员');
+      toast('已导入 ' + list.length + ' 名人员');
       return;
     }
     Sheet.confirmSheet({
-      title: '替换全部队员？',
-      message: '当前的 ' + current + ' 名队员会被替换为新的 ' + list.length + ' 名,此操作不可撤销。',
+      title: '替换全部人员？',
+      message: '当前的 ' + current + ' 名人员会被替换为新的 ' + list.length + ' 名,此操作不可撤销。',
       okText: '确认替换',
       danger: true,
       detail: list.slice(0, 20).map(function (m) { return m.name + (m.id ? '（' + m.id + '）' : ''); }).join('、') + (list.length > 20 ? ' 等 ' + list.length + ' 人' : ''),
@@ -3279,7 +3279,7 @@ function openMemberImportSheet() {
         data.settings.members = list;
         save(); renderMembers(); renderForm();
         Sheet.closeNow();
-        toast('已替换为 ' + list.length + ' 名队员');
+        toast('已替换为 ' + list.length + ' 名人员');
       }
     });
   });
@@ -3289,7 +3289,7 @@ function openMemberImportSheet() {
 
   updatePreview();
   Sheet.open({
-    title: '批量导入队员',
+    title: '批量导入人员',
     bodyNode: bodyNode,
     footNode: footNode,
     autofocus: true
@@ -4186,7 +4186,7 @@ function openHelpSheet() {
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
-    { t: '队员批量导入', l: ['设置页「队员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
+    { t: '人员批量导入', l: ['设置页「人员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
     { t: '速查', l: ['速查页内容完全可自定义,在设置页点「管理」编辑', '支持添加禁止携带、限制携带、处置口径、便民信息等分类', '支持搜索和筛选'] },
     { t: '数据统计', l: ['物品清单类型支持自定义字段,可配置「数字」类型并勾选「求和」自动汇总', '字段可关联「安检点」或「群名」,填数据时直接下拉选择不用手输', '模板里用 *总字段名* 引用汇总值,如 *总过机数*'] },
     { t: '数据', l: ['全部数据只存在这台设备的浏览器里,不上传', '设置页可导出 .json 备份,同事导入即可共用配置', '清除浏览器数据会一并删除,请定期导出备份'] }
