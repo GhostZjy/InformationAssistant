@@ -1630,6 +1630,7 @@ const Sheet = (function () {
 /* SECTION: js-report */
 let currentTplId = null;
 let values = {};
+let touchedVars = {};          // 用户手动改过的变量,自动刷新时跳过
 const collapsedGroups = new Set();
 let previewQueued = false;
 
@@ -1638,9 +1639,20 @@ function saveFormCache() {
   try { data.formCache[currentTplId] = deepCopy(values); } catch (e) { data.formCache[currentTplId] = values; }
   save();
 }
+/* 日期/时间属于「每次填写都应反映当前时刻」的变量,缓存里不保留,
+   打开时一律重新取当前值,避免每次都要手动删掉上次的时间 */
 function loadFormCache(id) {
   const c = data.formCache[id];
-  return (c && typeof c === 'object') ? deepCopy(c) : {};
+  if (!c || typeof c !== 'object') return {};
+  const out = deepCopy(c);
+  const tpl = tplById(id);
+  if (tpl) {
+    extractVars(tpl.content).forEach(function (name) {
+      const type = varType(tpl, name);
+      if (type === 'time' || type === 'date') delete out[name];
+    });
+  }
+  return out;
 }
 function ensureValues(tpl) {
   if (!tpl) return;
@@ -1668,6 +1680,7 @@ function selectTemplate(id, keepValues) {
   if (currentTplId && currentTplId !== id) saveFormCache();
   currentTplId = id;
   data.lastTplId = id;
+  touchedVars = {};                       // 换模板后回到「自动填充」状态
   const tpl = tplById(id);
   if (!keepValues) {
     values = loadFormCache(id);
@@ -1863,6 +1876,7 @@ function buildField(tpl, name) {
     hint.hidden = false;
     hint.textContent = '支持 08:30、8.30、830 等写法,失焦时自动规范化';
     input.addEventListener('input', function () {
+      touchedVars[name] = true;
       values[name] = input.value;
       queuePreview();
     });
@@ -1887,7 +1901,12 @@ function buildField(tpl, name) {
     values[name] = iso;          // 关键：回写，保证控件与预览一致
     input.value = iso;
     input.setAttribute('aria-label', name);
-    input.addEventListener('change', function () { values[name] = input.value; queuePreview(); });
+    input.addEventListener('input', function () { touchedVars[name] = true; });
+    input.addEventListener('change', function () {
+      touchedVars[name] = true;
+      values[name] = input.value;
+      queuePreview();
+    });
     return node;
   }
   if (type === 'single' || type === 'entrance' || type === 'member') {
@@ -2191,7 +2210,11 @@ function renderForm() {
     return;
   }
   const frag = document.createDocumentFragment();
-  vars.forEach(function (name) { frag.appendChild(buildField(tpl, name)); });
+  vars.forEach(function (name) {
+    const node = buildField(tpl, name);
+    if (node) node.dataset.var = name;    // 便于按变量名刷新对应控件
+    frag.appendChild(node);
+  });
   area.appendChild(frag);
 }
 function queuePreview() {
@@ -2230,6 +2253,43 @@ function currentText() {
   const box = $('#previewBox');
   if (box.classList.contains('placeholder')) return '';
   return box.textContent || '';
+}
+/* 把未被手动改过的日期/时间变量刷新为当前值,并同步到界面 */
+let lastRefreshMin = -1;
+function refreshDatetimeFields() {
+  const tpl = tplById(currentTplId);
+  if (!tpl) return;
+  let changed = false;
+  extractVars(tpl.content).forEach(function (name) {
+    const type = varType(tpl, name);
+    if (type !== 'time' && type !== 'date') return;
+    if (touchedVars[name]) return;
+    if (presetValue(name)) return;
+    const v = defaultByType(name, type);
+    if (String(values[name] == null ? '' : values[name]) !== v) {
+      values[name] = v;
+      changed = true;
+    }
+  });
+  if (!changed) return;
+  $$('#formArea [data-var]').forEach(function (node) {
+    const name = node.dataset.var;
+    if (touchedVars[name]) return;
+    const type = varType(tpl, name);
+    if (type !== 'time' && type !== 'date') return;
+    const input = node.querySelector('input');
+    if (!input) return;
+    input.value = type === 'time' ? (normalizeTime(values[name]) || '') : (values[name] || '');
+  });
+  saveFormCache();
+  renderPreview();
+}
+function maybeRefreshDatetime() {
+  const d = new Date();
+  const m = d.getHours() * 60 + d.getMinutes();
+  if (m === lastRefreshMin) return;
+  lastRefreshMin = m;
+  refreshDatetimeFields();
 }
 
 /* SECTION: js-output */
@@ -2559,7 +2619,12 @@ const Reminder = (function () {
     if (titleTimer) { clearInterval(titleTimer); titleTimer = null; document.title = origTitle; }
   }
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) { stopFlash(); check(true); }
+    if (!document.hidden) {
+      stopFlash();
+      check(true);
+      lastRefreshMin = -1;          // 回到前台立即校准一次时间
+      refreshDatetimeFields();
+    }
   });
   $('#alertClose').addEventListener('click', function () { $('#alertBanner').classList.remove('show'); stopFlash(); });
   function ensureLog() {
@@ -2614,6 +2679,7 @@ const Reminder = (function () {
       tickClock();
       const d = new Date();
       if (d.getSeconds() % 15 === 0) { check(false); renderTimeline(false); }
+      maybeRefreshDatetime();        // 跨分钟/跨天自动校准
     }, 1000);
     check(true);
   }
@@ -3228,6 +3294,7 @@ function applyImported(parsed) {
       currentTplId = data.templates.length ? data.templates[0].id : null;
       data.lastTplId = currentTplId || '';
       values = {};
+      touchedVars = {};
       bootRender();
       toast('导入成功');
     }
@@ -3876,7 +3943,7 @@ function openManageSheet() {
       dirty = false;
       save();
       paintList(); renderTplChips();
-      if (currentTplId === t.id) { values = {}; selectTemplate(t.id); }
+      if (currentTplId === t.id) { values = {}; touchedVars = {}; selectTemplate(t.id); }
       toast('模板已保存');
     });
     editorBox.appendChild(saveBtn);
@@ -3899,7 +3966,7 @@ function openManageSheet() {
     use.type = 'button'; use.className = 'btn'; use.textContent = '在主界面使用';
     use.addEventListener('click', function () {
       currentTplId = t.id; data.lastTplId = t.id;
-      values = {}; ensureValues(t);
+      values = {}; touchedVars = {}; ensureValues(t);
       dirty = false;
       save(); renderTplChips(); renderForm(); renderGroupHint(); renderPreview();
       Sheet.closeNow(); switchView('report');
@@ -3934,7 +4001,7 @@ function openManageSheet() {
 function openHelpSheet() {
   const node = document.createElement('div');
   const blocks = [
-    { t: '快速上手', l: ['在「上报」页选模板,填几个空', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送'] },
+    { t: '快速上手', l: ['在「上报」页选模板,填几个空', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
@@ -3976,6 +4043,7 @@ function switchView(name) {
     const chg = applyTimelineTpl();
     renderTplChips();
     if (chg && currentTplId && tplById(currentTplId)) selectTemplate(currentTplId);
+    refreshDatetimeFields();
   }
   if (name === 'timeline') renderTimeline(true);
   if (name === 'history') renderHistory();
@@ -4014,7 +4082,7 @@ function bootRender() {
     currentTplId = (data.lastTplId && tplById(data.lastTplId)) ? data.lastTplId : (data.templates.length ? data.templates[0].id : null);
   }
   if (currentTplId) selectTemplate(currentTplId);
-  else { values = {}; renderForm(); renderPreview(); renderGroupHint(); }
+  else { values = {}; touchedVars = {}; renderForm(); renderPreview(); renderGroupHint(); }
   renderTimeline(true);
   renderRemindBar();
   renderHistory();
@@ -4066,6 +4134,7 @@ function bindGlobal() {
       title: '重置填写内容?', message: '当前模板已填的内容会被清空,时间类变量会重新填为当前时间。', okText: '重置', danger: true,
       onOk: function () {
         values = {};
+        touchedVars = {};
         delete data.formCache[t.id];
         ensureValues(t);
         save(); renderForm(); renderPreview(); toast('已重置');
@@ -4114,6 +4183,7 @@ function bindGlobal() {
         currentTplId = data.templates.length ? data.templates[0].id : null;
         data.lastTplId = currentTplId;
         values = {};
+        touchedVars = {};
         saveNow(); bootRender(); toast('已恢复初始状态');
       }
     });
