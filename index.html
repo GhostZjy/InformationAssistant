@@ -591,11 +591,14 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
         <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开队员"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
         <span class="card-title">队员</span>
       </div>
-      <button class="link-btn" id="btnAddMember">添加</button>
+      <div style="display:flex;gap:0">
+        <button class="link-btn" id="btnImportMembers">批量导入</button>
+        <button class="link-btn" id="btnAddMember">添加</button>
+      </div>
     </div>
     <div class="card-body">
       <div id="memberList"></div>
-      <p class="section-note" style="margin-top:8px">模板中用 <code>*队员*</code> 生成单选，<code>*多队员*</code> 生成多选，输出格式为「姓名（工号）」。</p>
+      <p class="section-note" style="margin-top:8px">模板中用 <code>*队员*</code> 生成单选，<code>*多队员*</code> 生成多选，输出格式为「姓名（工号）」。也可用「批量导入」一次粘贴一整份名单。</p>
     </div>
   </div>
 
@@ -3049,7 +3052,7 @@ function renderMembers() {
     const e = document.createElement('div');
     e.className = 'section-note';
     e.style.padding = '6px 0';
-    e.textContent = '还没有队员,添加后在模板里用 *队员* 生成单选、*多队员* 生成多选';
+    e.textContent = '还没有队员,可以点上方「批量导入」一次粘贴一整份名单,或用「添加」逐个录入。';
     host.appendChild(e);
     return;
   }
@@ -3112,6 +3115,184 @@ function renderMembers() {
     row.appendChild(down);
     row.appendChild(del);
     host.appendChild(row);
+  });
+}
+/* 解析批量粘贴的队员名单:支持 空格、逗号、制表符、分号、竖线、括号 等分隔 */
+function parseMembersText(raw) {
+  const out = [];
+  const lines = String(raw || '').split(/\r?\n/);
+  lines.forEach(function (line) {
+    let s = line.trim();
+    if (!s) return;
+    // 去掉行首序号,如 "1. " "1、" "1) " "1：" 以及 "- " "* " "· " "• "
+    s = s.replace(/^\d+\s*[.、)）:：]\s*/, '').replace(/^[-*·•]\s*/, '');
+    if (!s) return;
+    let name = '', id = '';
+    const mb = s.match(/^(.+?)\s*[（(]\s*([^)）]*?)\s*[)）]\s*$/);
+    if (mb) {
+      name = mb[1].trim();
+      id = mb[2].trim();
+    } else {
+      const m1 = s.match(/^(.+?)\s*[,，\t;；|]\s*(.+)$/);
+      if (m1) {
+        name = m1[1].trim();
+        id = m1[2].trim();
+      } else {
+        const parts = s.split(/\s+/);
+        if (parts.length >= 2) {
+          id = parts.pop();
+          name = parts.join(' ').trim();
+        } else {
+          name = s;
+        }
+      }
+    }
+    // 智能识别:如果"姓名"是纯数字而"工号"不是,交换
+    if (name && id && /^\d+$/.test(name) && !/^\d+$/.test(id)) {
+      const t = name; name = id; id = t;
+    }
+    if (name) out.push({ name: name, id: id });
+  });
+  return out;
+}
+function openMemberImportSheet() {
+  const bodyNode = document.createElement('div');
+
+  const tip = document.createElement('p');
+  tip.className = 'section-note';
+  tip.style.marginBottom = '9px';
+  tip.style.lineHeight = '1.9';
+  tip.innerHTML = '每行一个队员,支持以下写法(可混用,自动识别):<br>'
+    + '<code>张三 001</code> &nbsp; <code>张三,001</code> &nbsp; <code>张三，001</code><br>'
+    + '<code>张三（001）</code> &nbsp; <code>张三(001)</code> &nbsp; <code>张三</code><br>'
+    + '行首序号会忽略,例如 <code>1. 张三 001</code>';
+  bodyNode.appendChild(tip);
+
+  const ta = document.createElement('textarea');
+  ta.className = 'textarea';
+  ta.style.minHeight = '180px';
+  ta.style.fontFamily = 'ui-monospace,SFMono-Regular,Menlo,monospace';
+  ta.style.fontSize = '14px';
+  ta.placeholder = '张三 001\n李四 002\n王五,003\n赵六（004）\n孙七';
+  ta.setAttribute('aria-label', '队员名单');
+  bodyNode.appendChild(ta);
+
+  const preview = document.createElement('div');
+  preview.className = 'preview';
+  preview.style.marginTop = '9px';
+  preview.style.minHeight = '56px';
+  preview.style.fontSize = '.82rem';
+  preview.style.maxHeight = '180px';
+  preview.style.overflow = 'auto';
+  bodyNode.appendChild(preview);
+
+  const footNode = document.createElement('div');
+  footNode.className = 'btn-row';
+
+  const replaceBtn = document.createElement('button');
+  replaceBtn.type = 'button';
+  replaceBtn.className = 'btn btn-danger';
+  replaceBtn.textContent = '替换全部';
+
+  const appendBtn = document.createElement('button');
+  appendBtn.type = 'button';
+  appendBtn.className = 'btn btn-primary';
+  appendBtn.textContent = '追加到现有';
+
+  function getParsed() { return parseMembersText(ta.value); }
+
+  function updatePreview() {
+    const list = getParsed();
+    if (!list.length) {
+      preview.classList.add('placeholder');
+      preview.textContent = '还没有解析到队员,把名单粘到上面的输入框';
+      appendBtn.disabled = true;
+      replaceBtn.disabled = true;
+      appendBtn.textContent = '追加到现有';
+      replaceBtn.textContent = '替换全部';
+      return;
+    }
+    preview.classList.remove('placeholder');
+    preview.textContent = '';
+    const head = document.createElement('div');
+    head.style.cssText = 'font-weight:700;color:var(--primary);margin-bottom:6px';
+    head.textContent = '共解析到 ' + list.length + ' 名队员：';
+    preview.appendChild(head);
+    const showAll = document.createElement('div');
+    showAll.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+    list.forEach(function (m) {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.style.cssText = 'font-size:.72rem;min-height:26px;padding:2px 8px;pointer-events:none';
+      chip.textContent = m.name + (m.id ? '（' + m.id + '）' : '');
+      showAll.appendChild(chip);
+    });
+    preview.appendChild(showAll);
+    appendBtn.disabled = false;
+    replaceBtn.disabled = false;
+    appendBtn.textContent = '追加 ' + list.length + ' 人';
+    replaceBtn.textContent = '替换为 ' + list.length + ' 人';
+  }
+
+  ta.addEventListener('input', debounce(updatePreview, 120));
+
+  appendBtn.addEventListener('click', function () {
+    const list = getParsed();
+    if (!list.length) return;
+    const existing = {};
+    data.settings.members.forEach(function (m) {
+      existing[(m.name || '') + '\u0000' + (m.id || '')] = 1;
+    });
+    let added = 0, skipped = 0;
+    list.forEach(function (m) {
+      const k = m.name + '\u0000' + m.id;
+      if (existing[k]) { skipped++; return; }
+      existing[k] = 1;
+      data.settings.members.push(m);
+      added++;
+    });
+    save(); renderMembers(); renderForm();
+    Sheet.closeNow();
+    if (added && skipped) toast('已追加 ' + added + ' 人,跳过 ' + skipped + ' 个重复');
+    else if (added) toast('已追加 ' + added + ' 名队员');
+    else toast('全部 ' + skipped + ' 人都已存在,未新增');
+  });
+
+  replaceBtn.addEventListener('click', function () {
+    const list = getParsed();
+    if (!list.length) return;
+    const current = data.settings.members.length;
+    if (!current) {
+      data.settings.members = list;
+      save(); renderMembers(); renderForm();
+      Sheet.closeNow();
+      toast('已导入 ' + list.length + ' 名队员');
+      return;
+    }
+    Sheet.confirmSheet({
+      title: '替换全部队员？',
+      message: '当前的 ' + current + ' 名队员会被替换为新的 ' + list.length + ' 名,此操作不可撤销。',
+      okText: '确认替换',
+      danger: true,
+      detail: list.slice(0, 20).map(function (m) { return m.name + (m.id ? '（' + m.id + '）' : ''); }).join('、') + (list.length > 20 ? ' 等 ' + list.length + ' 人' : ''),
+      onOk: function () {
+        data.settings.members = list;
+        save(); renderMembers(); renderForm();
+        Sheet.closeNow();
+        toast('已替换为 ' + list.length + ' 名队员');
+      }
+    });
+  });
+
+  footNode.appendChild(replaceBtn);
+  footNode.appendChild(appendBtn);
+
+  updatePreview();
+  Sheet.open({
+    title: '批量导入队员',
+    bodyNode: bodyNode,
+    footNode: footNode,
+    autofocus: true
   });
 }
 function renderDispatch() {
@@ -3353,11 +3534,11 @@ function openImportSheet() {
 let editingId = null;
 
 function openLookupSheet() {
-  let editing = false;                              // 仅表示"编辑器内有未保存内容"
+  let editing = false;
   const items = deepCopy(data.lookup);
   const bodyNode = document.createElement('div');
   const listBox = document.createElement('div');
-  const editorHost = document.createElement('div'); // 固定宿主，杜绝面板堆叠
+  const editorHost = document.createElement('div');
   editorHost.style.cssText = 'margin-top:14px;border-top:1px solid var(--border);padding-top:14px';
   bodyNode.appendChild(listBox);
   bodyNode.appendChild(editorHost);
@@ -4005,6 +4186,7 @@ function openHelpSheet() {
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
+    { t: '队员批量导入', l: ['设置页「队员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
     { t: '速查', l: ['速查页内容完全可自定义,在设置页点「管理」编辑', '支持添加禁止携带、限制携带、处置口径、便民信息等分类', '支持搜索和筛选'] },
     { t: '数据统计', l: ['物品清单类型支持自定义字段,可配置「数字」类型并勾选「求和」自动汇总', '字段可关联「安检点」或「群名」,填数据时直接下拉选择不用手输', '模板里用 *总字段名* 引用汇总值,如 *总过机数*'] },
     { t: '数据', l: ['全部数据只存在这台设备的浏览器里,不上传', '设置页可导出 .json 备份,同事导入即可共用配置', '清除浏览器数据会一并删除,请定期导出备份'] }
@@ -4118,6 +4300,7 @@ function bindGlobal() {
   $('#btnManageTpl').addEventListener('click', openManageSheet);
   $('#btnManageTimeline').addEventListener('click', openTimelineSheet);
   $('#btnManageLookup').addEventListener('click', openLookupSheet);
+  $('#btnImportMembers').addEventListener('click', openMemberImportSheet);
   $('#btnCopyGroup').addEventListener('click', async function () {
     const t = tplById(currentTplId);
     const groups = t && Array.isArray(t.groupHint) ? t.groupHint.filter(Boolean) : [];
