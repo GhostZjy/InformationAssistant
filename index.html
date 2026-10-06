@@ -1419,12 +1419,24 @@ function itemsToText(items, fields, rowFormat) {
     const filtered = items.filter(function (it) {
       return fields.some(function (f) { return (it[f.key] || '').trim(); });
     });
+    
+    // 新增：统一格式化日期为中文格式
+    function formatFieldValue(val, type) {
+      if (!val) return '';
+      if (type === 'date') {
+        const m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) return parseInt(m[1], 10) + '年' + parseInt(m[2], 10) + '月' + parseInt(m[3], 10) + '日';
+      }
+      return val;
+    }
+
     if (rowFormat) {
       // 自定义行格式
       return filtered.map(function (it) {
         let line = rowFormat;
         fields.forEach(function (f) {
-          const v = (it[f.key] || '').trim();
+          const rawVal = (it[f.key] || '').trim();
+          const v = formatFieldValue(rawVal, f.type);
           line = line.split('*' + f.key + '*').join(v);
         });
         return line;
@@ -1434,7 +1446,8 @@ function itemsToText(items, fields, rowFormat) {
     return filtered.map(function (it) {
       const parts = [];
       fields.forEach(function (f, fi) {
-        const v = (it[f.key] || '').trim();
+        const rawVal = (it[f.key] || '').trim();
+        const v = formatFieldValue(rawVal, f.type);
         if (v) {
           if (fi === 0) parts.push(v);
           else parts.push(f.key + ':' + v);
@@ -2074,8 +2087,17 @@ function buildItemsField(tpl, name) {
             // 普通文本/数字输入
             el = document.createElement('input');
             el.className = 'input';
-            el.type = f.type === 'number' ? 'number' : 'text';
-            el.inputMode = f.type === 'number' ? 'numeric' : 'text';
+            if (f.type === 'date') {
+            el.type = 'date';
+          } else if (f.type === 'time') {
+            el.type = 'time';
+          } else if (f.type === 'number') {
+            el.type = 'number';
+            el.inputMode = 'numeric';
+          } else {
+            el.type = 'text';
+            el.inputMode = 'text';
+          }
             el.placeholder = f.key;
             el.value = it[f.key] || '';
             el.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
@@ -3986,12 +4008,13 @@ function openManageSheet() {
             typeSel.style.width = 'auto';
             typeSel.style.minWidth = '80px';
             typeSel.style.minHeight = '40px';
-            ['text', 'number'].forEach(function (tt) {
-              const o = document.createElement('option');
-              o.value = tt; o.textContent = tt === 'text' ? '文本' : '数字';
-              if (f.type === tt) o.selected = true;
-              typeSel.appendChild(o);
-            });
+            ['text', 'number', 'date', 'time'].forEach(function (tt) {
+            const o = document.createElement('option');
+            o.value = tt; 
+            o.textContent = tt === 'text' ? '文本' : (tt === 'number' ? '数字' : (tt === 'date' ? '日期' : '时间'));
+            if (f.type === tt) o.selected = true;
+            typeSel.appendChild(o);
+          });
             typeSel.addEventListener('change', function () { f.type = typeSel.value; dirty = true; });
             // 关联来源选择
             const sourceSel = document.createElement('select');
