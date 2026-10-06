@@ -1664,9 +1664,9 @@ function loadFormCache(id) {
   const tpl = tplById(id);
   if (tpl) {
     extractVars(tpl.content).forEach(function (name) {
-      const type = varType(tpl, name);
-      if (type === 'time' || type === 'date') delete out[name];
-    });
+        const type = varType(tpl, name);
+        if (type === 'time' || type === 'date' || name === '内容') delete out[name];
+      });
   }
   return out;
 }
