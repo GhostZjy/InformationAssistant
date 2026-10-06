@@ -2084,21 +2084,31 @@ function buildItemsField(tpl, name) {
               queuePreview();
             });
           } else {
-            // 普通文本/数字输入
+            // 普通文本/数字/日期/时间输入
             el = document.createElement('input');
             el.className = 'input';
             if (f.type === 'date') {
-            el.type = 'date';
-          } else if (f.type === 'time') {
-            el.type = 'time';
-          } else if (f.type === 'number') {
-            el.type = 'number';
-            el.inputMode = 'numeric';
-          } else {
-            el.type = 'text';
-            el.inputMode = 'text';
-          }
-            el.placeholder = f.key;
+              el.type = 'date';
+            } else if (f.type === 'time') {
+              el.type = 'text';
+              el.inputMode = 'numeric';
+              el.placeholder = f.key + ' (如 08:30 或 830)';
+              // 失焦时自动规范化为 08:30 格式
+              el.addEventListener('blur', function () {
+                const n = normalizeTime(el.value);
+                el.value = n || '';
+                it[f.key] = el.value;
+                queuePreview();
+              });
+            } else if (f.type === 'number') {
+              el.type = 'number';
+              el.inputMode = 'numeric';
+              el.placeholder = f.key;
+            } else {
+              el.type = 'text';
+              el.inputMode = 'text';
+              el.placeholder = f.key;
+            }
             el.value = it[f.key] || '';
             el.setAttribute('aria-label', '第' + (idx + 1) + '条' + f.key);
             el.style.minHeight = '42px';
