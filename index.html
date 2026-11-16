@@ -20,6 +20,8 @@
 <style>
 /* SECTION: reset-vars */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* 组件里显式写了 display 的元素(按钮、flex 容器)会盖掉浏览器默认的 [hidden],这里统一兜底 */
+[hidden]{display:none !important}
 :root{
   --primary:#4f7cf7;--primary-dark:#3a5fc9;--primary-soft:#eef3ff;--on-primary:#fff;
   --success:#1f9d55;--success-soft:#e6f6ec;--warn:#c77700;--warn-soft:#fff4e0;
@@ -91,7 +93,6 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .card-title{font-size:.82rem;font-weight:700;color:var(--text-2);display:flex;align-items:center;gap:6px;
   letter-spacing:.3px}
 .card-title svg{width:15px;height:15px;color:var(--primary)}
-.card-head{gap:8px}
 .collapse-toggle{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:var(--text-3);flex:none;margin:-4px 0 -4px -6px;padding:0}
 .collapse-toggle svg{width:17px;height:17px;transition:transform .18s ease}
 .collapse-toggle:active{background:var(--primary-soft)}
@@ -184,6 +185,55 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 
 /* SECTION: view-report */
 .tpl-picker{display:flex;flex-direction:column;gap:8px}
+.head-acts{display:flex;align-items:center;gap:2px;flex:none}
+
+/* SECTION: tpl-picker-list */
+.tpl-search{position:relative}
+.tpl-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-3)}
+.tpl-search .input{padding-left:36px;min-height:42px;font-size:.85rem}
+.tpl-list-bar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tpl-list-bar .section-note{flex:1;min-width:0}
+.tpl-list{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding-right:2px}
+.tpl-list::-webkit-scrollbar{width:4px}
+.tpl-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.tpl-group{display:flex;flex-direction:column;gap:5px}
+.tg-items{display:flex;flex-direction:column;gap:5px}
+.tpl-list-empty{padding:18px 10px;text-align:center;color:var(--text-3);font-size:.82rem;line-height:1.7}
+.tpl-group-head{display:flex;align-items:center;gap:7px;width:100%;min-height:38px;padding:6px 10px;
+  border-radius:9px;background:var(--card-2);border:1px solid var(--border);font-size:.76rem;font-weight:700;color:var(--text-2)}
+.tpl-group-head .tg-name{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpl-group-head .tg-count{font-size:.7rem;font-weight:600;color:var(--text-3);flex:none}
+.tpl-group-head .tg-chev{width:14px;height:14px;color:var(--text-3);flex:none;transition:transform .2s}
+.tpl-group-head[aria-expanded="false"] .tg-chev{transform:rotate(-90deg)}
+.tpl-item{display:flex;align-items:center;gap:9px;width:100%;min-height:46px;padding:9px 12px;text-align:left;
+  border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.88rem;line-height:1.4}
+.tpl-item:active{transform:scale(.99)}
+.tpl-item .ti-name{flex:1;min-width:0;word-break:break-word}
+.tpl-item .ti-mark{flex:none;font-size:.68rem;font-weight:700;padding:2px 6px;border-radius:6px;
+  background:var(--primary-soft);color:var(--primary)}
+.tpl-item .ti-check{flex:none;width:17px;height:17px;color:var(--primary);opacity:0}
+.tpl-item.on{border-color:var(--primary);background:var(--primary-soft);font-weight:700}
+.tpl-item.on .ti-check{opacity:1}
+.tpl-item.linked .ti-name::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--primary);margin-left:6px;vertical-align:middle}
+
+/* SECTION: tpl-maker */
+.mk-src{min-height:150px}
+.mk-sec{font-size:.76rem;font-weight:700;color:var(--text-3);letter-spacing:.5px;margin:14px 0 8px}
+.mk-row{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card-2);padding:10px;margin-bottom:8px}
+.mk-row.off{opacity:.55}
+.mk-row-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mk-frag{flex:1;min-width:0;font-size:.82rem;font-weight:700;word-break:break-all;
+  background:var(--warn-soft);color:var(--warn);padding:3px 7px;border-radius:6px}
+.mk-switch{flex:none;min-height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border);
+  background:var(--card);font-size:.74rem;font-weight:700;color:var(--text-3)}
+.mk-switch[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.mk-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mk-grid .input,.mk-grid .select{min-height:40px;font-size:.82rem;padding:8px 10px}
+.mk-meta{display:flex;align-items:center;gap:10px;margin-top:7px;font-size:.72rem;color:var(--text-3);flex-wrap:wrap}
+.mk-meta label{display:inline-flex;align-items:center;gap:5px}
+.mk-preview{max-height:210px;overflow-y:auto}
 .group-hint{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:var(--radius-sm);
   background:var(--warn-soft);color:var(--warn);font-size:.88rem;font-weight:600;line-height:1.5}
 .group-hint .gh-text{flex:1;min-width:0;word-break:break-word}
@@ -413,11 +463,21 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
             选择模板
           </span>
-          <button class="link-btn" id="btnManageTpl">管理模板</button>
+          <span class="head-acts">
+            <button class="link-btn" id="btnMakeTpl">制作模板</button>
+            <button class="link-btn" id="btnManageTpl">管理模板</button>
+          </span>
         </div>
         <div class="tpl-picker">
-          <div class="chip-scroll" id="tplGroupBar"></div>
-          <div class="chip-scroll" id="tplChips"></div>
+          <div class="tpl-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input class="input" type="search" id="tplSearch" placeholder="搜索模板名称或内容" autocomplete="off" aria-label="搜索模板">
+          </div>
+          <div class="tpl-list-bar">
+            <span class="section-note" id="tplCount"></span>
+            <button type="button" class="link-btn" id="btnToggleGroups">折叠全部</button>
+          </div>
+          <div class="tpl-list" id="tplList" role="listbox" aria-label="模板列表"></div>
         </div>
         <div id="groupHintWrap" style="margin-top:11px" hidden>
           <div class="group-hint">
@@ -639,7 +699,7 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
       <button class="link-btn" id="btnManageLookup">管理</button>
     </div>
     <div class="card-body">
-      <p class="section-note">自定义速查页的内容,可添加、编辑、删除条目。支持禁止携带、限制携带、处置口径、便民信息四种分类。</p>
+      <p class="section-note">速查内容随配置文件下发,导入配置即可载入;也可在这里添加、编辑、删除条目。分类含 A/B 类图像特征、禁止携带、限制携带、处置口径、汇报口径、勤务考勤、奖惩分值、考点速记、便民信息。</p>
     </div>
   </div>
 
@@ -734,6 +794,25 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
 
 <!-- SECTION: templates -->
 <template id="tpl-chip"><button type="button" class="chip"></button></template>
+
+<template id="tpl-picker-group">
+  <div class="tpl-group">
+    <button type="button" class="tpl-group-head" aria-expanded="true">
+      <svg class="tg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      <span class="tg-name"></span>
+      <span class="tg-count"></span>
+    </button>
+    <div class="tg-items"></div>
+  </div>
+</template>
+
+<template id="tpl-picker-item">
+  <button type="button" class="tpl-item" role="option">
+    <span class="ti-name"></span>
+    <span class="ti-mark" hidden>联动</span>
+    <svg class="ti-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+  </button>
+</template>
 
 <template id="tpl-field-text">
   <div class="field">
@@ -878,6 +957,7 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
     <div class="hist-acts">
       <button type="button" class="btn btn-sm btn-primary hi-copy">复制</button>
       <button type="button" class="btn btn-sm hi-reuse">复用</button>
+      <button type="button" class="btn btn-sm hi-make">转模板</button>
       <button type="button" class="btn btn-sm hi-more">展开</button>
     </div>
   </div>
@@ -1119,36 +1199,9 @@ const Sound = (function () {
 })();
 
 /* SECTION: js-seed */
-function seedLookup() {
-  return [
-  { kind: 'ban', kindText: '禁止携带', name: '枪支、子弹类(含主要零部件)', items: ['军用枪:手枪、步枪、冲锋枪、机枪、防暴枪等及各类配用子弹', '民用枪:气枪、猎枪、运动枪、麻醉注射枪等及各类配用子弹', '其他枪支:钢珠枪、道具枪、发令枪等', '上述物品的样品、仿制品'] },
-  { kind: 'ban', kindText: '禁止携带', name: '爆炸物品类', items: ['弹药:炸弹、照明弹、燃烧弹、烟幕弹、信号弹、催泪弹、毒气弹、炮弹、地雷、手雷、手榴弹等', '爆破器材:炸药、雷管、导火索、导爆索及含炸药的成品半成品装置', '烟火制品:礼花弹、烟花、鞭炮、摔炮、拉炮、砸炮等烟花爆竹及发令纸,黑火药、烟火药、引火线,含焰火药的玩具', '上述物品的仿制品'] },
-  { kind: 'ban', kindText: '禁止携带', name: '管制器具及其他器具类', items: ['管制刀具:匕首、三棱刮刀、带自锁装置的弹簧刀;刀尖角度小于60度且刀身长度超过150毫米,或刀尖角度大于60度且刀身长度超过220毫米的各类单刃、双刃和多刃刀具;属《管制刀具认定标准》范围的陶瓷类和武术、工艺、礼品刀具', '其他器具:警棍、手铐、催泪器、催泪枪、电击器、电击枪、弓、弩、防卫喷雾器等'], warn: '注意区分「管制刀具」(禁止携带)与「非管制类刀器具」(限制携带),认定以刀刃长度和包装状态为准。' },
-  { kind: 'ban', kindText: '禁止携带', name: '易燃易爆物品类', items: ['高压气体容器:氢气瓶、氧气瓶、氮气瓶、氦气瓶等', '易燃液体:汽油、煤油、柴油、苯、乙醇(酒精)、丙酮、乙醚、油漆、稀料、松香油及含易燃溶剂的制品', '易燃固体:红磷、闪光粉、固体酒精、赛璐珞、发泡剂H等', '自燃物品:黄磷、白磷、硝化纤维(含胶片)、油纸及其制品', '遇湿易燃物品:金属钾、钠、锂、碳化钙(电石)、镁铝粉等', '氧化剂和有机过氧化物:高锰酸钾、氯酸钾、过氧化钠、过氧化钾、过氧化铅、过醋酸、双氧水等'], warn: '消毒酒精属禁止携带;可携带少量含酒精的消毒湿巾、棉片、棉球、免洗洗手凝胶。' },
-  { kind: 'ban', kindText: '禁止携带', name: '毒害品 / 腐蚀性 / 放射性 / 病原体', items: ['毒害品:氰化物、砒霜、剧毒农药等剧毒化学品,以及硒粉、苯酚、生漆等', '腐蚀性物品:硫酸、盐酸、硝酸、氢氧化钠、氢氧化钾、有液蓄电池、汞(水银)等', '放射性物品:放射性同位素等', '传染病病原体:乙肝病毒、炭疽杆菌、结核杆菌、艾滋病病毒等'] },
-  { kind: 'ban', kindText: '禁止携带', name: '其他危害运营安全的物品', items: ['可能干扰列车信号的强磁化物', '有强烈刺激性气味的物品', '不能判明性质、可能具有危险性的物品', '法律、法规、规章规定的其他禁止持有、携带、运输的物品'], warn: '性质不明的可疑物品应先用爆炸品检查仪、液态危险品检查仪、金属探测设备复查确认,不擅自定性。' },
-  { kind: 'ban', kindText: '禁止携带', name: '其他禁带情形(据广州地铁公示信息)', items: ['动物:活禽和猫、狗、蛇等宠物及其他可能妨碍运营或乘客乘车的动物(正在执行公务的专用动物,以及有识别标志、持相关证件并采取保护措施的导盲犬、扶助犬除外)', '交通工具:自行车(使用完整包装且符合行李规定的折叠自行车除外);电瓶车、电动滑板等电动代步工具(符合医疗器械标准、取得注册证编号用于无障碍用途的电动轮椅除外)', '充气气球、液氮等可能引起乘客恐慌或影响设施安全的物品'], warn: '本卡片内容来自广州地铁对外公示信息,与新目录条款分列,现场认定以运营单位最新规定为准。' },
-  { kind: 'limit', kindText: '限制携带', name: '非管制类刀器具', items: ['未包装完好的各类生活、生产类刀器具', '刀刃超过 20cm 的菜刀', '刀刃超过 15cm 的水果刀、餐刀、剪刀、工艺刀、工具刀、陶瓷刀', '铁器总长超过 25cm 的斧头、锤子、铜(铁)挫、锥子等金属利器、钝器'], warn: '例外:包装完好且总长不超过 25cm 的斧头、锤子等金属利器钝器可携带。' },
-  { kind: 'limit', kindText: '限制携带', name: '酒类', items: ['未包装完好的各类白酒', '重量超过 3kg 的白酒'] },
-  { kind: 'limit', kindText: '限制携带', name: '含易燃易爆物质的生活物品', items: ['单品超过 700ml 的摩丝、发胶、染发剂、指甲油、香水、卫生杀虫剂、自喷漆等', '单品 700ml(含)以下,但上述物品数量超过 5 瓶(支)'] },
-  { kind: 'limit', kindText: '限制携带', name: '其他限量物品', items: ['锂电池超过 5 块(单个额定容量值不大于 20000mAh)', '打火机超过 5 个', '安全火柴超过 20 小盒'] },
-  { kind: 'limit', kindText: '限制携带', name: '行李规格', items: ['每位乘客可携带行李总重量不超过 30kg', '外部尺寸长、宽、高之和不超过 1.8m', '超规或妨碍通行、影响安全的物品不得携带进站'] },
-  { kind: 'rule', kindText: '处置口径', name: '安检程序与原则', items: ['程序:引导 - 检查 - 定性 - 处置', '原则:全面安检、人物同检、逢疑严检', '设备:通道式安检机、通过式安检门、手持金属探测器、液体探测仪、炸药探测器等', '对经过安检门报警的乘客,应重点复查报警部位'] },
-  { kind: 'rule', kindText: '处置口径', name: '违禁品处置流程', items: ['对物品进行控制,确保人、物分离', '立即将信息上报站方和民警', '根据现场情况组织先期处置', '按规定登记查获物品台账,如实记录基本情况并妥善移交'], warn: '违禁品不可通过自助寄件柜寄递,只能移交处置。' },
-  { kind: 'rule', kindText: '处置口径', name: '限带品处置流程', items: ['按规定劝导乘客自弃该物品后进站乘车', '或劝导乘客携带该物品离站', '可提示乘客换乘其他交通工具', '在设有自助寄件柜的站点,可提示乘客现场寄出(限带品且符合寄件标准)'] },
-  { kind: 'rule', kindText: '处置口径', name: '特殊群体安检', items: ['孕妇、身高1.3米以下着校服并持有学生优惠地铁票的学生、行动不便人士,可视情采取手探检测与直观检查相结合', '上述人员随身携带箱包进站的,应主动协助将箱包过机安检', '特殊物品不便或无法用安检设备检查的,可采取手探检测等方式'] },
-  { kind: 'rule', kindText: '处置口径', name: '不配合安检的处理', items: ['携带法律法规明令禁止携带物品的,报公安机关依法处理', '携带疑似法律法规明令禁止携带物品的,报公安机关依法处理', '拒绝接受安全检查强行进站,或有其他扰乱安全检查秩序行为的,报公安机关依法处理', '安检员有权禁止其进站乘车'] },
-  { kind: 'info', kindText: '便民信息', name: '限带物品自助寄件柜(试点)', items: ['限带物品在符合快递寄件标准的前提下可现场自助寄出,之后可继续乘车', '服务时间:每日 6:00-21:00,非服务时段仍按原有方式处置', '仅支持顺丰到付,费用以实际计价为准', '仅提供寄件服务,不提供寄存;物品入柜下单后不可自助取消'], warn: '来源为广州地铁官网 2026-04-27 试点信息,是否设置及开放时间以本站现场为准。' }
-  ];
-}
-function seedLookupSource() {
-  return [
-  '《广州市轨道交通禁止携带物品目录》:穗公规字〔2026〕2号,广州市公安局、广州市交通运输局 2026-09-23 发布,2026-10-01 起施行,有效期至 2031-10-01(原穗公规字〔2021〕4号目录同日失效)。',
-  '处置口径:《广州市城市轨道交通安全检查工作规定》,2025-05-09 起施行,有效期 5 年。',
-  '便民寄件柜:广州地铁官网 2026-04-27 试点信息。',
-  '本页为离线摘录,供现场快速参考;正式认定与处置以运营单位现行文件和现场民警意见为准。'
-  ];
-}
+/* 速查内容属于数据,不内置在工具里:通过「设置 → 导入配置」载入,或在设置页自行维护 */
+function seedLookup() { return []; }
+function seedLookupSource() { return []; }
 const DISPATCH_DEFAULT = ['劝导自弃后进站', '携带物品离站', '换乘其他交通工具', '现场自助寄件', '移交民警处置'];
 function seedTemplates() {
   const t = (name, group, groupHint, content, varTypes) => ({
@@ -1188,7 +1241,8 @@ function seedData() {
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
       contentItems: [], entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
-      theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 }
+      theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 },
+      tplCollapsed: []
     },
     templates: [],
     timeline: [],
@@ -1215,6 +1269,7 @@ function normalize(d) {
   if (!Array.isArray(s.members)) s.members = [];
   if (!Array.isArray(s.custom)) s.custom = [];
   if (!Array.isArray(s.contentItems)) s.contentItems = [];
+  if (!Array.isArray(s.tplCollapsed)) s.tplCollapsed = [];
   /* 迁移:旧的单条 content -> contentItems */
   if (typeof s.content === 'string' && s.content.trim() && !s.contentItems.length) {
     s.contentItems = [{ id: uid(), name: '默认', text: s.content }];
@@ -1647,8 +1702,13 @@ const Sheet = (function () {
 let currentTplId = null;
 let values = {};
 let touchedVars = {};          // 用户手动改过的变量,自动刷新时跳过
-const collapsedGroups = new Set();
+const collapsedGroups = new Set(Array.isArray(data.settings.tplCollapsed) ? data.settings.tplCollapsed : []);
+let tplQuery = '';
 let previewQueued = false;
+function persistCollapsedGroups() {
+  data.settings.tplCollapsed = Array.from(collapsedGroups);
+  save();
+}
 
 function saveFormCache() {
   if (!currentTplId) return;
@@ -1703,6 +1763,8 @@ function selectTemplate(id, keepValues) {
     if (!Object.keys(values).length) values = {};
   }
   if (tpl) ensureValues(tpl);
+  const g = (tpl && tpl.group || '').trim();
+  if (collapsedGroups.has(g)) { collapsedGroups.delete(g); persistCollapsedGroups(); }
   renderForm();
   renderGroupHint();
   renderPreview();
@@ -1713,82 +1775,77 @@ function groupsOf() {
   return out;
 }
 function renderTplChips() {
-  const groupBox = $('#tplGroupBar'), chipBox = $('#tplChips');
-  groupBox.innerHTML = ''; chipBox.innerHTML = '';
+  const box = $('#tplList'), countEl = $('#tplCount'), toggleBtn = $('#btnToggleGroups');
+  if (!box) return;
+  box.innerHTML = '';
+  const q = tplQuery.trim().toLowerCase();
   const groups = groupsOf();
-  if (!data.templates.length) {
+  const shown = data.templates.filter(function (t) {
+    if (!q) return true;
+    return (t.name + ' ' + (t.group || '') + ' ' + t.content).toLowerCase().indexOf(q) >= 0;
+  });
+  countEl.textContent = !data.templates.length ? ''
+    : (q ? '匹配 ' + shown.length + ' / ' + data.templates.length + ' 个模板'
+         : '共 ' + data.templates.length + ' 个模板,竖向列表选择');
+  toggleBtn.hidden = groups.length < 2 || !!q;
+  toggleBtn.textContent = collapsedGroups.size ? '展开全部' : '折叠全部';
+  function empty(text) {
     const e = document.createElement('div');
-    e.className = 'section-note';
-    e.textContent = '还没有模板,点右上角「管理模板」新建。';
-    chipBox.appendChild(e);
-    groupBox.hidden = true;
+    e.className = 'tpl-list-empty';
+    e.textContent = text;
+    return e;
+  }
+  if (!data.templates.length) {
+    box.appendChild(empty('还没有模板,点右上角「制作模板」用现成文本生成,或点「管理模板」新建。'));
     return;
   }
-  // 分组折叠模式
-  if (groups.length > 1) {
-    groupBox.hidden = false;
-    // 显示分组折叠按钮
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.className = 'chip';
-    toggleBtn.style.cssText = 'font-size:.72rem;min-height:30px;padding:3px 10px';
-    toggleBtn.textContent = collapsedGroups.size ? '展开全部' : '折叠全部';
-    toggleBtn.addEventListener('click', function () {
-      if (collapsedGroups.size) {
-        collapsedGroups.clear();
-      } else {
-        groups.forEach(function (g) { collapsedGroups.add(g); });
-      }
-      save();
+  if (!shown.length) {
+    box.appendChild(empty('没有匹配的模板,换个关键词试试。'));
+    return;
+  }
+  const linkedIds = linkedTplIds();
+  function addItem(host, t) {
+    const node = mk('tpl-picker-item');
+    node.dataset.id = t.id;
+    $('.ti-name', node).textContent = t.name;
+    const on = t.id === currentTplId;
+    node.classList.toggle('on', on);
+    node.setAttribute('aria-selected', on ? 'true' : 'false');
+    const linked = linkedIds.indexOf(t.id) >= 0;
+    node.classList.toggle('linked', linked);
+    if (linked && !on) $('.ti-mark', node).hidden = false;
+    node.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
+    host.appendChild(node);
+  }
+  function addGroup(label, key, list) {
+    const node = mk('tpl-picker-group');
+    const head = $('.tpl-group-head', node);
+    $('.tg-name', head).textContent = label;
+    $('.tg-count', head).textContent = list.length + ' 个';
+    const collapsed = collapsedGroups.has(key);
+    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    const host = $('.tg-items', node);
+    host.hidden = collapsed;
+    list.forEach(function (t) { addItem(host, t); });
+    head.addEventListener('click', function () {
+      if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+      else collapsedGroups.add(key);
+      persistCollapsedGroups();
       renderTplChips();
     });
-    groupBox.appendChild(toggleBtn);
-    groups.forEach(function (g) {
-      const header = document.createElement('button');
-      header.type = 'button';
-      header.className = 'chip';
-      header.style.cssText = 'font-size:.75rem;min-height:30px;padding:3px 10px;font-weight:600';
-      const isCollapsed = collapsedGroups.has(g);
-      header.textContent = (isCollapsed ? '▶ ' : '▼ ') + g;
-      header.setAttribute('aria-pressed', !isCollapsed ? 'true' : 'false');
-      header.addEventListener('click', function () {
-        if (collapsedGroups.has(g)) collapsedGroups.delete(g);
-        else collapsedGroups.add(g);
-        save();
-        renderTplChips();
-      });
-      groupBox.appendChild(header);
-    });
-    // 显示未折叠分组的模板
-    groups.forEach(function (g) {
-      if (collapsedGroups.has(g)) return;
-      const groupTemplates = data.templates.filter(function (t) { return (t.group || '').trim() === g; });
-      groupTemplates.forEach(function (t) {
-        const c = mk('tpl-chip');
-        c.textContent = t.name;
-        c.dataset.id = t.id;
-        c.setAttribute('aria-pressed', t.id === currentTplId ? 'true' : 'false');
-        c.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
-        const linked = linkedTplIds().indexOf(t.id) >= 0;
-        if (linked) c.classList.add('linked');
-        if (linked && t.id !== currentTplId) c.title = '当前时段联动模板';
-        chipBox.appendChild(c);
-      });
-    });
-  } else {
-    groupBox.hidden = true;
-    data.templates.forEach(function (t) {
-      const c = mk('tpl-chip');
-      c.textContent = t.name;
-      c.dataset.id = t.id;
-      c.setAttribute('aria-pressed', t.id === currentTplId ? 'true' : 'false');
-      c.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
-      const linked = linkedTplIds().indexOf(t.id) >= 0;
-      if (linked) c.classList.add('linked');
-      if (linked && t.id !== currentTplId) c.title = '当前时段联动模板';
-      chipBox.appendChild(c);
-    });
+    box.appendChild(node);
   }
+  // 搜索时平铺命中项,避免结果被折叠的分组藏起来
+  if (q || groups.length < 2) {
+    shown.forEach(function (t) { addItem(box, t); });
+    return;
+  }
+  groups.forEach(function (g) {
+    const list = shown.filter(function (t) { return (t.group || '').trim() === g; });
+    if (list.length) addGroup(g, g, list);
+  });
+  const rest = shown.filter(function (t) { return !(t.group || '').trim(); });
+  if (rest.length) addGroup('未分组', '', rest);
 }
 function renderGroupHint() {
   const tpl = tplById(currentTplId);
@@ -2802,6 +2859,7 @@ function renderHistory() {
       toast(ok ? '已复制到剪贴板' : '复制失败,请长按文本手动复制');
     });
     $('.hi-reuse', node).addEventListener('click', function () { reuseHistory(h); });
+    $('.hi-make', node).addEventListener('click', function () { openTplMakerSheet(h.text, h.templateName); });
     $('.hi-del', node).addEventListener('click', function () {
       Sheet.confirmSheet({
         title: '删除这条记录?', message: '删除后无法恢复。', okText: '删除', danger: true,
@@ -2837,7 +2895,25 @@ function reuseHistory(h) {
 /* SECTION: js-lookup */
 let lookupKind = '全部';
 let lookupQuery = '';
-const KIND_LABEL = { ban: '禁止携带', limit: '限制携带', rule: '处置口径', info: '便民信息' };
+/* 速查分类注册表:新增分类只改这里,筛选栏、卡片配色、编辑器下拉全部自动跟随 */
+const KIND_META = [
+  { kind: 'xa', label: 'A类图像特征', badge: 'A类', cls: 'ban' },
+  { kind: 'xb', label: 'B类图像特征', badge: 'B类', cls: 'limit' },
+  { kind: 'ban', label: '禁止携带', badge: '禁止携带', cls: 'ban' },
+  { kind: 'limit', label: '限制携带', badge: '限制携带', cls: 'limit' },
+  { kind: 'rule', label: '处置口径', badge: '处置口径', cls: 'rule' },
+  { kind: 'report', label: '汇报口径', badge: '汇报口径', cls: 'rule' },
+  { kind: 'duty', label: '勤务考勤', badge: '勤务考勤', cls: 'rule' },
+  { kind: 'score', label: '奖惩分值', badge: '奖惩分值', cls: 'rule' },
+  { kind: 'exam', label: '考点速记', badge: '考点速记', cls: 'rule' },
+  { kind: 'info', label: '便民信息', badge: '便民信息', cls: 'rule' }
+];
+const KIND_LABEL = {};
+const KIND_CLS = {};
+const KIND_BADGE = {};
+KIND_META.forEach(function (m) {
+  KIND_LABEL[m.kind] = m.label; KIND_CLS[m.kind] = m.cls; KIND_BADGE[m.kind] = m.badge;
+});
 function highlightInto(host, text, q) {
   host.textContent = '';
   if (!q) { host.textContent = text; return; }
@@ -2856,7 +2932,7 @@ function highlightInto(host, text, q) {
 function renderLookup() {
   const bar = $('#lookupFilterBar');
   bar.innerHTML = '';
-  ['全部', '禁止携带', '限制携带', '处置口径', '便民信息'].forEach(function (k) {
+  ['全部'].concat(KIND_META.map(function (m) { return m.label; })).forEach(function (k) {
     const c = mk('tpl-chip');
     c.textContent = k;
     c.setAttribute('aria-pressed', k === lookupKind ? 'true' : 'false');
@@ -2865,6 +2941,21 @@ function renderLookup() {
   });
   const box = $('#lookupList');
   box.innerHTML = '';
+  // 旧版速查数据没有新增分类,给一个明确的升级入口,避免以为新内容没生效
+  if (data.lookup.length && !data.lookup.some(function (r) { return r.kind === 'xa' || r.kind === 'duty'; })) {
+    const tip = document.createElement('div');
+    tip.className = 'group-hint';
+    tip.style.marginBottom = '11px';
+    const txt = document.createElement('span');
+    txt.className = 'gh-text';
+    txt.textContent = '当前速查仍是旧版内容,导入最新配置文件即可载入新版分类与全部条目。';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '导入配置';
+    btn.addEventListener('click', openImportSheet);
+    tip.appendChild(txt); tip.appendChild(btn);
+    box.appendChild(tip);
+  }
   const q = lookupQuery.trim();
   const rows = data.lookup.filter(function (r) {
     if (lookupKind !== '全部' && KIND_LABEL[r.kind] !== lookupKind) return false;
@@ -2875,7 +2966,9 @@ function renderLookup() {
   if (!rows.length) {
     const e = document.createElement('div');
     e.className = 'empty';
-    e.textContent = '没有匹配的条目,试试更短的关键词,如「刀」「酒」「电池」';
+    e.textContent = data.lookup.length
+      ? '没有匹配的条目,试试更短的关键词,如「刀」「酒」「电池」'
+      : '速查内容为空。到「设置 → 导入配置」导入速查配置文件即可载入全部条目,也可以在设置页「速查内容 → 管理」里自行添加。';
     box.appendChild(e);
     return;
   }
@@ -2883,7 +2976,7 @@ function renderLookup() {
     const node = mk('tpl-lookup-card');
     const kind = $('.lk-kind', node);
     kind.textContent = r.kindText;
-    kind.className = 'lk-kind ' + (r.kind === 'ban' ? 'ban' : r.kind === 'limit' ? 'limit' : 'rule');
+    kind.className = 'lk-kind ' + (KIND_CLS[r.kind] || 'rule');
     highlightInto($('.lk-name', node), r.name, q);
     const ul = $('.lk-list', node);
     r.items.forEach(function (line) {
@@ -3495,7 +3588,7 @@ function applyImported(parsed) {
     toast('导入失败:' + e.message);
     return;
   }
-  const summary = '模板 ' + next.templates.length + ' 个\n时间线任务 ' + next.timeline.length + ' 个\n安检点 ' + next.settings.entrances.length + ' 个\n自定义变量 ' + next.settings.custom.length + ' 个\n上报记录 ' + next.history.length + ' 条';
+  const summary = '模板 ' + next.templates.length + ' 个\n时间线任务 ' + next.timeline.length + ' 个\n安检点 ' + next.settings.entrances.length + ' 个\n自定义变量 ' + next.settings.custom.length + ' 个\n速查条目 ' + next.lookup.length + ' 条\n上报记录 ' + next.history.length + ' 条';
   Sheet.confirmSheet({
     title: '确认导入并覆盖当前数据?',
     message: '导入会覆盖本机现有的全部模板、设置和时间线,此操作不可撤销。建议先导出一份当前配置备份。',
@@ -3575,7 +3668,6 @@ function openLookupSheet() {
   bodyNode.appendChild(listBox);
   bodyNode.appendChild(editorHost);
 
-  const KIND_TEXT = { ban: '禁止携带', limit: '限制携带', rule: '处置口径', info: '便民信息' };
   function commit() { data.lookup = items; save(); renderLookup(); }
   function closeEditor() { editing = false; editorHost.innerHTML = ''; }
 
@@ -3647,10 +3739,10 @@ function openLookupSheet() {
 
     const kindSelect = document.createElement('select');
     kindSelect.className = 'select'; kindSelect.style.marginBottom = '9px';
-    Object.keys(KIND_TEXT).forEach(function (k) {
+    KIND_META.forEach(function (m) {
       const o = document.createElement('option');
-      o.value = k; o.textContent = KIND_TEXT[k];
-      if (item.kind === k) o.selected = true;
+      o.value = m.kind; o.textContent = m.label;
+      if (item.kind === m.kind) o.selected = true;
       kindSelect.appendChild(o);
     });
 
@@ -3672,7 +3764,7 @@ function openLookupSheet() {
     saveBtn.addEventListener('click', function () {
       item.name = nameInput.value.trim() || '未命名';
       item.kind = kindSelect.value;
-      item.kindText = KIND_TEXT[item.kind];
+      item.kindText = KIND_BADGE[item.kind] || item.kind;
       item.items = itemsInput.value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
       item.warn = warnInput.value.trim();
       closeEditor(); paintList(); commit();
@@ -4212,15 +4304,516 @@ function openManageSheet() {
     onClose: function () { dirty = false; renderTplChips(); }
   });
 }
+/* SECTION: js-tpl-maker */
+/* 把一段现成的上报文本反向做成模板:自动识别候选片段,可逐个确认或手动补选。
+   每条候选 = 前文锚点 + 要替换的片段 + 后文锚点;替换时只动中间片段,锚点原样保留,
+   避免「x6」里的 6 把全文所有 6 都换掉。已有 *变量* 一律保护,不参与识别与替换。 */
+const MAKER_TYPES = [
+  ['text', '文本'], ['number', '数字'], ['date', '日期'], ['time', '时间'],
+  ['single', '单选'], ['multi', '多选'], ['entrance', '安检点'], ['member', '人员']
+];
+function escapeRe(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function makerKey(r) { return (r.pre || '') + r.frag + (r.suf || ''); }
+function protectedRanges(text) {
+  const out = [], re = /\*[^*\n]+\*/g;
+  let m;
+  while ((m = re.exec(text)) !== null) out.push([m.index, m.index + m[0].length]);
+  return out;
+}
+function inRanges(ranges, a, b) {
+  return ranges.some(function (r) { return a < r[1] && b > r[0]; });
+}
+function detectCandidates(text) {
+  const ranges = protectedRanges(text);
+  const found = [];
+  const st = data.settings;
+  /* prio 越小优先级越高:同一起点上,语义明确的片段压过「括号备注」这类兜底识别 */
+  function add(frag, name, type, prio, options, pre, suf) {
+    if (!frag) return;
+    pre = pre || ''; suf = suf || '';
+    const key = pre + frag + suf;
+    let at = text.indexOf(key);
+    while (at >= 0) {
+      const fs = at + pre.length;
+      if (!inRanges(ranges, fs, fs + frag.length)) {
+        found.push({ frag: frag, name: name, type: type, options: options || '', prio: prio, pre: pre, suf: suf, start: fs });
+        return;
+      }
+      at = text.indexOf(key, at + 1);
+    }
+  }
+  function addRe(re, name, type, prio, options, gi) {
+    let m;
+    re.lastIndex = 0;
+    while ((m = re.exec(text)) !== null) {
+      const frag = m[gi == null ? 0 : gi];
+      if (frag) {
+        const off = m[0].indexOf(frag);
+        const fs = m.index + off;
+        if (!inRanges(ranges, fs, fs + frag.length)) {
+          found.push({
+            frag: frag, name: name, type: type, options: options || '', prio: prio,
+            pre: m[0].slice(0, off), suf: m[0].slice(off + frag.length), start: fs
+          });
+        }
+      }
+      if (m.index === re.lastIndex) re.lastIndex++;
+    }
+  }
+  // 人员:姓名＋工号优先,其次纯姓名
+  const leaderName = String(st.leader || '').trim();
+  (st.members || []).forEach(function (m) {
+    if (!m.name) return;
+    if (m.id) add(m.name + '（' + m.id + '）', '人员', 'member', 5);
+    // 班长本人出现在「上报班长（…）」里时应识别为班长,不是复检员
+    if (m.name !== leaderName) add(m.name, '人员', 'member', 6);
+  });
+  // 基本信息
+  if (st.leaderPhone) add(String(st.leaderPhone).trim(), '电话号码', 'text', 8);
+  if (st.leader) add(String(st.leader).trim(), '班长', 'text', 9);
+  if (st.station) add(String(st.station).trim(), '站点', 'text', 10);
+  if (st.line) add(String(st.line).trim(), '线路', 'text', 11);
+  // 日期与时间
+  addRe(/\d{4}年\d{1,2}月\d{1,2}日/g, '日期', 'date', 15);
+  addRe(/\d{4}-\d{1,2}-\d{1,2}/g, '日期', 'date', 15);
+  addRe(/\d{1,2}月\d{1,2}日/g, '日期', 'date', 16);
+  addRe(/\d{1,2}:\d{2}/g, '时间', 'time', 17);
+  addRe(/(\d{3,4})分(?!钟)/g, '时间', 'time', 18, '', 1);
+  // 安检点:长的优先,避免 C1口 被 C口 抢先
+  (st.entrances || []).filter(Boolean).slice().sort(function (a, b) { return b.length - a.length; })
+    .forEach(function (e) { add(e, '安检点', 'entrance', 20); });
+  // 已配置的自定义选项与处置选项
+  (st.custom || []).forEach(function (c) {
+    if (!c.key || (c.type !== 'single' && c.type !== 'multi')) return;
+    String(c.value || '').split('|').map(function (x) { return x.trim(); }).filter(Boolean)
+      .sort(function (a, b) { return b.length - a.length; })
+      .forEach(function (opt) { add(opt, c.key, c.type, 25, String(c.value || '')); });
+  });
+  (st.dispatchOptions || []).filter(Boolean).forEach(function (opt) { add(opt, '处置结果', 'single', 26); });
+  // 性别
+  addRe(/([男女])(?=乘客)/g, '乘客性别', 'single', 30, '男|女', 1);
+  // 物品名:取自速查的 A/B 类图像条目,含括号里的别名与常见前置修饰词
+  const ITEM_MODS = ['玩具', '仿真', '工艺', '电动', '折叠', '超额', '超量', '儿童'];
+  const seenItem = {};
+  (data.lookup || []).forEach(function (r) {
+    if (r.kind !== 'xa' && r.kind !== 'xb') return;
+    const cands = [];
+    String(r.name).split('/').forEach(function (part) {
+      const al = part.match(/（([^）]+)）/);
+      if (al) cands.push(al[1].trim());
+      const base = part.replace(/（[^）]*）/g, '').trim();
+      if (base) cands.push(base);
+    });
+    cands.forEach(function (nm) {
+      if (!nm || nm.length > 8 || seenItem[nm]) return;
+      seenItem[nm] = 1;
+      const varName = r.kind === 'xa' ? '违禁品' : '限带品';
+      let at = text.indexOf(nm);
+      while (at >= 0) {
+        let frag = nm, fs = at;
+        const mod = text.slice(Math.max(0, at - 2), at);
+        if (ITEM_MODS.indexOf(mod) >= 0) { frag = mod + nm; fs = at - 2; }
+        if (!inRanges(ranges, fs, fs + frag.length)) {
+          found.push({ frag: frag, name: varName, type: 'text', options: '', prio: 40, pre: '', suf: '', start: fs });
+          break;
+        }
+        at = text.indexOf(nm, at + nm.length);
+      }
+    });
+  });
+  // 数量与括号备注:捕获组就是要替换的部分,前后文自动成为锚点
+  addRe(/[x×X](\d+)/g, '物品数量', 'number', 50, '', 1);
+  addRe(/(\d+)名/g, '人数', 'number', 51, '', 1);
+  addRe(/(\d+)次/g, '次数', 'number', 52, '', 1);
+  addRe(/(\d+)人/g, '人数', 'number', 53, '', 1);
+  addRe(/(\d+)分钟/g, '时长', 'number', 54, '', 1);
+  addRe(/[（(]([^（）()]{1,40})[）)]/g, '备注', 'text', 80, '', 1);
+  // 去重叠:同一起点先比优先级,再比长度;只按真正要替换的片段判重叠
+  found.sort(function (a, b) {
+    return a.start - b.start || a.prio - b.prio || b.frag.length - a.frag.length;
+  });
+  const picked = [];
+  found.forEach(function (f) {
+    const end = f.start + f.frag.length;
+    if (!f.frag) return;
+    if (picked.some(function (p) { return f.start < p.start + p.frag.length && end > p.start; })) return;
+    picked.push(f);
+  });
+  // 同一片段合并成一行,默认替换全部同名
+  function countOf(key) {
+    let n = 0, at = text.indexOf(key);
+    while (at >= 0) { n++; at = text.indexOf(key, at + key.length); }
+    return n;
+  }
+  const rows = [], byKey = {};
+  picked.forEach(function (f) {
+    const key = f.pre + f.frag + f.suf;
+    if (byKey[key]) return;
+    const row = {
+      frag: f.frag, pre: f.pre, suf: f.suf, name: f.name, type: f.type, options: f.options,
+      on: true, scope: 'all', count: countOf(key), start: f.start
+    };
+    byKey[key] = row;
+    rows.push(row);
+  });
+  // 变量名去重:不同片段撞到同名时自动加序号
+  const used = {};
+  rows.forEach(function (r) {
+    let nm = r.name, i = 2;
+    while (used[nm]) { nm = r.name + i; i++; }
+    used[nm] = 1;
+    r.name = nm;
+  });
+  return rows;
+}
+function buildTemplateFromRows(raw, rows) {
+  const on = rows.filter(function (r) { return r.on && r.frag; });
+  const used = {}, varTypes = {};
+  on.forEach(function (r) {
+    const base = (r.name || '').trim() || '变量';
+    let nm = base, i = 2;
+    while (used[nm]) { nm = base + i; i++; }
+    used[nm] = 1;
+    r.finalName = nm;
+    const vt = { type: r.type };
+    if ((r.type === 'single' || r.type === 'multi') && r.options) {
+      vt.options = r.options.split('|').map(function (x) { return x.trim(); }).filter(Boolean);
+    }
+    varTypes[nm] = vt;
+  });
+  if (!on.length) return { content: raw, varTypes: {} };
+  const sorted = on.slice().sort(function (a, b) { return makerKey(b).length - makerKey(a).length; });
+  const map = {};
+  sorted.forEach(function (r) { map[makerKey(r)] = r; });
+  const re = new RegExp(sorted.map(function (r) { return escapeRe(makerKey(r)); }).join('|'), 'g');
+  const ranges = protectedRanges(raw);
+  const hit = {};
+  const parts = [];
+  let last = 0, m;
+  while ((m = re.exec(raw)) !== null) {
+    const r = map[m[0]];
+    const fs = m.index + (r ? (r.pre || '').length : 0);
+    const blocked = !r || inRanges(ranges, fs, fs + r.frag.length)
+      || (r.scope === 'one' && hit[m[0]]);
+    if (!blocked) {
+      hit[m[0]] = 1;
+      parts.push(raw.slice(last, m.index), (r.pre || '') + '*' + r.finalName + '*' + (r.suf || ''));
+      last = m.index + m[0].length;
+    }
+    if (m.index === re.lastIndex) re.lastIndex++;
+  }
+  parts.push(raw.slice(last));
+  return { content: parts.join(''), varTypes: varTypes };
+}
+function openTplMakerSheet(seedText, suggestName) {
+  let raw = String(seedText || '');
+  let rows = [];
+  let resultTouched = false;
+  const body = document.createElement('div');
+
+  const tip = document.createElement('p');
+  tip.className = 'section-note';
+  tip.textContent = '把一段已经写好的上报文本粘进来,工具会标出可以换成变量的地方(日期、时间、站点、安检点、人员、物品、数量等)。确认后就是一条新模板。';
+  body.appendChild(tip);
+
+  const srcLabel = document.createElement('div');
+  srcLabel.className = 'mk-sec';
+  srcLabel.textContent = '第一步 · 现成文本';
+  body.appendChild(srcLabel);
+  const src = document.createElement('textarea');
+  src.className = 'textarea mk-src';
+  src.placeholder = '例如:\n【限带品查危简报】\n       2026年1月1日08:30，X号线XX站A口复检员张三（SZ00001）查出疑似B类物品……';
+  src.value = raw;
+  src.setAttribute('aria-label', '现成的上报文本');
+  body.appendChild(src);
+  const srcBtns = document.createElement('div');
+  srcBtns.className = 'btn-row';
+  srcBtns.style.marginTop = '9px';
+  const scanBtn = document.createElement('button');
+  scanBtn.type = 'button'; scanBtn.className = 'btn btn-primary'; scanBtn.textContent = '识别可替换内容';
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button'; clearBtn.className = 'btn'; clearBtn.textContent = '清空';
+  srcBtns.appendChild(scanBtn); srcBtns.appendChild(clearBtn);
+  body.appendChild(srcBtns);
+
+  const rowSec = document.createElement('div');
+  rowSec.className = 'mk-sec';
+  rowSec.textContent = '第二步 · 确认要替换的内容';
+  body.appendChild(rowSec);
+  const rowBox = document.createElement('div');
+  body.appendChild(rowBox);
+
+  const manualSec = document.createElement('div');
+  manualSec.className = 'mk-sec';
+  manualSec.textContent = '手动补选(识别不到时用)';
+  body.appendChild(manualSec);
+  const mFrag = document.createElement('input');
+  mFrag.className = 'input'; mFrag.type = 'text';
+  mFrag.placeholder = '要替换的原文片段,如 玩具手铐';
+  mFrag.style.marginBottom = '7px';
+  mFrag.setAttribute('aria-label', '要替换的原文片段');
+  const mGrid = document.createElement('div');
+  mGrid.className = 'mk-grid';
+  const mName = document.createElement('input');
+  mName.className = 'input'; mName.type = 'text'; mName.placeholder = '变量名,如 违禁品';
+  mName.setAttribute('aria-label', '变量名');
+  const mType = document.createElement('select');
+  mType.className = 'select';
+  MAKER_TYPES.forEach(function (t) {
+    const o = document.createElement('option');
+    o.value = t[0]; o.textContent = t[1];
+    mType.appendChild(o);
+  });
+  mGrid.appendChild(mName); mGrid.appendChild(mType);
+  const mAdd = document.createElement('button');
+  mAdd.type = 'button'; mAdd.className = 'btn btn-block'; mAdd.style.marginTop = '7px';
+  mAdd.textContent = '添加替换';
+  body.appendChild(mFrag); body.appendChild(mGrid); body.appendChild(mAdd);
+
+  const resSec = document.createElement('div');
+  resSec.className = 'mk-sec';
+  resSec.textContent = '第三步 · 生成结果(可继续手动修改)';
+  body.appendChild(resSec);
+  const resNote = document.createElement('p');
+  resNote.className = 'section-note';
+  resNote.style.marginBottom = '7px';
+  body.appendChild(resNote);
+  const result = document.createElement('textarea');
+  result.className = 'textarea mk-src';
+  result.setAttribute('aria-label', '生成的模板内容');
+  body.appendChild(result);
+  const regen = document.createElement('button');
+  regen.type = 'button'; regen.className = 'btn btn-block'; regen.style.marginTop = '7px';
+  regen.textContent = '按上面的选择重新生成';
+  regen.hidden = true;
+  body.appendChild(regen);
+
+  const infoSec = document.createElement('div');
+  infoSec.className = 'mk-sec';
+  infoSec.textContent = '第四步 · 模板信息';
+  body.appendChild(infoSec);
+  const nameIn = document.createElement('input');
+  nameIn.className = 'input'; nameIn.type = 'text';
+  nameIn.placeholder = '模板名称';
+  nameIn.value = suggestName ? suggestName + '(新)' : '';
+  nameIn.style.marginBottom = '7px';
+  nameIn.setAttribute('aria-label', '模板名称');
+  const groupIn = document.createElement('input');
+  groupIn.className = 'input'; groupIn.type = 'text';
+  groupIn.placeholder = '分组(选填),如 查违';
+  groupIn.style.marginBottom = '9px';
+  groupIn.setAttribute('aria-label', '模板分组');
+  const hintWrap = document.createElement('div');
+  hintWrap.className = 'chip-group';
+  hintWrap.setAttribute('aria-label', '发往群名(多选)');
+  (data.settings.groups || []).filter(Boolean).forEach(function (g) {
+    const chip = document.createElement('button');
+    chip.type = 'button'; chip.className = 'chip'; chip.textContent = g;
+    chip.setAttribute('aria-pressed', 'false');
+    chip.addEventListener('click', function () {
+      chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    });
+    hintWrap.appendChild(chip);
+  });
+  if (!hintWrap.children.length) {
+    const n = document.createElement('span');
+    n.className = 'section-note';
+    n.textContent = '还没配置群名,可去设置页添加';
+    hintWrap.appendChild(n);
+  }
+  body.appendChild(nameIn); body.appendChild(groupIn); body.appendChild(hintWrap);
+
+  function contextOf(frag) {
+    const at = raw.indexOf(frag);
+    if (at < 0) return '';
+    const a = Math.max(0, at - 10), b = Math.min(raw.length, at + frag.length + 10);
+    return (a > 0 ? '…' : '') + raw.slice(a, b).replace(/\n/g, ' ') + (b < raw.length ? '…' : '');
+  }
+  function buildResult() { return buildTemplateFromRows(raw, rows); }
+  function refreshResult() {
+    const built = buildResult();
+    if (!resultTouched) result.value = built.content;
+    const on = rows.filter(function (r) { return r.on; });
+    resNote.textContent = !on.length ? '还没有选择要替换的内容,生成结果就是原文。'
+      : (resultTouched ? '已手动改过生成结果,上面的选择不会再覆盖它;需要时点下面「按上面的选择重新生成」。'
+                       : '已选 ' + on.length + ' 处替换。这里也可以继续手动改,例如加 {?备注}…{/备注} 可选段。');
+    return built;
+  }
+  function paintRows() {
+    rowBox.innerHTML = '';
+    if (!rows.length) {
+      const e = document.createElement('div');
+      e.className = 'tpl-list-empty';
+      e.textContent = raw.trim() ? '点上面的「识别可替换内容」开始。' : '先粘贴一段现成文本。';
+      rowBox.appendChild(e);
+      return;
+    }
+    rows.forEach(function (r, idx) {
+      const row = document.createElement('div');
+      row.className = 'mk-row' + (r.on ? '' : ' off');
+      const head = document.createElement('div');
+      head.className = 'mk-row-head';
+      const frag = document.createElement('span');
+      frag.className = 'mk-frag';
+      frag.textContent = makerKey(r);
+      const sw = document.createElement('button');
+      sw.type = 'button'; sw.className = 'mk-switch';
+      sw.setAttribute('aria-pressed', r.on ? 'true' : 'false');
+      sw.textContent = r.on ? '替换' : '不替换';
+      sw.addEventListener('click', function () {
+        r.on = !r.on;
+        paintRows(); refreshResult();
+      });
+      head.appendChild(frag); head.appendChild(sw);
+      row.appendChild(head);
+      const ctx = document.createElement('div');
+      ctx.className = 'section-note';
+      ctx.style.marginBottom = '7px';
+      ctx.textContent = ((r.pre || r.suf) ? '只把其中的「' + r.frag + '」换成变量。' : '')
+        + contextOf(makerKey(r)) + (r.count > 1 ? '（全文出现 ' + r.count + ' 处）' : '');
+      row.appendChild(ctx);
+      const grid = document.createElement('div');
+      grid.className = 'mk-grid';
+      const nm = document.createElement('input');
+      nm.className = 'input'; nm.type = 'text'; nm.value = r.name;
+      nm.placeholder = '变量名';
+      nm.setAttribute('aria-label', '变量名');
+      nm.addEventListener('input', function () { r.name = nm.value; refreshResult(); });
+      const tp = document.createElement('select');
+      tp.className = 'select';
+      tp.setAttribute('aria-label', '变量类型');
+      MAKER_TYPES.forEach(function (t) {
+        const o = document.createElement('option');
+        o.value = t[0]; o.textContent = t[1];
+        if (t[0] === r.type) o.selected = true;
+        tp.appendChild(o);
+      });
+      tp.addEventListener('change', function () { r.type = tp.value; paintRows(); refreshResult(); });
+      grid.appendChild(nm); grid.appendChild(tp);
+      row.appendChild(grid);
+      if (r.type === 'single' || r.type === 'multi') {
+        const op = document.createElement('input');
+        op.className = 'input'; op.type = 'text';
+        op.style.cssText = 'min-height:40px;font-size:.82rem;padding:8px 10px;margin-top:7px';
+        op.placeholder = '选项1|选项2|选项3';
+        op.value = r.options || '';
+        op.setAttribute('aria-label', '选项');
+        op.addEventListener('input', function () { r.options = op.value; refreshResult(); });
+        row.appendChild(op);
+      }
+      const meta = document.createElement('div');
+      meta.className = 'mk-meta';
+      const scopeLab = document.createElement('label');
+      const scope = document.createElement('input');
+      scope.type = 'checkbox';
+      scope.checked = r.scope === 'all';
+      scope.disabled = r.count < 2;
+      scope.addEventListener('change', function () { r.scope = scope.checked ? 'all' : 'one'; refreshResult(); });
+      scopeLab.appendChild(scope);
+      scopeLab.appendChild(document.createTextNode(r.count > 1 ? '替换全部同名' : '仅 1 处'));
+      meta.appendChild(scopeLab);
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'mini-btn danger';
+      del.style.cssText = 'min-height:30px;font-size:.72rem';
+      del.textContent = '移除';
+      del.addEventListener('click', function () {
+        rows.splice(idx, 1);
+        paintRows(); refreshResult();
+      });
+      meta.appendChild(del);
+      row.appendChild(meta);
+      rowBox.appendChild(row);
+    });
+  }
+  function scan() {
+    raw = src.value;
+    if (!raw.trim()) { toast('先粘贴一段现成文本'); return; }
+    rows = detectCandidates(raw);
+    resultTouched = false;
+    regen.hidden = true;
+    paintRows();
+    const built = refreshResult();
+    result.value = built.content;
+    toast(rows.length ? '识别到 ' + rows.length + ' 处可替换内容' : '没识别到可替换内容,可用下面手动补选');
+  }
+  scanBtn.addEventListener('click', scan);
+  clearBtn.addEventListener('click', function () {
+    src.value = ''; raw = ''; rows = [];
+    resultTouched = false; regen.hidden = true;
+    paintRows(); refreshResult();
+  });
+  src.addEventListener('input', function () { raw = src.value; });
+  result.addEventListener('input', function () {
+    resultTouched = true;
+    regen.hidden = false;
+  });
+  regen.addEventListener('click', function () {
+    resultTouched = false; regen.hidden = true;
+    refreshResult();
+  });
+  mAdd.addEventListener('click', function () {
+    const frag = mFrag.value.trim();
+    const nm = mName.value.trim();
+    if (!frag) { toast('先填要替换的原文片段'); return; }
+    if (!nm) { toast('先填变量名'); return; }
+    if (raw.indexOf(frag) < 0) { toast('原文里找不到这个片段'); return; }
+    if (rows.some(function (r) { return makerKey(r) === frag; })) { toast('这个片段已经在列表里了'); return; }
+    let count = 0, at = raw.indexOf(frag);
+    while (at >= 0) { count++; at = raw.indexOf(frag, at + frag.length); }
+    rows.push({ frag: frag, pre: '', suf: '', name: nm, type: mType.value, options: '', on: true, scope: 'all', count: count, start: raw.indexOf(frag) });
+    mFrag.value = ''; mName.value = '';
+    paintRows(); refreshResult();
+    toast('已添加');
+  });
+
+  const foot = document.createElement('div');
+  foot.className = 'btn-row';
+  const cancel = document.createElement('button');
+  cancel.type = 'button'; cancel.className = 'btn'; cancel.textContent = '取消';
+  cancel.addEventListener('click', function () { Sheet.requestClose(); });
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button'; saveBtn.className = 'btn btn-primary'; saveBtn.textContent = '保存为模板';
+  saveBtn.addEventListener('click', function () {
+    const content = result.value.trim();
+    if (!content) { toast('生成结果是空的'); return; }
+    const nm = nameIn.value.trim();
+    if (!nm) { toast('先填模板名称'); nameIn.focus(); return; }
+    const built = buildResult();
+    const t = {
+      id: uid(), name: nm, group: groupIn.value.trim(),
+      groupHint: Array.from(hintWrap.querySelectorAll('.chip[aria-pressed="true"]')).map(function (c) { return c.textContent; }),
+      content: result.value, varTypes: built.varTypes, varOrder: [],
+      builtin: false, createdAt: Date.now(), updatedAt: Date.now()
+    };
+    data.templates.push(t);
+    save();
+    Sheet.closeNow();
+    switchView('report');
+    selectTemplate(t.id);
+    renderTplChips();
+    toast('模板「' + nm + '」已保存');
+  });
+  foot.appendChild(cancel); foot.appendChild(saveBtn);
+
+  paintRows();
+  refreshResult();
+  if (raw.trim()) scan();
+  Sheet.open({
+    title: '制作模板', bodyNode: body, footNode: foot,
+    dirty: function () { return !!result.value.trim() && !!raw.trim(); },
+    autofocus: !raw
+  });
+}
 function openHelpSheet() {
   const node = document.createElement('div');
   const blocks = [
-    { t: '快速上手', l: ['在「上报」页选模板,填几个空', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
+    { t: '快速上手', l: ['在「上报」页的竖向列表里选模板,模板多时可用上方搜索框过滤', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
     { t: '人员批量导入', l: ['设置页「人员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
-    { t: '速查', l: ['速查页内容完全可自定义,在设置页点「管理」编辑', '支持添加禁止携带、限制携带、处置口径、便民信息等分类', '支持搜索和筛选'] },
+    { t: '速查', l: ['速查内容随配置文件下发,在「设置 → 导入配置」导入即可载入', '分类含 A/B 类图像特征、禁止携带、限制携带、处置口径、汇报口径、勤务考勤、奖惩分值、考点速记、便民信息', '顶部搜索框可查物品名、数值和口径,命中的卡片自动展开', '也可以在设置页「速查内容 → 管理」里自行添加、编辑、排序'] },
+    { t: '制作模板', l: ['上报页点「制作模板」,把一段已经写好的上报文本粘进去', '点「识别可替换内容」,工具会标出日期、时间、线路、站点、安检点、人员、物品、数量等候选', '每处可以改变量名和类型、取消替换、或只替换第一处', '识别不到的可在「手动补选」里填原文片段和变量名', '生成结果可继续手动修改,填好名称分组后保存即成新模板', '历史记录每条也有「转模板」,可直接拿旧上报内容做模板'] },
     { t: '数据统计', l: ['物品清单类型支持自定义字段,可配置「数字」类型并勾选「求和」自动汇总', '字段可关联「安检点」或「群名」,填数据时直接下拉选择不用手输', '模板里用 *总字段名* 引用汇总值,如 *总过机数*'] },
     { t: '数据', l: ['全部数据只存在这台设备的浏览器里,不上传', '设置页可导出 .json 备份,同事导入即可共用配置', '清除浏览器数据会一并删除,请定期导出备份'] }
   ];
@@ -4292,12 +4885,12 @@ function injectPwa() {
 function bootRender() {
   renderHeaderSub();
   applyTimelineTpl();
-  renderTplChips();
   if (!currentTplId || !tplById(currentTplId)) {
     currentTplId = (data.lastTplId && tplById(data.lastTplId)) ? data.lastTplId : (data.templates.length ? data.templates[0].id : null);
   }
   if (currentTplId) selectTemplate(currentTplId);
   else { values = {}; touchedVars = {}; renderForm(); renderPreview(); renderGroupHint(); }
+  renderTplChips();
   renderTimeline(true);
   renderRemindBar();
   renderHistory();
@@ -4331,6 +4924,21 @@ function bindGlobal() {
   });
   $('#btnHelp').addEventListener('click', openHelpSheet);
   $('#btnManageTpl').addEventListener('click', openManageSheet);
+  $('#btnMakeTpl').addEventListener('click', function () { openTplMakerSheet(''); });
+  $('#btnToggleGroups').addEventListener('click', function () {
+    if (collapsedGroups.size) collapsedGroups.clear();
+    else {
+      groupsOf().forEach(function (g) { collapsedGroups.add(g); });
+      collapsedGroups.add('');
+    }
+    persistCollapsedGroups();
+    renderTplChips();
+  });
+  const tplSearchEl = $('#tplSearch');
+  tplSearchEl.addEventListener('input', debounce(function () {
+    tplQuery = tplSearchEl.value;
+    renderTplChips();
+  }, 180));
   $('#btnManageTimeline').addEventListener('click', openTimelineSheet);
   $('#btnManageLookup').addEventListener('click', openLookupSheet);
   $('#btnImportMembers').addEventListener('click', openMemberImportSheet);
