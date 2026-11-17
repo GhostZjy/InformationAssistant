@@ -234,6 +234,31 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .mk-meta{display:flex;align-items:center;gap:10px;margin-top:7px;font-size:.72rem;color:var(--text-3);flex-wrap:wrap}
 .mk-meta label{display:inline-flex;align-items:center;gap:5px}
 .mk-preview{max-height:210px;overflow-y:auto}
+/* SECTION: combobox */
+.cb-wrap{position:relative}
+.cb-panel{position:absolute;left:0;right:0;top:100%;z-index:40;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;margin-top:4px}
+.cb-opt{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;text-align:left;font-size:.86rem;
+  color:var(--text);border-bottom:1px solid var(--border);min-height:42px}
+.cb-opt:last-child{border-bottom:none}
+.cb-opt:active,.cb-opt:hover{background:var(--primary-soft)}
+.cb-opt .cb-kind{font-size:.66rem;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--card-2);color:var(--text-3);flex:none}
+.cb-empty{padding:10px 12px;font-size:.8rem;color:var(--text-3)}
+/* SECTION: backup */
+.snap-row{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card-2);margin-bottom:8px}
+.snap-info{flex:1;min-width:0}
+.snap-time{font-size:.84rem;font-weight:700;color:var(--text)}
+.snap-meta{font-size:.72rem;color:var(--text-3);margin-top:2px}
+/* SECTION: todo */
+.todo-line{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;line-height:1.6;padding:5px 0;color:var(--text-2)}
+.todo-line .todo-tag{flex:none;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:6px;margin-top:2px}
+.todo-tag.now{background:var(--primary-soft);color:var(--primary)}
+.todo-tag.next{background:var(--card-2);color:var(--text-3)}
+.todo-tag.late{background:var(--danger-soft);color:var(--danger)}
+.todo-tag.done{background:var(--success-soft);color:var(--success)}
+.todo-line b{color:var(--text)}
+.lk-report{margin-top:9px}
+
 .group-hint{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:var(--radius-sm);
   background:var(--warn-soft);color:var(--warn);font-size:.88rem;font-weight:600;line-height:1.5}
 .group-hint .gh-text{flex:1;min-width:0;word-break:break-word}
@@ -542,6 +567,11 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
   </div>
 
   <div class="card">
+    <div class="card-head"><span class="card-title">今日待办</span><span class="section-note" id="todoCount"></span></div>
+    <div id="todoBody"></div>
+  </div>
+
+  <div class="card">
     <div id="remindBar"></div>
     <div class="progress-line" style="margin-top:12px">
       <span class="progress-text" id="progressText">0 / 0</span>
@@ -725,6 +755,10 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
         导入配置
       </button>
     </div>
+    <div class="btn-row" style="margin-bottom:9px">
+      <button class="btn" id="btnBackup">备份与恢复</button>
+    </div>
+    <p class="section-note" id="backupLast" style="margin-bottom:9px"></p>
     <div class="btn-row">
       <button class="btn btn-danger" id="btnWipe">清空全部数据</button>
     </div>
@@ -1322,7 +1356,7 @@ function normalize(d) {
     if (i.done && typeof i.done !== 'object') i.done = null;
   });
   out.history = out.history.slice(0, 300).map(function (h) {
-    return { id: h.id || uid(), templateId: h.templateId || '', templateName: h.templateName || '', text: String(h.text || ''), createdAt: h.createdAt || Date.now() };
+    return { id: h.id || uid(), templateId: h.templateId || '', templateName: h.templateName || '', text: String(h.text || ''), vals: (h.vals && typeof h.vals === 'object') ? h.vals : null, createdAt: h.createdAt || Date.now() };
   });
   return out;
 }
@@ -1595,18 +1629,70 @@ function renderTemplate(tpl, values) {
   out = out.replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '').replace(/\n+$/, '');
   return out;
 }
+/* 只出现在可选段 {?变量}…{/变量} 里的变量属于选填,空着不算漏填 */
+function optionalOnlyVars(content) {
+  const spans = [];
+  const re = /\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g;
+  let m;
+  while ((m = re.exec(content)) !== null) spans.push([m.index, m.index + m[0].length]);
+  const out = {};
+  extractVars(content).forEach(function (name) {
+    const vr = new RegExp('\\*' + escapeRe(name) + '\\*', 'g');
+    let hit = false, allIn = true, mm;
+    while ((mm = vr.exec(content)) !== null) {
+      hit = true;
+      const at = mm.index;
+      if (!spans.some(function (sp) { return at >= sp[0] && at < sp[1]; })) { allIn = false; break; }
+    }
+    if (hit && allIn) out[name] = 1;
+  });
+  return out;
+}
+/* 漏填判定:只看真正需要手填的变量。
+   自动带入的基本信息、自动求和与件数变量、可选段内的变量都不算;
+   物品清单为空视为漏填(清单没填就发汇总,正文会缺一整块数据)。 */
 function missingVars(tpl, values) {
   if (!tpl) return [];
+  const opt = optionalOnlyVars(tpl.content);
   const miss = [];
-  extractVars(tpl.content).forEach(function (name) {
+  visibleVars(tpl).forEach(function (name) {
+    if (opt[name]) return;
     const type = varType(tpl, name);
-    if (type === 'items') return;
+    if (type === 'items') {
+      const arr = values[name + '__items'];
+      if (!Array.isArray(arr) || !arr.length) miss.push(name);
+      return;
+    }
     let v = values[name];
-    if (v == null) v = presetValue(name) || defaultByType(name, type);
-    v = String(v).trim();
-    if (!v && ['年', '月', '日'].indexOf(name) < 0) miss.push(name);
+    if (v == null) v = defaultByType(name, type);
+    if (Array.isArray(v)) { if (!v.length) miss.push(name); return; }
+    if (!String(v == null ? '' : v).trim()) miss.push(name);
   });
   return miss;
+}
+/* 复制前拦一道:漏填就列出来让用户确认,仍可选择照发 */
+function copyWithCheck() {
+  const text = currentText();
+  if (!text) { toast('暂无内容可复制'); return; }
+  const tpl = tplById(currentTplId);
+  const miss = tpl ? missingVars(tpl, values) : [];
+  if (!miss.length) { doCopy(text, $('#btnCopy'), $('#btnCopyText')); return; }
+  Sheet.confirmSheet({
+    title: '还有 ' + miss.length + ' 项没填',
+    message: '这些变量现在是空的,发出去可能要返工。要现在复制吗?',
+    detail: '未填：' + miss.join('、'),
+    okText: '仍要复制',
+    cancelText: '返回填写',
+    onOk: function () { doCopy(text, $('#btnCopy'), $('#btnCopyText')); },
+    onCancel: function () {
+      let el = null;
+      $$('#formArea [data-var]').forEach(function (n) { if (!el && n.dataset.var === miss[0]) el = n; });
+      if (!el) return;
+      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+      const f = el.querySelector('input:not([type=hidden]),select,textarea,button');
+      if (f && f.focus) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+    }
+  });
 }
 /* SECTION: js-sheet */
 const Sheet = (function () {
@@ -2075,6 +2161,8 @@ function buildField(tpl, name) {
         node.insertBefore(chooser, ta);
       }
     }
+  } else if (/(违禁品|限带品)/.test(name)) {
+    buildItemCombo(node, input, tpl, name);
   } else {
     input.placeholder = '请输入' + name;
     input.value = values[name] || '';
@@ -2409,11 +2497,24 @@ async function copyText(text) {
   }
   return fallbackCopy(text);
 }
+/* 复制时把当时各变量的取值一并存进历史(剔除自动带入与日期时间),供精准复用与后续统计 */
+function snapshotValues(tpl, vals) {
+  const out = {};
+  if (!tpl) return out;
+  extractVars(tpl.content).forEach(function (name) {
+    const type = varType(tpl, name);
+    if (presetValue(name)) return;
+    if (type === 'date' || type === 'time') return;
+    if (type === 'items') { out[name + '__items'] = deepCopy(vals[name + '__items'] || []); return; }
+    if (name in vals) out[name] = vals[name];
+  });
+  return out;
+}
 function addHistory(text, tpl) {
   if (!text) return;
   data.history.unshift({
     id: uid(), templateId: tpl ? tpl.id : '', templateName: tpl ? tpl.name : '',
-    text: text, createdAt: Date.now()
+    text: text, vals: tpl ? snapshotValues(tpl, values) : null, createdAt: Date.now()
   });
   if (data.history.length > 300) data.history.length = 300;
   save();
@@ -2531,6 +2632,7 @@ function renderTimeline(force) {
   const doneCount = list.filter(isDoneToday).length;
   $('#progressText').textContent = doneCount + ' / ' + list.length;
   $('#progressFill').style.width = (list.length ? Math.round(doneCount / list.length * 100) : 0) + '%';
+  renderTodo(list, nowMin, doneCount);
   const sig = list.map(function (i) {
     return [i.id, i.start, i.end, i.task, i.desc, i.crossDay, isDoneToday(i) ? 1 : 0, statusOf(i, nowMin)].join('|');
   }).join('#') + '#' + nowMin;
@@ -2873,6 +2975,97 @@ function renderHistory() {
     box.appendChild(node);
   });
 }
+/* SECTION: js-history-reuse */
+/* 把一条历史上报文本按当前模板结构反解回各变量的值:
+   模板里的固定文字当锚点,变量按类型给精确模式,可选段整段可选。
+   含物品清单的模板无法可靠反解,直接判失败,由调用方回落到上次填写内容。 */
+function historyVarPattern(tpl, name, loose) {
+  const type = varType(tpl, name);
+  if (type === 'items') return null;
+  // 线路/站点/班长/电话这类自动带入的变量,按设置里的实际值锚定,
+  // 否则宽松匹配时相邻变量会把它们的文字一起吞掉(如把线路站点连进安检点的取值)
+  const pv = presetValue(name);
+  if (pv) return '(?:' + escapeRe(pv) + ')?';   // 历史里可能省略线路等前缀,允许缺席
+  if (type === 'date') {
+    if (['年', '月', '日'].indexOf(name) >= 0) return '\\d{1,4}';
+    return '(?:\\d{4}年\\d{1,2}月\\d{1,2}日|\\d{4}-\\d{1,2}-\\d{1,2})';
+  }
+  if (type === 'time') return '(?:\\d{1,2}:\\d{2}|\\d{3,4})';
+  if (type === 'number') return '\\d+(?:\\.\\d+)?';
+  if (['entrance', 'entrances', 'member', 'members', 'single'].indexOf(type) >= 0) {
+    // 先按当前名单/选项精确匹配;对不上时(人员变动、旧工号)再用宽松模式兜一轮
+    const opts = loose ? [] : varOptions(tpl, name);
+    if (opts.length) {
+      return '(?:' + opts.slice().sort(function (a, b) { return b.length - a.length; }).map(escapeRe).join('|') + ')';
+    }
+    if (type === 'entrance' || type === 'entrances') return '[^\\n，,。；;]{1,12}?';
+    if (type === 'member' || type === 'members') return '[^\\n，,。；;]{1,24}?';
+    if (type === 'single') return '[^\\n]*?';
+  }
+  return '[\\s\\S]*?';
+}
+function historyLiteralRe(t) {
+  // 生成文本时行尾空白会被压掉,这里把空格放宽,换行仍按原样对齐
+  return escapeRe(t).replace(/[ \t]+/g, '[ \\t]*');
+}
+function historyTemplateRegex(tpl, loose) {
+  const names = [];
+  let failed = false;
+  const src = String(tpl.content).split('\n').map(function (l) { return l.replace(/\s+$/, ''); }).join('\n')
+    .replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  function build(text) {
+    let out = '', i = 0, m;
+    const re = /\{\?([^}]+)\}([\s\S]*?)\{\/\1\}|\*([^*\n]+)\*/g;
+    while ((m = re.exec(text)) !== null) {
+      out += historyLiteralRe(text.slice(i, m.index));
+      if (m[1] != null) {
+        out += '(?:' + build(m[2]) + ')?';
+      } else {
+        const name = m[3].trim();
+        const p = historyVarPattern(tpl, name, loose);
+        if (p == null) failed = true;
+        names.push(name);
+        out += '(' + (p == null ? '[\\s\\S]*?' : p) + ')';
+      }
+      i = m.index + m[0].length;
+    }
+    out += historyLiteralRe(text.slice(i));
+    return out;
+  }
+  const body = build(src);
+  if (failed) return null;
+  try { return { re: new RegExp('^' + body + '$'), names: names }; }
+  catch (e) { return null; }
+}
+function matchHistory(tpl, text, loose) {
+  const built = historyTemplateRegex(tpl, loose);
+  if (!built) return null;
+  const m = built.re.exec(String(text));
+  if (!m) return null;
+  const out = {};
+  built.names.forEach(function (name, i) {
+    const raw = m[i + 1];
+    if (raw == null) return;
+    const v = String(raw).trim();
+    if (!v) return;
+    if (presetValue(name)) return;                       // 基本信息由设置自动带入
+    const type = varType(tpl, name);
+    if (type === 'date' || type === 'time') return;      // 日期时间统一刷新为当前
+    if (name in out) return;                             // 同名变量多处出现,取第一处
+    out[name] = v;
+  });
+  return { ok: true, values: out, loose: !!loose };
+}
+function parseHistoryToValues(tpl, text) {
+  if (!tpl || !tpl.content || !text) return { ok: false, values: {} };
+  return matchHistory(tpl, text, false) || matchHistory(tpl, text, true) || { ok: false, values: {} };
+}
+function resetDatetimeVars(tpl) {
+  extractVars(tpl.content).forEach(function (name) {
+    const type = varType(tpl, name);
+    if (type === 'date' || type === 'time') values[name] = defaultByType(name, type);
+  });
+}
 function reuseHistory(h) {
   const tpl = tplById(h.templateId);
   if (!tpl) {
@@ -2881,11 +3074,24 @@ function reuseHistory(h) {
     });
     return;
   }
-  delete data.formCache[tpl.id];
-  selectTemplate(tpl.id);
-  save();
+  let vals = null, mode = 'cache';
+  if (h.vals && typeof h.vals === 'object') { vals = deepCopy(h.vals); mode = 'snap'; }
+  else {
+    const parsed = parseHistoryToValues(tpl, h.text);
+    if (parsed.ok) { vals = parsed.values; mode = parsed.loose ? 'loose' : 'parse'; }
+  }
   switchView('report');
-  toast('已载入模板,时间已重置为当前,请核对后发送');
+  currentTplId = tpl.id;
+  data.lastTplId = tpl.id;
+  values = vals || loadFormCache(tpl.id);
+  touchedVars = {};
+  ensureValues(tpl);
+  resetDatetimeVars(tpl);
+  saveFormCache();
+  renderForm(); renderGroupHint(); renderPreview(); renderTplChips();
+  toast(mode === 'loose' ? '已回填,但人员或选项与当前设置对不上,请核对后再发'
+      : mode === 'cache' ? '这条记录与当前模板结构对不上,已载入该模板上次填写的内容'
+      : '已按这条记录回填,日期时间已更新为当前');
   setTimeout(function () {
     const f = document.querySelector('#formArea input:not([type=hidden]), #formArea select, #formArea textarea');
     if (f && f.focus) { try { f.focus({ preventScroll: false }); } catch (e) { try { f.focus(); } catch (e2) {} } }
@@ -2995,6 +3201,14 @@ function renderLookup() {
       const open = node.classList.toggle('open');
       head.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
+    if (r.kind === 'xa' || r.kind === 'xb') {
+      const act = document.createElement('div'); act.className = 'lk-report';
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn btn-sm btn-primary'; b.textContent = '用这条上报';
+      b.addEventListener('click', function () { reportFromLookup(r); });
+      act.appendChild(b);
+      $('.lk-body', node).appendChild(act);
+    }
     box.appendChild(node);
   });
   const src = $('#lookupSource');
@@ -3613,43 +3827,59 @@ function importFromFile(file) {
     let parsed = null;
     try { parsed = JSON.parse(String(reader.result)); }
     catch (e) { toast('文件不是有效的 JSON'); return; }
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.templates)) { toast('文件格式不正确,缺少 templates 字段'); return; }
-    applyImported(parsed);
+    if (!validImport(parsed)) { toast('文件格式不正确'); return; }
+    dispatchImport(parsed);
   };
   reader.onerror = function () { toast('读取文件失败'); };
   reader.readAsText(file, 'utf-8');
 }
 function openImportSheet() {
+  importCfg = { mode: 'full', tpl: true, lookup: true };
   const bodyNode = document.createElement('div');
-  const p1 = document.createElement('p');
-  p1.className = 'section-note';
-  p1.style.marginBottom = '10px';
-  p1.textContent = '方式一:选择之前导出的 .json 配置文件。';
-  const pick = document.createElement('button');
-  pick.type = 'button'; pick.className = 'btn btn-block';
-  pick.textContent = '选择文件导入';
+  const modeLab = document.createElement('div'); modeLab.className = 'field-label'; modeLab.textContent = '导入方式';
+  const modeRow = document.createElement('div'); modeRow.className = 'chip-group'; modeRow.style.marginBottom = '9px';
+  const mergeBox = document.createElement('div'); mergeBox.hidden = true; mergeBox.style.marginBottom = '9px';
+  const note = document.createElement('p'); note.className = 'section-note'; note.style.marginBottom = '10px';
+  function setMode(m) {
+    importCfg.mode = m;
+    $$('.chip', modeRow).forEach(function (c) { c.setAttribute('aria-pressed', c.dataset.mode === m ? 'true' : 'false'); });
+    mergeBox.hidden = m !== 'merge';
+    note.textContent = m === 'merge'
+      ? '合并导入:只把文件里的模板/速查并进来,同名项覆盖,不动你的历史、设置、时间线、名单。适合更新中队下发的模板。'
+      : '整包导入:用文件完整覆盖本机全部数据(模板、设置、时间线、历史)。建议先在「备份与恢复」里备份一份。';
+  }
+  [['full', '整包覆盖'], ['merge', '合并导入']].forEach(function (pair) {
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'chip'; c.textContent = pair[1]; c.dataset.mode = pair[0];
+    c.addEventListener('click', function () { setMode(pair[0]); });
+    modeRow.appendChild(c);
+  });
+  function chk(label, key) {
+    const lab = document.createElement('label'); lab.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:.84rem';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = importCfg[key];
+    cb.addEventListener('change', function () { importCfg[key] = cb.checked; });
+    lab.appendChild(cb); lab.appendChild(document.createTextNode(label));
+    return lab;
+  }
+  mergeBox.appendChild(chk('并入模板', 'tpl'));
+  mergeBox.appendChild(chk('并入速查内容', 'lookup'));
+  bodyNode.appendChild(modeLab); bodyNode.appendChild(modeRow); bodyNode.appendChild(mergeBox); bodyNode.appendChild(note);
+  setMode('full');
+  const p1 = document.createElement('p'); p1.className = 'section-note'; p1.style.marginBottom = '8px'; p1.textContent = '方式一:选择 .json 配置文件。';
+  const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'btn btn-block'; pick.textContent = '选择文件导入';
   pick.addEventListener('click', function () { $('#fileInput').click(); });
-  const p2 = document.createElement('p');
-  p2.className = 'section-note';
-  p2.style.margin = '14px 0 8px';
-  p2.textContent = '方式二:把 JSON 内容粘贴到下面。';
-  const ta = document.createElement('textarea');
-  ta.className = 'textarea';
-  ta.placeholder = '在此粘贴 JSON 配置';
-  ta.setAttribute('aria-label', '粘贴 JSON 配置');
+  const p2 = document.createElement('p'); p2.className = 'section-note'; p2.style.margin = '14px 0 8px'; p2.textContent = '方式二:把 JSON 内容粘贴到下面。';
+  const ta = document.createElement('textarea'); ta.className = 'textarea'; ta.placeholder = '在此粘贴 JSON 配置'; ta.setAttribute('aria-label', '粘贴 JSON 配置');
   bodyNode.appendChild(p1); bodyNode.appendChild(pick); bodyNode.appendChild(p2); bodyNode.appendChild(ta);
-  const footNode = document.createElement('div');
-  footNode.className = 'btn-row';
-  const ok = document.createElement('button');
-  ok.type = 'button'; ok.className = 'btn btn-primary'; ok.textContent = '解析并导入';
+  const footNode = document.createElement('div'); footNode.className = 'btn-row';
+  const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn btn-primary'; ok.textContent = '解析并导入';
   ok.addEventListener('click', function () {
     const raw = ta.value.trim();
     if (!raw) { toast('请先粘贴 JSON 内容'); return; }
     let parsed = null;
     try { parsed = JSON.parse(raw); } catch (e) { toast('JSON 解析失败:' + e.message); return; }
-    if (!parsed || !Array.isArray(parsed.templates)) { toast('格式不正确,缺少 templates 字段'); return; }
+    if (!validImport(parsed)) { toast('格式不正确'); return; }
     Sheet.closeNow();
-    applyImported(parsed);
+    dispatchImport(parsed);
   });
   footNode.appendChild(ok);
   Sheet.open({ title: '导入配置', bodyNode: bodyNode, footNode: footNode });
@@ -4804,18 +5034,277 @@ function openTplMakerSheet(seedText, suggestName) {
     autofocus: !raw
   });
 }
+/* SECTION: js-backup */
+const SNAP_KEY = KEY + '.snap';
+const SNAP_MAX = 7;
+function loadSnapshots() {
+  try { const a = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+}
+function saveSnapshots(arr) {
+  while (arr.length) {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(arr)); return true; }
+    catch (e) { arr.shift(); }   // 配额不足,从最旧开始丢
+  }
+  try { localStorage.removeItem(SNAP_KEY); } catch (e) {}
+  return false;
+}
+function makeSnapshot() {
+  const arr = loadSnapshots();
+  arr.push({ at: Date.now(), data: deepCopy(data) });
+  while (arr.length > SNAP_MAX) arr.shift();
+  const ok = saveSnapshots(arr);
+  updateBackupLast();
+  return ok;
+}
+function autoSnapshot() {
+  const arr = loadSnapshots();
+  const last = arr.length ? todayStr(new Date(arr[arr.length - 1].at)) : '';
+  if (last !== todayStr()) makeSnapshot();
+  updateBackupLast();
+}
+function updateBackupLast() {
+  const el = $('#backupLast');
+  if (!el) return;
+  const arr = loadSnapshots();
+  el.textContent = arr.length ? ('上次备份:' + fmtStamp(arr[arr.length - 1].at) + ' · 共 ' + arr.length + ' 份快照,每天首次打开自动备份')
+                              : '还没有备份,点上方「备份与恢复」立即备份一份';
+}
+function openBackupSheet() {
+  const body = document.createElement('div');
+  const note = document.createElement('p');
+  note.className = 'section-note'; note.style.marginBottom = '10px';
+  note.textContent = '每天首次打开会自动备份一份,保留最近 ' + SNAP_MAX + ' 份。恢复会用该快照覆盖当前全部数据,操作前请确认。';
+  body.appendChild(note);
+  const listBox = document.createElement('div');
+  body.appendChild(listBox);
+  function paint() {
+    listBox.innerHTML = '';
+    const arr = loadSnapshots().slice().reverse();
+    if (!arr.length) {
+      const e = document.createElement('div'); e.className = 'empty'; e.textContent = '还没有快照,点下方「立即备份」';
+      listBox.appendChild(e); return;
+    }
+    arr.forEach(function (sn) {
+      const row = document.createElement('div'); row.className = 'snap-row';
+      const info = document.createElement('div'); info.className = 'snap-info';
+      const t = document.createElement('div'); t.className = 'snap-time'; t.textContent = fmtStamp(sn.at);
+      const m = document.createElement('div'); m.className = 'snap-meta';
+      const d = sn.data || {};
+      m.textContent = '模板 ' + (d.templates || []).length + ' · 历史 ' + (d.history || []).length + ' · 速查 ' + (d.lookup || []).length;
+      info.appendChild(t); info.appendChild(m);
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn btn-sm'; btn.textContent = '恢复';
+      btn.addEventListener('click', function () {
+        Sheet.confirmSheet({
+          title: '恢复这份备份?', message: '将用 ' + fmtStamp(sn.at) + ' 的快照覆盖当前全部数据,此操作不可撤销。', okText: '恢复', danger: true,
+          onOk: function () {
+            data = normalize(sn.data);
+            saveNow();
+            currentTplId = data.templates.length ? data.templates[0].id : null;
+            data.lastTplId = currentTplId || '';
+            values = {}; touchedVars = {};
+            collapsedGroups.clear();
+            bootRender();
+            toast('已恢复到 ' + fmtStamp(sn.at));
+          }
+        });
+      });
+      row.appendChild(info); row.appendChild(btn);
+      listBox.appendChild(row);
+    });
+  }
+  paint();
+  const foot = document.createElement('div'); foot.className = 'btn-row';
+  const mkBtn = document.createElement('button'); mkBtn.type = 'button'; mkBtn.className = 'btn btn-primary'; mkBtn.textContent = '立即备份';
+  mkBtn.addEventListener('click', function () { const ok = makeSnapshot(); paint(); toast(ok ? '已备份当前数据' : '备份失败:存储空间不足'); });
+  const close = document.createElement('button'); close.type = 'button'; close.className = 'btn'; close.textContent = '关闭';
+  close.addEventListener('click', function () { Sheet.closeNow(); });
+  foot.appendChild(mkBtn); foot.appendChild(close);
+  Sheet.open({ title: '备份与恢复', bodyNode: body, footNode: foot, autofocus: false });
+}
+
+/* SECTION: js-merge-import */
+let importCfg = { mode: 'full', tpl: true, lookup: true };
+function validImport(parsed) {
+  if (!parsed || typeof parsed !== 'object') return false;
+  if (importCfg.mode === 'merge') return Array.isArray(parsed.templates) || Array.isArray(parsed.lookup);
+  return Array.isArray(parsed.templates);
+}
+function dispatchImport(parsed) {
+  if (importCfg.mode === 'merge') applyMerge(parsed);
+  else applyImported(parsed);
+}
+function infoSheet(title, text) {
+  const body = document.createElement('div');
+  const p = document.createElement('div'); p.className = 'preview'; p.style.whiteSpace = 'pre-wrap'; p.textContent = text;
+  body.appendChild(p);
+  const foot = document.createElement('div');
+  const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn btn-primary btn-block'; ok.textContent = '知道了';
+  ok.addEventListener('click', function () { Sheet.closeNow(); });
+  foot.appendChild(ok);
+  Sheet.open({ title: title, bodyNode: body, footNode: foot, autofocus: false });
+}
+function applyMerge(parsed) {
+  if (!parsed || typeof parsed !== 'object') { toast('格式不正确'); return; }
+  const inc = normalize(parsed);
+  let tAdd = 0, tRep = 0, lAdd = 0, lRep = 0;
+  if (importCfg.tpl && Array.isArray(parsed.templates)) {
+    inc.templates.forEach(function (t) {
+      const nm = String(t.name || '').trim();
+      const idx = data.templates.findIndex(function (x) { return String(x.name || '').trim() === nm; });
+      if (idx >= 0) {
+        const keepId = data.templates[idx].id, keepCreated = data.templates[idx].createdAt;
+        data.templates[idx] = Object.assign({}, t, { id: keepId, createdAt: keepCreated, updatedAt: Date.now(), builtin: false });
+        tRep++;
+      } else {
+        data.templates.push(Object.assign({}, t, { id: uid(), createdAt: Date.now(), updatedAt: Date.now(), builtin: false }));
+        tAdd++;
+      }
+    });
+  }
+  if (importCfg.lookup && Array.isArray(parsed.lookup)) {
+    inc.lookup.forEach(function (r) {
+      const key = r.kind + '|' + String(r.name || '').trim();
+      const idx = data.lookup.findIndex(function (x) { return x.kind + '|' + String(x.name || '').trim() === key; });
+      if (idx >= 0) { data.lookup[idx] = deepCopy(r); lRep++; }
+      else { data.lookup.push(deepCopy(r)); lAdd++; }
+    });
+    if (Array.isArray(parsed.lookupSource)) data.lookupSource = inc.lookupSource.slice();
+  }
+  save();
+  bootRender();
+  const parts = [];
+  if (importCfg.tpl) parts.push('模板:新增 ' + tAdd + ' · 覆盖 ' + tRep);
+  if (importCfg.lookup) parts.push('速查:新增 ' + lAdd + ' · 覆盖 ' + lRep);
+  infoSheet('合并导入完成', parts.join('\n') + '\n\n历史记录、设置、时间线、队员名单均未改动。');
+}
+
+/* SECTION: js-item-combo */
+function itemCandidates(name) {
+  const kinds = /违禁品/.test(name) ? ['xa'] : ['xb'];
+  const seen = {}, out = [];
+  (data.lookup || []).forEach(function (r) {
+    if (kinds.indexOf(r.kind) < 0) return;
+    String(r.name).split('/').forEach(function (part) {
+      const cands = [];
+      const al = part.match(/（([^）]+)）/);
+      if (al) cands.push(al[1].trim());
+      const base = part.replace(/（[^）]*）/g, '').trim();
+      if (base) cands.push(base);
+      cands.forEach(function (nm) {
+        if (!nm || nm.length > 12 || seen[nm]) return;
+        seen[nm] = 1;
+        out.push({ name: nm, kind: r.kind });
+      });
+    });
+  });
+  return out;
+}
+function buildItemCombo(node, input, tpl, name) {
+  node.classList.add('cb-wrap');
+  input.placeholder = '输入搜索速查,也可手输';
+  input.value = values[name] || '';
+  input.setAttribute('aria-label', name);
+  const panel = document.createElement('div');
+  panel.className = 'cb-panel';
+  panel.hidden = true;
+  const cands = itemCandidates(name);
+  function renderOpts(q) {
+    panel.innerHTML = '';
+    const query = String(q || '').trim().toLowerCase();
+    let list = cands.filter(function (c) { return !query || c.name.toLowerCase().indexOf(query) >= 0; });
+    list = list.slice(0, 10);
+    if (!list.length) {
+      const e = document.createElement('div'); e.className = 'cb-empty';
+      e.textContent = cands.length ? '没有匹配项,可直接手输' : '速查暂无该类物品,可直接手输';
+      panel.appendChild(e); return;
+    }
+    list.forEach(function (c) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'cb-opt';
+      const k = document.createElement('span'); k.className = 'cb-kind'; k.textContent = c.kind === 'xa' ? 'A类' : 'B类';
+      const nm = document.createElement('span'); nm.textContent = c.name; nm.style.flex = '1'; nm.style.minWidth = '0';
+      b.appendChild(k); b.appendChild(nm);
+      b.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+      b.addEventListener('click', function () {
+        input.value = c.name;
+        values[name] = c.name;
+        touchedVars[name] = true;
+        queuePreview();
+        panel.hidden = true;
+      });
+      panel.appendChild(b);
+    });
+  }
+  input.addEventListener('input', function () {
+    values[name] = input.value; touchedVars[name] = true; queuePreview();
+    renderOpts(input.value); panel.hidden = false;
+  });
+  input.addEventListener('focus', function () { renderOpts(input.value); panel.hidden = false; });
+  input.addEventListener('blur', function () { setTimeout(function () { panel.hidden = true; }, 160); });
+  node.appendChild(panel);
+}
+
+/* SECTION: js-lookup-report */
+function reportFromLookup(r) {
+  const field = r.kind === 'xa' ? '违禁品' : '限带品';
+  const tpl = data.templates.find(function (t) { return extractVars(t.content).indexOf(field) >= 0; });
+  if (!tpl) { toast('没有包含 *' + field + '* 变量的模板,先去「管理模板」添加'); return; }
+  const itemName = String(r.name).split('/')[0].replace(/（[^）]*）/g, '').trim();
+  switchView('report');
+  selectTemplate(tpl.id);
+  values[field] = itemName;
+  touchedVars[field] = true;
+  saveFormCache();
+  renderForm(); renderGroupHint(); renderPreview(); renderTplChips();
+  toast('已带入「' + itemName + '」,接着填其余几格');
+}
+
+/* SECTION: js-todo */
+function renderTodo(list, nowMin, doneCount) {
+  const body = $('#todoBody');
+  if (!body) return;
+  body.innerHTML = '';
+  const cnt = $('#todoCount');
+  if (cnt) cnt.textContent = '已完成 ' + doneCount + ' / ' + list.length;
+  if (!list.length) {
+    const e = document.createElement('div'); e.className = 'section-note'; e.textContent = '今天没有安排任务,点下方「管理任务」添加每日流程。';
+    body.appendChild(e); return;
+  }
+  function addLine(tag, cls, text, strong) {
+    const row = document.createElement('div'); row.className = 'todo-line';
+    const t = document.createElement('span'); t.className = 'todo-tag ' + cls; t.textContent = tag;
+    const c = document.createElement('span'); c.style.cssText = 'flex:1;min-width:0';
+    if (strong) { const b = document.createElement('b'); b.textContent = text; c.appendChild(b); }
+    else c.textContent = text;
+    row.appendChild(t); row.appendChild(c); body.appendChild(row);
+  }
+  const current = list.filter(function (i) { return statusOf(i, nowMin) === 'current' && !isDoneToday(i); });
+  const late = list.filter(function (i) { return statusOf(i, nowMin) === 'past' && !isDoneToday(i); });
+  const future = list.filter(function (i) { return statusOf(i, nowMin) === 'future'; });
+  if (current.length) current.forEach(function (i) { addLine('现在', 'now', i.task + (i.end ? '(至 ' + i.end + ')' : ''), true); });
+  else addLine('现在', 'now', '当前无进行中任务', false);
+  if (future.length) addLine('接下来', 'next', future[0].start + ' ' + future[0].task, false);
+  if (late.length) addLine('逾期未完成', 'late', late.map(function (i) { return i.task; }).join('、'), true);
+  if (doneCount === list.length) addLine('状态', 'done', '今日任务已全部完成', false);
+}
 function openHelpSheet() {
   const node = document.createElement('div');
   const blocks = [
-    { t: '快速上手', l: ['在「上报」页的竖向列表里选模板,模板多时可用上方搜索框过滤', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
+    { t: '快速上手', l: ['在「上报」页的竖向列表里选模板,模板多时可用上方搜索框过滤', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
+      '有变量没填时会先列出漏填项让你确认,可以选择返回填写或仍要复制', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
     { t: '人员批量导入', l: ['设置页「人员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
-    { t: '速查', l: ['速查内容随配置文件下发,在「设置 → 导入配置」导入即可载入', '分类含 A/B 类图像特征、禁止携带、限制携带、处置口径、汇报口径、勤务考勤、奖惩分值、考点速记、便民信息', '顶部搜索框可查物品名、数值和口径,命中的卡片自动展开', '也可以在设置页「速查内容 → 管理」里自行添加、编辑、排序'] },
+    { t: '速查', l: ['速查内容随配置文件下发,在「设置 → 导入配置」导入即可载入', '分类含 A/B 类图像特征、禁止携带、限制携带、处置口径、汇报口径、勤务考勤、奖惩分值、考点速记、便民信息', '顶部搜索框可查物品名、数值和口径,命中的卡片自动展开',
+      'A/B 类物品卡片展开后可点「用这条上报」,直接带物品名进查危简报', '也可以在设置页「速查内容 → 管理」里自行添加、编辑、排序'] },
     { t: '制作模板', l: ['上报页点「制作模板」,把一段已经写好的上报文本粘进去', '点「识别可替换内容」,工具会标出日期、时间、线路、站点、安检点、人员、物品、数量等候选', '每处可以改变量名和类型、取消替换、或只替换第一处', '识别不到的可在「手动补选」里填原文片段和变量名', '生成结果可继续手动修改,填好名称分组后保存即成新模板', '历史记录每条也有「转模板」,可直接拿旧上报内容做模板'] },
+    { t: '历史复用', l: ['复制上报时会把当时各变量的取值一并存进历史', '点「复用」优先直接用这份取值回填,日期时间自动更新为当前', '旧记录没有取值时,按模板结构反解文本;再对不上就回落上次填写内容'] },
+    { t: '物品输入与速查联动', l: ['违禁品/限带品字段输入时从速查实时给候选,点选即填,也能手输速查里没有的', '速查页 A/B 类卡片展开后有「用这条上报」,自动跳进对应查危简报并填好物品名'] },
+    { t: '今日待办', l: ['时间线页顶部显示现在该做哪件、接下来哪件、哪些到点还没勾完成', '不依赖系统通知,打开页面就能看清,离线可用'] },
     { t: '数据统计', l: ['物品清单类型支持自定义字段,可配置「数字」类型并勾选「求和」自动汇总', '字段可关联「安检点」或「群名」,填数据时直接下拉选择不用手输', '模板里用 *总字段名* 引用汇总值,如 *总过机数*'] },
-    { t: '数据', l: ['全部数据只存在这台设备的浏览器里,不上传', '设置页可导出 .json 备份,同事导入即可共用配置', '清除浏览器数据会一并删除,请定期导出备份'] }
+    { t: '数据与备份', l: ['全部数据只存在这台设备的浏览器里,不上传', '每天首次打开自动备份一份快照,保留最近 7 份,「备份与恢复」可一键回滚', '也可手动立即备份、导出 .json 发给同事', '导入分两种:整包覆盖全部数据;合并导入只并入模板/速查(同名覆盖),不动历史与设置', '清除浏览器数据会一并删除,请定期备份'] }
   ];
   blocks.forEach(function (b) {
     const title = document.createElement('div');
@@ -4896,6 +5385,7 @@ function bootRender() {
   renderHistory();
   renderLookup();
   renderSettingsAll();
+  updateBackupLast();
 }
 function bindGlobal() {
   bindCollapse();
@@ -4950,7 +5440,7 @@ function bindGlobal() {
     const ok = await copyText(text);
     toast(ok ? '群名已复制：' + text : '复制失败');
   });
-  $('#btnCopy').addEventListener('click', function () { doCopy(currentText(), $('#btnCopy'), $('#btnCopyText')); });
+  $('#btnCopy').addEventListener('click', copyWithCheck);
   $('#btnResetForm').addEventListener('click', function () {
     const t = tplById(currentTplId);
     if (!t) { toast('请先选择模板'); return; }
@@ -4994,6 +5484,7 @@ function bindGlobal() {
   $('#btnAddCustom').addEventListener('click', function () { data.settings.custom.push({ id: uid(), key: '', type: 'text', value: '' }); save(); renderCustom(); });
   $('#btnExport').addEventListener('click', exportJSON);
   $('#btnImport').addEventListener('click', openImportSheet);
+  $('#btnBackup').addEventListener('click', openBackupSheet);
   $('#fileInput').addEventListener('change', function (e) {
     const f = e.target.files && e.target.files[0];
     importFromFile(f);
@@ -5038,6 +5529,7 @@ function boot() {
   } catch (e) {}
   bindSettingsInputs();
   bindGlobal();
+  autoSnapshot();
   bootRender();
   Reminder.start();
   let seen = null;
