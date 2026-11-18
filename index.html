@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
-<script>
-!(function(j,a,g){j.__itrace_conf = {bid: 'f43basl8-6nqu7l3w',rel: '0.0.1', spa: true, uid: '', plugins:['jserror','interface','perf','resource','flow','blank']};var b = a.createElement("script");var d = a.getElementsByTagName("script")[0];b.type = "text/javascript";b.crossorigin = true;b.async = true;b.onload = function(){j.__itrace && j.__itrace.setReady()};d.parentNode.insertBefore(b,d);b.src = g})(window, document, "https://g.alicdn.com/woodpeckerx/itrace-next/itrace.iife.js")
-</script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>信息助手</title>
@@ -217,6 +213,26 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .tpl-item.on .ti-check{opacity:1}
 .tpl-item.linked .ti-name::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
   background:var(--primary);margin-left:6px;vertical-align:middle}
+/* 三级选择器:上报页单按钮 + 弹窗分类/模板两级 */
+.tpl-pick-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:10px 14px;text-align:left;
+  border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--card-2);color:var(--text);
+  transition:border-color .15s,background .15s,transform .1s}
+.tpl-pick-btn:active{transform:scale(.99);border-color:var(--primary);background:var(--primary-soft)}
+.tpl-pick-btn .tpb-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tpl-pick-btn .tpb-name{font-size:.95rem;font-weight:700;line-height:1.35;word-break:break-word}
+.tpl-pick-btn .tpb-sub{font-size:.72rem;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpl-pick-btn .tpb-chev{width:18px;height:18px;color:var(--text-3);flex:none}
+.pk-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.pk-bar .section-note{flex:1;min-width:0}
+.pk-list{display:flex;flex-direction:column;gap:6px}
+.pk-row{display:flex;align-items:center;gap:8px;width:100%}
+.pk-row .tpl-group-head,.pk-row .tpl-item{flex:1;min-width:0;width:auto}
+.pk-move{display:flex;flex-direction:column;gap:3px;flex:none}
+.pk-move button{width:34px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--card-2);
+  color:var(--text-2);display:grid;place-items:center;font-size:.62rem;line-height:1}
+.pk-move button:active{background:var(--primary-soft);color:var(--primary)}
+.pk-move button[disabled]{opacity:.3;pointer-events:none}
+.pk-sub{font-size:.68rem;color:var(--text-3);font-weight:400;margin-left:6px}
 
 /* SECTION: tpl-maker */
 .mk-src{min-height:150px}
@@ -494,15 +510,13 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
           </span>
         </div>
         <div class="tpl-picker">
-          <div class="tpl-search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-            <input class="input" type="search" id="tplSearch" placeholder="搜索模板名称或内容" autocomplete="off" aria-label="搜索模板">
-          </div>
-          <div class="tpl-list-bar">
-            <span class="section-note" id="tplCount"></span>
-            <button type="button" class="link-btn" id="btnToggleGroups">折叠全部</button>
-          </div>
-          <div class="tpl-list" id="tplList" role="listbox" aria-label="模板列表"></div>
+          <button type="button" class="tpl-pick-btn" id="btnPickTpl" aria-haspopup="dialog">
+            <span class="tpb-text">
+              <span class="tpb-name" id="pickTplName">选择模板</span>
+              <span class="tpb-sub" id="pickTplSub"></span>
+            </span>
+            <svg class="tpb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
         </div>
         <div id="groupHintWrap" style="margin-top:11px" hidden>
           <div class="group-hint">
@@ -1275,11 +1289,12 @@ function seedData() {
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
       contentItems: [], entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
+      groupOrder: [], tplOrder: [],
       theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 },
       tplCollapsed: []
     },
-    templates: [],
-    timeline: [],
+    templates: seedTemplates(),
+    timeline: seedTimeline(),
     lookup: [],
     lookupSource: [],
     history: [],
@@ -1304,6 +1319,8 @@ function normalize(d) {
   if (!Array.isArray(s.custom)) s.custom = [];
   if (!Array.isArray(s.contentItems)) s.contentItems = [];
   if (!Array.isArray(s.tplCollapsed)) s.tplCollapsed = [];
+  if (!Array.isArray(s.groupOrder)) s.groupOrder = [];
+  if (!Array.isArray(s.tplOrder)) s.tplOrder = [];
   /* 迁移:旧的单条 content -> contentItems */
   if (typeof s.content === 'string' && s.content.trim() && !s.contentItems.length) {
     s.contentItems = [{ id: uid(), name: '默认', text: s.content }];
@@ -1316,8 +1333,7 @@ function normalize(d) {
     templates: Array.isArray(d.templates) ? d.templates : base.templates,
     timeline: Array.isArray(d.timeline) ? d.timeline : [],
     lookup: Array.isArray(d.lookup) ? d.lookup : base.lookup,
-    lookupSource: Array.isArray(d.lookupSource) ? d.lookupSource : base.lookupSource,
-    history: Array.isArray(d.history) ? d.history : [],
+    lookupSource: Array.isArray(d.lookupSource) ? d.lookupSource : base.lookupSource,    history: Array.isArray(d.history) ? d.history : [],
     formCache: (d.formCache && typeof d.formCache === 'object') ? d.formCache : {},
     reminderLog: (d.reminderLog && d.reminderLog.date) ? d.reminderLog : { date: todayStr(), ids: [] },
     lastTplId: typeof d.lastTplId === 'string' ? d.lastTplId : '',
@@ -1354,6 +1370,10 @@ function normalize(d) {
     i.notify = i.notify !== false;
     if (!Array.isArray(i.tplIds)) i.tplIds = [];
     if (i.done && typeof i.done !== 'object') i.done = null;
+  });
+  /* 速查条目校验:丢弃缺 kind/name 的畸形数据,避免物品候选出现 undefined */
+  out.lookup = out.lookup.filter(function (r) {
+    return r && typeof r === 'object' && typeof r.kind === 'string' && r.kind && typeof r.name === 'string' && r.name.trim();
   });
   out.history = out.history.slice(0, 300).map(function (h) {
     return { id: h.id || uid(), templateId: h.templateId || '', templateName: h.templateName || '', text: String(h.text || ''), vals: (h.vals && typeof h.vals === 'object') ? h.vals : null, createdAt: h.createdAt || Date.now() };
@@ -1860,78 +1880,184 @@ function groupsOf() {
   data.templates.forEach(function (t) { const g = (t.group || '').trim(); if (g && !seen[g]) { seen[g] = 1; out.push(g); } });
   return out;
 }
-function renderTplChips() {
-  const box = $('#tplList'), countEl = $('#tplCount'), toggleBtn = $('#btnToggleGroups');
-  if (!box) return;
-  box.innerHTML = '';
-  const q = tplQuery.trim().toLowerCase();
-  const groups = groupsOf();
-  const shown = data.templates.filter(function (t) {
-    if (!q) return true;
-    return (t.name + ' ' + (t.group || '') + ' ' + t.content).toLowerCase().indexOf(q) >= 0;
+/* 三级模板选择器:上报页单按钮 -> 分类菜单 -> 分类内模板列表;
+   分类与模板顺序均可自定义,存 settings.groupOrder / settings.tplOrder */
+function orderedGroupKeys() {
+  const seen = {}, keys = [];
+  data.templates.forEach(function (t) { const g = (t.group || '').trim(); if (!seen[g]) { seen[g] = 1; keys.push(g); } });
+  const order = data.settings.groupOrder || [];
+  keys.sort(function (a, b) {
+    const ai = order.indexOf(a), bi = order.indexOf(b);
+    if (ai < 0 && bi < 0) return 0;
+    if (ai < 0) return 1;
+    if (bi < 0) return -1;
+    return ai - bi;
   });
-  countEl.textContent = !data.templates.length ? ''
-    : (q ? '匹配 ' + shown.length + ' / ' + data.templates.length + ' 个模板'
-         : '共 ' + data.templates.length + ' 个模板,竖向列表选择');
-  toggleBtn.hidden = groups.length < 2 || !!q;
-  toggleBtn.textContent = collapsedGroups.size ? '展开全部' : '折叠全部';
-  function empty(text) {
-    const e = document.createElement('div');
-    e.className = 'tpl-list-empty';
-    e.textContent = text;
-    return e;
+  return keys;
+}
+function orderedTemplatesIn(g) {
+  const order = data.settings.tplOrder || [];
+  return data.templates.filter(function (t) { return (t.group || '').trim() === g; })
+    .sort(function (a, b) {
+      const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
+      if (ai < 0 && bi < 0) return 0;
+      if (ai < 0) return 1;
+      if (bi < 0) return -1;
+      return ai - bi;
+    });
+}
+function allOrderedTemplates() {
+  const out = [];
+  orderedGroupKeys().forEach(function (g) { orderedTemplatesIn(g).forEach(function (t) { out.push(t); }); });
+  return out;
+}
+function moveGroupOrder(key, dir) {
+  const keys = orderedGroupKeys();
+  const i = keys.indexOf(key), j = i + dir;
+  if (i < 0 || j < 0 || j >= keys.length) return;
+  keys.splice(i, 1); keys.splice(j, 0, key);
+  data.settings.groupOrder = keys; save();
+}
+function moveTplOrder(id, dir) {
+  const t = tplById(id); if (!t) return;
+  const g = (t.group || '').trim();
+  const list = orderedTemplatesIn(g);
+  const i = list.findIndex(function (x) { return x.id === id; }), j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  const full = allOrderedTemplates().map(function (x) { return x.id; });
+  const ai = full.indexOf(list[i].id), bi = full.indexOf(list[j].id);
+  full[ai] = list[j].id; full[bi] = list[i].id;
+  data.settings.tplOrder = full; save();
+}
+/* 旧入口名保留:各处在模板增删/切换后调用它刷新选择按钮 */
+function renderTplChips() {
+  const nameEl = $('#pickTplName'), subEl = $('#pickTplSub');
+  if (!nameEl) return;
+  const t = tplById(currentTplId);
+  if (t) {
+    nameEl.textContent = t.name;
+    subEl.textContent = ((t.group || '').trim() || '未分组') + ' · 共 ' + data.templates.length + ' 个模板,点击切换';
+  } else if (data.templates.length) {
+    nameEl.textContent = '选择模板';
+    subEl.textContent = '共 ' + data.templates.length + ' 个模板,点击选择';
+  } else {
+    nameEl.textContent = '还没有模板';
+    subEl.textContent = '点右上角「制作模板」或「管理模板」创建';
   }
-  if (!data.templates.length) {
-    box.appendChild(empty('还没有模板,点右上角「制作模板」用现成文本生成,或点「管理模板」新建。'));
-    return;
-  }
-  if (!shown.length) {
-    box.appendChild(empty('没有匹配的模板,换个关键词试试。'));
-    return;
-  }
+}
+function openTplPicker() {
+  if (!data.templates.length) { toast('还没有模板,先点「制作模板」或「管理模板」创建'); return; }
+  let sortMode = false, query = '';
   const linkedIds = linkedTplIds();
-  function addItem(host, t) {
+  const bodyNode = document.createElement('div');
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'tpl-search'; searchWrap.style.marginBottom = '9px';
+  searchWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+  const searchInput = document.createElement('input');
+  searchInput.className = 'input'; searchInput.type = 'search'; searchInput.placeholder = '搜索模板名称或内容';
+  searchInput.autocomplete = 'off'; searchInput.setAttribute('aria-label', '搜索模板');
+  searchWrap.appendChild(searchInput);
+  bodyNode.appendChild(searchWrap);
+  const bar = document.createElement('div'); bar.className = 'pk-bar';
+  const note = document.createElement('span'); note.className = 'section-note';
+  const sortBtn = document.createElement('button'); sortBtn.type = 'button'; sortBtn.className = 'link-btn';
+  bar.appendChild(note); bar.appendChild(sortBtn);
+  bodyNode.appendChild(bar);
+  const listBox = document.createElement('div'); listBox.className = 'pk-list';
+  bodyNode.appendChild(listBox);
+  function pick(t) {
+    selectTemplate(t.id);
+    Sheet.closeNow(); Sheet.closeNow();   // 关掉模板层与分类层(搜索直选时只有一层,多关一次无副作用)
+    renderTplChips();
+  }
+  function tplItem(t, withGroup) {
     const node = mk('tpl-picker-item');
-    node.dataset.id = t.id;
-    $('.ti-name', node).textContent = t.name;
+    const nameEl = $('.ti-name', node);
+    nameEl.textContent = t.name;
+    if (withGroup) { const s = document.createElement('span'); s.className = 'pk-sub'; s.textContent = ((t.group || '').trim() || '未分组'); nameEl.appendChild(s); }
     const on = t.id === currentTplId;
     node.classList.toggle('on', on);
     node.setAttribute('aria-selected', on ? 'true' : 'false');
-    const linked = linkedIds.indexOf(t.id) >= 0;
-    node.classList.toggle('linked', linked);
-    if (linked && !on) $('.ti-mark', node).hidden = false;
-    node.addEventListener('click', function () { selectTemplate(t.id); renderTplChips(); });
-    host.appendChild(node);
+    if (linkedIds.indexOf(t.id) >= 0 && !on) $('.ti-mark', node).hidden = false;
+    node.addEventListener('click', function () { pick(t); });
+    return node;
   }
-  function addGroup(label, key, list) {
-    const node = mk('tpl-picker-group');
-    const head = $('.tpl-group-head', node);
-    $('.tg-name', head).textContent = label;
-    $('.tg-count', head).textContent = list.length + ' 个';
-    const collapsed = collapsedGroups.has(key);
-    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    const host = $('.tg-items', node);
-    host.hidden = collapsed;
-    list.forEach(function (t) { addItem(host, t); });
-    head.addEventListener('click', function () {
-      if (collapsedGroups.has(key)) collapsedGroups.delete(key);
-      else collapsedGroups.add(key);
-      persistCollapsedGroups();
-      renderTplChips();
+  function moveBtns(host, i, len, onMove) {
+    const wrap = document.createElement('div'); wrap.className = 'pk-move';
+    const up = document.createElement('button'); up.type = 'button'; up.textContent = '▲'; up.setAttribute('aria-label', '上移'); up.disabled = i === 0;
+    const down = document.createElement('button'); down.type = 'button'; down.textContent = '▼'; down.setAttribute('aria-label', '下移'); down.disabled = i === len - 1;
+    up.addEventListener('click', function () { onMove(-1); });
+    down.addEventListener('click', function () { onMove(1); });
+    wrap.appendChild(up); wrap.appendChild(down);
+    host.appendChild(wrap);
+  }
+  function openGroup(g) {
+    let gSort = false;
+    const body2 = document.createElement('div');
+    const bar2 = document.createElement('div'); bar2.className = 'pk-bar';
+    const note2 = document.createElement('span'); note2.className = 'section-note';
+    const sortBtn2 = document.createElement('button'); sortBtn2.type = 'button'; sortBtn2.className = 'link-btn';
+    bar2.appendChild(note2); bar2.appendChild(sortBtn2);
+    body2.appendChild(bar2);
+    const list2 = document.createElement('div'); list2.className = 'pk-list';
+    body2.appendChild(list2);
+    function paint2() {
+      list2.innerHTML = '';
+      const list = orderedTemplatesIn(g);
+      sortBtn2.textContent = gSort ? '完成排序' : '调整顺序';
+      note2.textContent = gSort ? '点 ▲▼ 调整模板顺序,自动保存' : list.length + ' 个模板,点选即用';
+      list.forEach(function (t, i) {
+        const row = document.createElement('div'); row.className = 'pk-row';
+        const item = tplItem(t, false);
+        if (gSort) { item.style.pointerEvents = 'none'; item.style.opacity = '.75'; }
+        row.appendChild(item);
+        if (gSort) moveBtns(row, i, list.length, function (dir) { moveTplOrder(t.id, dir); paint2(); });
+        list2.appendChild(row);
+      });
+    }
+    sortBtn2.addEventListener('click', function () { gSort = !gSort; paint2(); });
+    paint2();
+    Sheet.open({ title: g || '未分组', bodyNode: body2, autofocus: false });
+  }
+  function paint() {
+    listBox.innerHTML = '';
+    const q = query.trim().toLowerCase();
+    sortBtn.hidden = !!q;
+    sortBtn.textContent = sortMode ? '完成排序' : '调整顺序';
+    if (q) {
+      const hits = allOrderedTemplates().filter(function (t) {
+        return (t.name + ' ' + (t.group || '') + ' ' + t.content).toLowerCase().indexOf(q) >= 0;
+      });
+      note.textContent = '匹配 ' + hits.length + ' / ' + data.templates.length + ' 个模板';
+      if (!hits.length) {
+        const e = document.createElement('div'); e.className = 'tpl-list-empty';
+        e.textContent = '没有匹配的模板,换个关键词试试。';
+        listBox.appendChild(e); return;
+      }
+      hits.forEach(function (t) { listBox.appendChild(tplItem(t, true)); });
+      return;
+    }
+    const keys = orderedGroupKeys();
+    note.textContent = sortMode ? '点 ▲▼ 调整分类顺序,自动保存'
+      : '共 ' + data.templates.length + ' 个模板 · ' + keys.length + ' 个分类,先选分类';
+    keys.forEach(function (g, i) {
+      const list = orderedTemplatesIn(g);
+      const row = document.createElement('div'); row.className = 'pk-row';
+      const head = document.createElement('button'); head.type = 'button'; head.className = 'tpl-group-head';
+      const nm = document.createElement('span'); nm.className = 'tg-name'; nm.textContent = g || '未分组';
+      const ct = document.createElement('span'); ct.className = 'tg-count'; ct.textContent = list.length + ' 个';
+      const chev = document.createElement('span'); chev.className = 'tg-count'; chev.textContent = '›';
+      head.appendChild(nm); head.appendChild(ct); head.appendChild(chev);
+      head.addEventListener('click', function () { if (!sortMode) openGroup(g); });
+      row.appendChild(head);
+      if (sortMode) moveBtns(row, i, keys.length, function (dir) { moveGroupOrder(g, dir); paint(); });
+      listBox.appendChild(row);
     });
-    box.appendChild(node);
   }
-  // 搜索时平铺命中项,避免结果被折叠的分组藏起来
-  if (q || groups.length < 2) {
-    shown.forEach(function (t) { addItem(box, t); });
-    return;
-  }
-  groups.forEach(function (g) {
-    const list = shown.filter(function (t) { return (t.group || '').trim() === g; });
-    if (list.length) addGroup(g, g, list);
-  });
-  const rest = shown.filter(function (t) { return !(t.group || '').trim(); });
-  if (rest.length) addGroup('未分组', '', rest);
+  searchInput.addEventListener('input', debounce(function () { query = searchInput.value; paint(); }, 150));
+  sortBtn.addEventListener('click', function () { sortMode = !sortMode; paint(); });
+  paint();
+  Sheet.open({ title: '选择模板', bodyNode: bodyNode, autofocus: false });
 }
 function renderGroupHint() {
   const tpl = tplById(currentTplId);
@@ -2815,7 +2941,7 @@ const Reminder = (function () {
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) {
       stopFlash();
-      check(true);
+      check();
       lastRefreshMin = -1;          // 回到前台立即校准一次时间
       refreshDatetimeFields();
     }
@@ -2843,7 +2969,10 @@ const Reminder = (function () {
     Sound.beep(2);
     if (document.hidden) flashTitle(item.task || '任务提醒');
   }
-  function check(catchUp) {
+  /* 到点判定按「分钟」进行:命中触发分钟起 5 分钟内、当天未响过就提醒。
+     不依赖定时器落在特定秒点,后台被浏览器节流、切回前台补发都能覆盖;
+     reminderLog 按天去重,不会重复响。 */
+  function check() {
     if (!data.settings.notify.enabled) return;
     const d = new Date();
     const nowMin = d.getHours() * 60 + d.getMinutes();
@@ -2854,8 +2983,9 @@ const Reminder = (function () {
       const w = itemWindow(item);
       if (!w) return;
       const trigger = ((w[0] - adv) % 1440 + 1440) % 1440;
-      const hit = nowMin === trigger || (catchUp && nowMin >= trigger && nowMin <= Math.min(trigger + 5, w[0] % 1440));
-      if (hit && log.ids.indexOf(item.id) < 0) fire(item, nowMin);
+      let delta = nowMin - trigger;
+      if (delta < -720) delta += 1440;   // 跨午夜:触发点在昨晚、现在刚过零点
+      if (delta >= 0 && delta <= 5 && log.ids.indexOf(item.id) < 0) fire(item, nowMin);
     });
   }
   function askPermission() {
@@ -2869,13 +2999,19 @@ const Reminder = (function () {
     }).catch(function () { toast('无法申请通知权限'); });
   }
   function start() {
+    let lastCheckMin = -1;
     setInterval(function () {
       tickClock();
       const d = new Date();
-      if (d.getSeconds() % 15 === 0) { check(false); renderTimeline(false); }
+      const m = d.getHours() * 60 + d.getMinutes();
+      if (m !== lastCheckMin) {        // 每跨一分钟检查一次,后台节流也不漏
+        lastCheckMin = m;
+        check();
+        renderTimeline(false);
+      }
       maybeRefreshDatetime();        // 跨分钟/跨天自动校准
     }, 1000);
-    check(true);
+    check();
   }
   return { start, check, askPermission, banner };
 })();
@@ -2944,7 +3080,7 @@ function renderHistory() {
     box.appendChild(e);
     return;
   }
-  shown.slice(0, 100).forEach(function (h) {
+  shown.forEach(function (h) {
     const node = mk('tpl-hist-item');
     $('.hm-tpl', node).textContent = h.templateName || '自由文本';
     $('.hm-time', node).textContent = fmtStamp(h.createdAt);
@@ -5291,7 +5427,7 @@ function renderTodo(list, nowMin, doneCount) {
 function openHelpSheet() {
   const node = document.createElement('div');
   const blocks = [
-    { t: '快速上手', l: ['在「上报」页的竖向列表里选模板,模板多时可用上方搜索框过滤', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
+    { t: '快速上手', l: ['在「上报」页点「选择模板」按钮,先选分类、再选该分类下的模板', '弹窗顶部可直接搜索模板;分类和模板的顺序可在弹窗里点「调整顺序」用 ▲▼ 自定义,自动保存', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
       '有变量没填时会先列出漏填项让你确认,可以选择返回填写或仍要复制', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
@@ -5415,20 +5551,7 @@ function bindGlobal() {
   $('#btnHelp').addEventListener('click', openHelpSheet);
   $('#btnManageTpl').addEventListener('click', openManageSheet);
   $('#btnMakeTpl').addEventListener('click', function () { openTplMakerSheet(''); });
-  $('#btnToggleGroups').addEventListener('click', function () {
-    if (collapsedGroups.size) collapsedGroups.clear();
-    else {
-      groupsOf().forEach(function (g) { collapsedGroups.add(g); });
-      collapsedGroups.add('');
-    }
-    persistCollapsedGroups();
-    renderTplChips();
-  });
-  const tplSearchEl = $('#tplSearch');
-  tplSearchEl.addEventListener('input', debounce(function () {
-    tplQuery = tplSearchEl.value;
-    renderTplChips();
-  }, 180));
+  $('#btnPickTpl').addEventListener('click', openTplPicker);
   $('#btnManageTimeline').addEventListener('click', openTimelineSheet);
   $('#btnManageLookup').addEventListener('click', openLookupSheet);
   $('#btnImportMembers').addEventListener('click', openMemberImportSheet);
