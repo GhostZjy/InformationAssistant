@@ -711,6 +711,20 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
     </div>
   </div>
 
+  <div class="card card-collapsible" data-collapse="library">
+    <div class="card-head">
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开内容库"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">内容库</span>
+      </div>
+      <button class="link-btn" id="btnAddLibGroup">添加分组</button>
+    </div>
+    <div class="card-body">
+      <div id="libraryList"></div>
+      <p class="section-note" style="margin-top:8px">分组管理可复用内容(如 检查内容库、培训内容库)。模板里把变量类型设为「内容库」并指定分组，填写时多选，自动按勾选顺序编号、每项缩进输出。</p>
+    </div>
+  </div>
+
   <div class="card card-collapsible" data-collapse="custom">
     <div class="card-head">
       <div style="display:flex;align-items:center;gap:2px;min-width:0">
@@ -1097,6 +1111,8 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
         <option value="member">人员</option>
         <option value="members">多人员</option>
         <option value="items">物品清单</option>
+        <option value="tree">分支选择</option>
+        <option value="library">内容库</option>
       </select>
     </div>
     <input class="input vt-options" type="text" placeholder="选项1|选项2|选项3" autocomplete="off" style="min-height:40px" hidden>
@@ -1302,6 +1318,7 @@ function seedData() {
     },
     templates: seedTemplates(),
     timeline: seedTimeline(),
+    libraries: [],
     lookup: [],
     lookupSource: [],
     history: [],
@@ -1339,6 +1356,7 @@ function normalize(d) {
     version: 5, settings: s,
     templates: Array.isArray(d.templates) ? d.templates : base.templates,
     timeline: Array.isArray(d.timeline) ? d.timeline : [],
+    libraries: Array.isArray(d.libraries) ? d.libraries : [],
     lookup: Array.isArray(d.lookup) ? d.lookup : base.lookup,
     lookupSource: Array.isArray(d.lookupSource) ? d.lookupSource : base.lookupSource,    history: Array.isArray(d.history) ? d.history : [],
     formCache: (d.formCache && typeof d.formCache === 'object') ? d.formCache : {},
@@ -1615,6 +1633,33 @@ function computeJoins(items, fields) {
   });
   return out;
 }
+/* 分支选择:按选中路径取分支文字/路径/末级名 */
+function computeTreeOutput(tpl, name, path) {
+  const cfg = (tpl.varTypes || {})[name] || {};
+  let level = cfg.tree || [], node = null; const labels = [];
+  (path || []).forEach(function (i) {
+    if (level && level[i]) { node = level[i]; labels.push(node.label); level = node.children || []; }
+  });
+  if (!node) return '';
+  if (cfg.output === 'path') return labels.join(cfg.separator || '/');
+  if (cfg.output === 'leaf') return node.label;
+  return node.text || node.label;
+}
+/* 内容库:按勾选顺序输出 缩进+编号+内容 */
+function computeLibraryOutput(tpl, name, sel) {
+  const cfg = (tpl.varTypes || {})[name] || {};
+  const lib = (data.libraries || []).find(function (l) { return l.name === cfg.group; });
+  if (!lib) return '';
+  const indent = ' '.repeat(cfg.indent != null ? cfg.indent : 8);
+  const numFmt = cfg.numFmt || '{n}、';
+  const sep = cfg.sep != null ? cfg.sep : '\n';
+  const lines = [];
+  (sel || []).forEach(function (id, i) {
+    const it = (lib.items || []).find(function (x) { return x.id === id; });
+    if (it) lines.push(indent + numFmt.replace('{n}', i + 1) + it.text);
+  });
+  return lines.join(sep);
+}
 function applyConditionals(content, values) {
   return content.replace(/\{\?([^}]+)\}([\s\S]*?)\{\/\1\}/g, function (all, name, inner) {
     const v = values[name.trim()];
@@ -1626,6 +1671,12 @@ function renderTemplate(tpl, values) {
   if (!tpl || !tpl.content) return '';
   const vals = Object.assign({}, values);
   const vars = extractVars(tpl.content);
+  /* 分支选择 / 内容库 -> 文本 */
+  vars.forEach(function (name) {
+    const ty = varType(tpl, name);
+    if (ty === 'tree') vals[name] = computeTreeOutput(tpl, name, vals[name + '__path'] || []);
+    else if (ty === 'library') vals[name] = computeLibraryOutput(tpl, name, vals[name + '__sel'] || []);
+  });
   /* 物品清单 -> 文本,并回填件数变量和汇总变量 */
   vars.forEach(function (name) {
     if (varType(tpl, name) !== 'items') return;
@@ -1708,6 +1759,16 @@ function missingVars(tpl, values) {
     if (type === 'items') {
       const arr = values[name + '__items'];
       if (!Array.isArray(arr) || !arr.length) miss.push(name);
+      return;
+    }
+    if (type === 'tree') {
+      const p = values[name + '__path'];
+      if (!Array.isArray(p) || !p.length) miss.push(name);
+      return;
+    }
+    if (type === 'library') {
+      const sel = values[name + '__sel'];
+      if (!Array.isArray(sel) || !sel.length) miss.push(name);
       return;
     }
     let v = values[name];
@@ -1871,6 +1932,14 @@ function ensureValues(tpl) {
     if (type === 'items') {
       if (!Array.isArray(values[name + '__items'])) values[name + '__items'] = [];
       if (!(name in values)) values[name] = '';
+      return;
+    }
+    if (type === 'tree') {
+      if (!Array.isArray(values[name + '__path'])) values[name + '__path'] = [];
+      return;
+    }
+    if (type === 'library') {
+      if (!Array.isArray(values[name + '__sel'])) values[name + '__sel'] = [];
       return;
     }
     if (name in values && String(values[name] || '').length) return;
@@ -2167,6 +2236,8 @@ function bindStepper(host, opts) {
 function buildField(tpl, name) {
   const type = varType(tpl, name);
   if (type === 'items') return buildItemsField(tpl, name);
+  if (type === 'tree') return buildTreeField(tpl, name);
+  if (type === 'library') return buildLibraryField(tpl, name);
   if (type === 'number') {
     const node = mk('tpl-field-number');
     fieldLabel(node, name, type);
@@ -2397,6 +2468,93 @@ function openBulkPaste(fields, items, onDone) {
   });
   foot.appendChild(cancel); foot.appendChild(ok);
   Sheet.open({ title: '批量粘贴', bodyNode: body, footNode: foot });
+}
+/* 分支选择:逐层级联单选,选一层展开下一层,任意深度 */
+function buildTreeField(tpl, name) {
+  const node = mk('tpl-field-multi');
+  fieldLabel(node, name, 'tree');
+  const box = $('.chip-group', node);
+  const hint = $('.field-hint', node);
+  const cfg = tpl.varTypes[name] || {};
+  const tree = cfg.tree || [];
+  const path = values[name + '__path'] || (values[name + '__path'] = []);
+  if (!tree.length) {
+    hint.hidden = false;
+    hint.textContent = '还没有分支,去「管理模板」里为此变量配置分支树';
+    return node;
+  }
+  function paint() {
+    box.innerHTML = '';
+    let level = tree;
+    for (let depth = 0; depth < 20; depth++) {
+      const row = document.createElement('div');
+      row.className = 'chip-group';
+      row.style.cssText = 'margin-bottom:6px';
+      const tag = document.createElement('span');
+      tag.className = 'section-note';
+      tag.style.cssText = 'width:100%;font-size:.72rem';
+      tag.textContent = depth === 0 ? '请选择(逐级展开)' : '第 ' + (depth + 1) + ' 级分支';
+      row.appendChild(tag);
+      level.forEach(function (nd, i) {
+        const c = mk('tpl-chip');
+        c.textContent = nd.label;
+        c.setAttribute('aria-pressed', path[depth] === i ? 'true' : 'false');
+        c.addEventListener('click', function () {
+          path[depth] = i;
+          path.length = depth + 1;
+          touchedVars[name] = true;
+          paint(); queuePreview();
+        });
+        row.appendChild(c);
+      });
+      box.appendChild(row);
+      const si = path[depth];
+      if (si == null || !level[si] || !level[si].children || !level[si].children.length) break;
+      level = level[si].children;
+    }
+  }
+  paint();
+  return node;
+}
+/* 内容库:从指定分组多选内容,按勾选顺序编号缩进输出 */
+function buildLibraryField(tpl, name) {
+  const node = mk('tpl-field-multi');
+  fieldLabel(node, name, 'library');
+  const box = $('.chip-group', node);
+  const hint = $('.field-hint', node);
+  const cfg = tpl.varTypes[name] || {};
+  const lib = (data.libraries || []).find(function (l) { return l.name === cfg.group; });
+  const sel = values[name + '__sel'] || (values[name + '__sel'] = []);
+  if (!lib || !(lib.items || []).length) {
+    hint.hidden = false;
+    hint.textContent = cfg.group ? '内容库「' + cfg.group + '」还没有内容,去「设置 → 内容库」添加'
+                                 : '先在「管理模板」里为此变量指定内容库分组';
+    return node;
+  }
+  function paint() {
+    box.innerHTML = '';
+    lib.items.forEach(function (it) {
+      const c = mk('tpl-chip');
+      c.textContent = it.text;
+      c.style.cssText = 'max-width:100%;white-space:normal;text-align:left;height:auto;line-height:1.4';
+      c.setAttribute('aria-pressed', sel.indexOf(it.id) >= 0 ? 'true' : 'false');
+      c.addEventListener('click', function () {
+        const i = sel.indexOf(it.id);
+        if (i >= 0) sel.splice(i, 1); else sel.push(it.id);
+        touchedVars[name] = true;
+        paint(); queuePreview();
+      });
+      box.appendChild(c);
+    });
+    const note = document.createElement('div');
+    note.className = 'section-note';
+    note.style.cssText = 'width:100%;margin-top:4px';
+    note.textContent = sel.length ? '已选 ' + sel.length + ' 项,按勾选顺序自动编号缩进输出'
+                                  : '点选要用的内容(可多选),自动编号缩进输出';
+    box.appendChild(note);
+  }
+  paint();
+  return node;
 }
 function buildItemsField(tpl, name) {
   const node = mk('tpl-field-items');
@@ -3925,13 +4083,70 @@ function renderHeaderSub() {
   const bits = [s.line, s.station].filter(function (x) { return (x || '').trim(); });
   $('#headerSub').textContent = bits.length ? bits.join(' · ') : '未设置线路站点,去「设置」里填写';
 }
+function renderLibraries() {
+  const box = $('#libraryList');
+  if (!box) return;
+  const E = function (tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  box.innerHTML = '';
+  const libs = data.libraries || [];
+  if (!libs.length) {
+    box.appendChild(E('div', 'empty', '还没有内容库，点右上「添加分组」创建（如 检查内容库、培训内容库）'));
+    return;
+  }
+  libs.forEach(function (lib, gi) {
+    const card = E('div', 'dyn-item');
+    const head = E('div', 'list-row');
+    const nameInp = document.createElement('input');
+    nameInp.className = 'input'; nameInp.type = 'text'; nameInp.value = lib.name || '';
+    nameInp.style.cssText = 'flex:1;min-height:40px;font-weight:700';
+    nameInp.setAttribute('aria-label', '分组名');
+    nameInp.addEventListener('input', debounce(function () { lib.name = nameInp.value; save(); }, 300));
+    const delG = E('button', 'mini-btn danger', '删除分组');
+    delG.addEventListener('click', function () {
+      Sheet.confirmSheet({
+        title: '删除分组「' + lib.name + '」?', message: '组内内容会一并删除，引用此分组的模板变量将取不到内容。', okText: '删除', danger: true,
+        onOk: function () { libs.splice(gi, 1); save(); renderLibraries(); }
+      });
+    });
+    head.appendChild(nameInp); head.appendChild(delG); card.appendChild(head);
+    const itemsBox = E('div'); itemsBox.style.marginTop = '8px';
+    (lib.items || []).forEach(function (it, ii) {
+      const r = E('div', 'list-row'); r.style.padding = '4px 0';
+      const ti = document.createElement('input');
+      ti.className = 'input'; ti.type = 'text'; ti.value = it.text || ''; ti.placeholder = '内容文字';
+      ti.style.cssText = 'flex:1;min-height:38px;font-size:.84rem';
+      ti.addEventListener('input', debounce(function () { it.text = ti.value; save(); }, 300));
+      const up = E('button', 'mini-btn', '↑'); up.disabled = ii === 0;
+      up.addEventListener('click', function () { const tmp = lib.items[ii - 1]; lib.items[ii - 1] = lib.items[ii]; lib.items[ii] = tmp; save(); renderLibraries(); });
+      const dn = E('button', 'mini-btn', '↓'); dn.disabled = ii === lib.items.length - 1;
+      dn.addEventListener('click', function () { const tmp = lib.items[ii + 1]; lib.items[ii + 1] = lib.items[ii]; lib.items[ii] = tmp; save(); renderLibraries(); });
+      const del = E('button', 'mini-btn danger', '删');
+      del.addEventListener('click', function () { lib.items.splice(ii, 1); save(); renderLibraries(); });
+      r.appendChild(ti); r.appendChild(up); r.appendChild(dn); r.appendChild(del);
+      itemsBox.appendChild(r);
+    });
+    card.appendChild(itemsBox);
+    const addIt = E('button', 'btn btn-ghost btn-sm', '+ 添加内容'); addIt.style.marginTop = '6px';
+    addIt.addEventListener('click', function () { lib.items = lib.items || []; lib.items.push({ id: uid(), text: '' }); save(); renderLibraries(); });
+    card.appendChild(addIt);
+    box.appendChild(card);
+  });
+}
+function bindLibraries() {
+  const b = $('#btnAddLibGroup');
+  if (b) b.addEventListener('click', function () {
+    data.libraries = data.libraries || [];
+    data.libraries.push({ id: uid(), name: '新分组', items: [] });
+    save(); renderLibraries();
+  });
+}
 function renderSettingsAll() {
   const s = data.settings;
   $('#setLine').value = s.line || '';
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
-  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderDispatch();
+  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderDispatch(); renderLibraries();
   renderThemeChips(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
@@ -4541,14 +4756,101 @@ function openManageSheet() {
       vtWrap.appendChild(fieldsWrap);
       function paintFieldsConfig() {
         fieldsWrap.innerHTML = '';
+        /* 分支选择编辑器:递归树,每个分支可配输出文字与子级 */
+        function renderTreeEditor(name, wrap) {
+          const decl = t.varTypes[name] || (t.varTypes[name] = {});
+          if (!decl.tree) decl.tree = [];
+          const modeRow = document.createElement('div');
+          modeRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0';
+          const modeSel = document.createElement('select'); modeSel.className = 'select';
+          modeSel.style.cssText = 'width:auto;min-height:38px;font-size:.82rem';
+          [['text', '输出分支文字'], ['path', '输出路径'], ['leaf', '输出末级名']].forEach(function (o) {
+            const op = document.createElement('option'); op.value = o[0]; op.textContent = o[1];
+            if ((decl.output || 'text') === o[0]) op.selected = true; modeSel.appendChild(op);
+          });
+          modeSel.addEventListener('change', function () { decl.output = modeSel.value; dirty = true; });
+          const sepInp = document.createElement('input'); sepInp.className = 'input'; sepInp.type = 'text';
+          sepInp.value = decl.separator || '/'; sepInp.placeholder = '路径分隔符';
+          sepInp.style.cssText = 'width:90px;min-height:38px;font-size:.82rem';
+          sepInp.addEventListener('input', function () { decl.separator = sepInp.value; dirty = true; });
+          modeRow.appendChild(modeSel); modeRow.appendChild(sepInp); wrap.appendChild(modeRow);
+          const treeBox = document.createElement('div'); wrap.appendChild(treeBox);
+          function repaint() {
+            treeBox.innerHTML = '';
+            function paintArr(arr, depth) {
+              arr.forEach(function (nd, i) {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;gap:6px;align-items:flex-start;margin:4px 0;padding-left:' + (depth * 14) + 'px';
+                const lab = document.createElement('input'); lab.className = 'input'; lab.type = 'text';
+                lab.value = nd.label || ''; lab.placeholder = '分支名'; lab.style.cssText = 'flex:1;min-height:36px;font-size:.8rem';
+                lab.addEventListener('input', function () { nd.label = lab.value; dirty = true; });
+                const txt = document.createElement('input'); txt.className = 'input'; txt.type = 'text';
+                txt.value = nd.text || ''; txt.placeholder = '输出文字(选此分支时输出)'; txt.style.cssText = 'flex:2;min-height:36px;font-size:.8rem';
+                txt.addEventListener('input', function () { nd.text = txt.value; dirty = true; });
+                const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'mini-btn'; addB.textContent = '+子';
+                addB.style.cssText = 'min-height:36px;font-size:.72rem';
+                addB.addEventListener('click', function () { nd.children = nd.children || []; nd.children.push({ label: '新分支', text: '' }); dirty = true; repaint(); });
+                const delB = document.createElement('button'); delB.type = 'button'; delB.className = 'mini-btn danger'; delB.textContent = '删';
+                delB.style.cssText = 'min-height:36px;font-size:.72rem';
+                delB.addEventListener('click', function () { arr.splice(i, 1); dirty = true; repaint(); });
+                row.appendChild(lab); row.appendChild(txt); row.appendChild(addB); row.appendChild(delB);
+                treeBox.appendChild(row);
+                if (nd.children && nd.children.length) paintArr(nd.children, depth + 1);
+              });
+            }
+            paintArr(decl.tree, 0);
+          }
+          repaint();
+          const addTop = document.createElement('button'); addTop.type = 'button'; addTop.className = 'btn btn-ghost btn-sm';
+          addTop.textContent = '+ 添加顶级分支';
+          addTop.addEventListener('click', function () { decl.tree.push({ label: '新分支', text: '' }); dirty = true; repaint(); });
+          wrap.appendChild(addTop);
+        }
+        /* 内容库配置:选分组 + 编号/缩进/分隔 */
+        function renderLibraryConfig(name, wrap) {
+          const decl = t.varTypes[name] || (t.varTypes[name] = {});
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0';
+          const groupSel = document.createElement('select'); groupSel.className = 'select';
+          groupSel.style.cssText = 'min-height:38px;font-size:.82rem;flex:1;min-width:140px';
+          const ph = document.createElement('option'); ph.value = ''; ph.textContent = '选择内容库分组'; groupSel.appendChild(ph);
+          (data.libraries || []).forEach(function (l) {
+            const op = document.createElement('option'); op.value = l.name; op.textContent = l.name;
+            if (decl.group === l.name) op.selected = true; groupSel.appendChild(op);
+          });
+          groupSel.addEventListener('change', function () { decl.group = groupSel.value; dirty = true; });
+          const numInp = document.createElement('input'); numInp.className = 'input'; numInp.type = 'text';
+          numInp.value = decl.numFmt || '{n}、'; numInp.placeholder = '编号 {n}、';
+          numInp.style.cssText = 'width:90px;min-height:38px;font-size:.82rem';
+          numInp.addEventListener('input', function () { decl.numFmt = numInp.value; dirty = true; });
+          const indInp = document.createElement('input'); indInp.className = 'input'; indInp.type = 'number'; indInp.min = '0';
+          indInp.value = decl.indent != null ? decl.indent : 8; indInp.placeholder = '缩进';
+          indInp.style.cssText = 'width:70px;min-height:38px;font-size:.82rem';
+          indInp.addEventListener('input', function () { decl.indent = parseInt(indInp.value, 10) || 0; dirty = true; });
+          const sepSel = document.createElement('select'); sepSel.className = 'select';
+          sepSel.style.cssText = 'width:auto;min-height:38px;font-size:.82rem';
+          [['\n', '单换行'], ['\n\n', '空行']].forEach(function (o) {
+            const op = document.createElement('option'); op.value = o[0]; op.textContent = o[1];
+            if ((decl.sep != null ? decl.sep : '\n') === o[0]) op.selected = true; sepSel.appendChild(op);
+          });
+          sepSel.addEventListener('change', function () { decl.sep = sepSel.value; dirty = true; });
+          row.appendChild(groupSel); row.appendChild(numInp); row.appendChild(indInp); row.appendChild(sepSel);
+          wrap.appendChild(row);
+          const note = document.createElement('p'); note.className = 'section-note';
+          note.textContent = '内容在「设置 → 内容库」维护;此处选分组并设编号格式、缩进空格数、行分隔。';
+          wrap.appendChild(note);
+        }
         vars.forEach(function (name) {
           const declared = t.varTypes[name] || {};
-          if ((declared.type || inferType(name)) !== 'items') return;
+          const vtype = declared.type || inferType(name);
+          if (['items', 'tree', 'library'].indexOf(vtype) < 0) return;
           const label = document.createElement('div');
           label.className = 'field-label';
           label.style.marginTop = '12px';
-          label.textContent = '「' + name + '」的字段配置';
+          label.textContent = '「' + name + '」的' + (vtype === 'tree' ? '分支配置' : vtype === 'library' ? '内容库配置' : '字段配置');
           fieldsWrap.appendChild(label);
+          if (vtype === 'tree') { renderTreeEditor(name, fieldsWrap); return; }
+          if (vtype === 'library') { renderLibraryConfig(name, fieldsWrap); return; }
           const decl0 = t.varTypes[name] || (t.varTypes[name] = {});
           const optRow = document.createElement('div');
           optRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0';
@@ -5812,6 +6114,7 @@ function boot() {
     else if (mq.addListener) mq.addListener(onChange);
   } catch (e) {}
   bindSettingsInputs();
+  bindLibraries();
   bindGlobal();
   autoSnapshot();
   bootRender();
