@@ -819,20 +819,6 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
     </div>
   </div>
 
-  <div class="card card-collapsible" data-collapse="dispatch">
-    <div class="card-head">
-      <div style="display:flex;align-items:center;gap:2px;min-width:0">
-        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开限带品处置方式"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <span class="card-title">限带品处置方式</span>
-      </div>
-      <button class="link-btn" id="btnAddDispatch">添加</button>
-    </div>
-    <div class="card-body">
-      <div id="dispatchList"></div>
-      <p class="section-note" style="margin-top:8px">物品清单里可选的处置去向,默认依据广州地铁安检处置口径。</p>
-    </div>
-  </div>
-
   <div class="card card-collapsible" data-collapse="lookup">
     <div class="card-head">
       <div style="display:flex;align-items:center;gap:2px;min-width:0">
@@ -1037,11 +1023,13 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
     <div class="dyn-grid">
       <input class="input di-name" type="text" placeholder="物品名称" autocomplete="off" style="min-height:42px">
       <input class="input di-spec" type="text" placeholder="规格/数量" autocomplete="off" style="min-height:42px">
-      <select class="select di-method" style="min-height:42px"></select>
-      <div class="stepper di-count-wrap" style="width:100%">
-        <button type="button" class="stepper-btn" data-dir="-1" aria-label="减少">-</button>
-        <input class="stepper-input di-count" type="number" inputmode="numeric" min="1" max="999" value="1">
-        <button type="button" class="stepper-btn" data-dir="1" aria-label="增加">+</button>
+      <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px">
+        <span class="section-note" style="flex:none;font-weight:600;color:var(--text-2)">数量</span>
+        <div class="stepper di-count-wrap" style="width:132px">
+          <button type="button" class="stepper-btn" data-dir="-1" aria-label="减少">-</button>
+          <input class="stepper-input di-count" type="number" inputmode="numeric" min="1" max="999" value="1">
+          <button type="button" class="stepper-btn" data-dir="1" aria-label="增加">+</button>
+        </div>
       </div>
       <input class="input di-note full" type="text" placeholder="备注(选填)" autocomplete="off" style="min-height:42px">
     </div>
@@ -1355,7 +1343,6 @@ const Sound = (function () {
 /* 速查内容属于数据,不内置在工具里:通过「设置 → 导入配置」载入,或在设置页自行维护 */
 function seedLookup() { return []; }
 function seedLookupSource() { return []; }
-const DISPATCH_DEFAULT = ['劝导自弃后进站', '携带物品离站', '换乘其他交通工具', '现场自助寄件', '移交民警处置'];
 function seedTemplates() {
   const t = (name, group, groupHint, content, varTypes) => ({
     id: uid(), name, group,
@@ -1369,7 +1356,7 @@ function seedTemplates() {
       { '发现时间': { type: 'time' }, '违禁品件数': { type: 'number' }, '违禁品清单': { type: 'items' }, '乘客情况': { type: 'single', options: ['配合处置,已移交民警', '拒绝配合安检', '已报公安机关处理', '乘客自行离站'] }, '备注': { type: 'text' } }),
     t('限带品处置登记', '安检上报', '安检工作群',
       '【限带品处置登记】\n时间:*日期* *发现时间*\n地点:*线路* *站点* *安检点*\n查获限制携带物品 *限带品件数* 件:\n*限带品清单*\n处置结果:*处置结果*\n{?乘客去向}乘客去向:*乘客去向*\n{/乘客去向}{?备注}备注:*备注*\n{/备注}',
-      { '发现时间': { type: 'time' }, '限带品件数': { type: 'number' }, '限带品清单': { type: 'items' }, '处置结果': { type: 'single', options: DISPATCH_DEFAULT }, '乘客去向': { type: 'single', options: ['进站乘车', '携带物品离站', '换乘其他交通工具'] }, '备注': { type: 'text' } }),
+      { '发现时间': { type: 'time' }, '限带品件数': { type: 'number' }, '限带品清单': { type: 'items' }, '处置结果': { type: 'single', options: ['劝导自弃后进站', '携带物品离站', '换乘其他交通工具', '现场自助寄件', '移交民警处置'] }, '乘客去向': { type: 'single', options: ['进站乘车', '携带物品离站', '换乘其他交通工具'] }, '备注': { type: 'text' } }),
     t('设备故障报修', '设备与勤务', '车站设备群',
       '【安检设备故障报修】\n报修时间:*日期* *报修时间*\n站点:*线路* *站点*\n故障设备:*设备名称*(*安检点*)\n故障现象:*故障现象*\n影响情况:*影响情况*\n{?已采取措施}已采取措施:*已采取措施*\n{/已采取措施}',
       { '报修时间': { type: 'time' }, '设备名称': { type: 'single', options: ['通道式安检机', '通过式安检门', '手持金属探测器', '液体探测仪', '炸药探测器', '防爆球', '其他设备'] }, '故障现象': { type: 'text' }, '影响情况': { type: 'single', options: ['单通道停用', '安检点停用', '不影响正常通行'] }, '已采取措施': { type: 'text' } }),
@@ -1395,7 +1382,7 @@ function seedData() {
     version: 5,
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
-      contentItems: [], entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
+      contentItems: [], entrances: [], groups: [], members: [], custom: [],
       groupOrder: [], tplOrder: [],
       theme: 'auto', bigMode: false, continuous: false,
       recentTplIds: [], tplUseCount: {}, itemChips: [],
@@ -1441,7 +1428,6 @@ function normalize(d) {
     s.contentItems = [{ id: uid(), name: '默认', text: s.content }];
   }
   s.content = '';
-  if (!Array.isArray(s.dispatchOptions) || !s.dispatchOptions.length) s.dispatchOptions = DISPATCH_DEFAULT.slice();
   if (['auto', 'light', 'dark'].indexOf(s.theme) < 0) s.theme = 'auto';
   const out = {
     version: 5, settings: s,
@@ -1593,7 +1579,6 @@ function varOptions(tpl, name) {
   if (declared && Array.isArray(declared.options) && declared.options.length) return declared.options.slice();
   const c = customByKey(name);
   if (c) return String(c.value || '').split('|').map(function (x) { return x.trim(); }).filter(Boolean);
-  if (name === '处置结果') return data.settings.dispatchOptions.slice();
   if (name === '安检点') return data.settings.entrances.filter(Boolean);
   if (name === '多安检点') return data.settings.entrances.filter(Boolean);
   if (name === '人员' || name === '多人员') {
@@ -1693,7 +1678,6 @@ function itemsToText(items, fields, rowFormat, opts) {
       if ((it.spec || '').trim()) parts.push(' 规格数量:' + it.spec.trim());
       const cnt = parseInt(it.count, 10);
       if (cnt && cnt > 1) parts.push(' 数量:' + cnt);
-      if (it.method) parts.push(' 处置:' + it.method);
       if ((it.note || '').trim()) parts.push(' 备注:' + it.note.trim());
       return parts.join('');
     }).join('\n');
@@ -2958,26 +2942,19 @@ function buildItemsField(tpl, name) {
   }
 
   // 默认字段模式（兼容旧数据）
-  const methods = data.settings.dispatchOptions.slice();
   function paint() {
     box.innerHTML = '';
     items.forEach(function (it, idx) {
       const row = mk('tpl-dyn-item');
       $('.di-title', row).textContent = '第 ' + (idx + 1) + ' 件';
-      const n = $('.di-name', row), sp = $('.di-spec', row), nt = $('.di-note', row), sel = $('.di-method', row);
+      const n = $('.di-name', row), sp = $('.di-spec', row), nt = $('.di-note', row);
       n.value = it.name || ''; sp.value = it.spec || ''; nt.value = it.note || '';
       n.setAttribute('aria-label', '第' + (idx + 1) + '件物品名称');
       sp.setAttribute('aria-label', '第' + (idx + 1) + '件规格数量');
       nt.setAttribute('aria-label', '第' + (idx + 1) + '件备注');
-      sel.setAttribute('aria-label', '第' + (idx + 1) + '件处置方式');
-      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '处置方式';
-      sel.appendChild(ph);
-      methods.forEach(function (m) { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
-      sel.value = it.method || '';
       n.addEventListener('input', function () { it.name = n.value; queuePreview(); });
       sp.addEventListener('input', function () { it.spec = sp.value; queuePreview(); });
       nt.addEventListener('input', function () { it.note = nt.value; queuePreview(); });
-      sel.addEventListener('change', function () { it.method = sel.value; queuePreview(); });
       $('.di-count', row).value = String(parseInt(it.count, 10) || 1);
       bindStepper($('.di-count-wrap', row), {
         min: 1, max: 999,
@@ -3001,13 +2978,13 @@ function buildItemsField(tpl, name) {
   bindStepper(stepper, {
     min: 0, max: 99,
     onChange: function (v) {
-      while (items.length < v) items.push({ name: '', spec: '', count: '1', method: methods[0] || '', note: '' });
+      while (items.length < v) items.push({ name: '', spec: '', count: '1', note: '' });
       if (items.length > v) items.length = v;
       syncCount(); paint(); queuePreview();
     }
   });
   addBtn.addEventListener('click', function () {
-    items.push({ name: '', spec: '', count: '1', method: methods[0] || '', note: '' });
+    items.push({ name: '', spec: '', count: '1', note: '' });
     syncCount(); paint(); queuePreview();
     const last = $('.di-name', box.lastElementChild);
     if (last) { try { last.focus({ preventScroll: false }); } catch (e) {} }
@@ -3019,7 +2996,7 @@ function buildItemsField(tpl, name) {
     syncCount(); paint(); queuePreview();
   });
   namePlaceChip = function (nm) {
-    items.push({ name: nm, spec: '', count: '1', method: (data.settings.dispatchOptions || [])[0] || '', note: '' });
+    items.push({ name: nm, spec: '', count: '1', note: '' });
     syncCount(); paint(); queuePreview();
   };
   syncCount();
@@ -3294,7 +3271,7 @@ function continuousReset(tpl) {
         });
         arr.push(item);
       } else {
-        arr.push({ name: '', spec: '', count: '1', method: last.method || (data.settings.dispatchOptions || [])[0] || '', note: '' });
+        arr.push({ name: '', spec: '', count: '1', note: '' });
       }
       return;
     }
@@ -4531,12 +4508,6 @@ function openMemberImportSheet() {
     autofocus: true
   });
 }
-function renderDispatch() {
-  bindRows($('#dispatchList'), data.settings.dispatchOptions, {
-    placeholder: '如 劝导自弃后进站', label: '处置方式', emptyText: '还没有处置方式',
-    onChange: function (repaint) { save(); if (repaint) renderDispatch(); renderForm(); }
-  });
-}
 function renderCustom() {
   const host = $('#customList');
   host.innerHTML = '';
@@ -4644,9 +4615,9 @@ function renderSettingsAll() {
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
-  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderDispatch(); renderLibraries();
+  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries();
   renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
-  $('#aboutText').textContent = '信息助手 v5 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
+  $('#aboutText').textContent = '信息助手 v5.1 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
     + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页内容可自定义,正式认定以运营单位现行文件为准。';
 }
@@ -5702,7 +5673,6 @@ function detectCandidates(text) {
       .sort(function (a, b) { return b.length - a.length; })
       .forEach(function (opt) { add(opt, c.key, c.type, 25, String(c.value || '')); });
   });
-  (st.dispatchOptions || []).filter(Boolean).forEach(function (opt) { add(opt, '处置结果', 'single', 26); });
   // 性别
   addRe(/([男女])(?=乘客)/g, '乘客性别', 'single', 30, '男|女', 1);
   // 物品名:取自速查的 A/B 类图像条目,含括号里的别名与常见前置修饰词
@@ -6591,7 +6561,6 @@ function bindGlobal() {
     const rows = $$('#memberList input');
     if (rows.length) { try { rows[rows.length - 2].focus(); } catch (e) {} }
   });
-  $('#btnAddDispatch').addEventListener('click', function () { data.settings.dispatchOptions.push(''); save(); renderDispatch(); });
   $('#btnAddCustom').addEventListener('click', function () { data.settings.custom.push({ id: uid(), key: '', type: 'text', value: '' }); save(); renderCustom(); });
   $('#btnExport').addEventListener('click', exportJSON);
   $('#btnImport').addEventListener('click', openImportSheet);
