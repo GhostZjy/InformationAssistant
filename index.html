@@ -822,7 +822,7 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
     </div>
     <div class="card-body">
       <div id="libraryList"></div>
-      <p class="section-note" style="margin-top:8px">分组管理可复用内容(如 检查内容库、培训内容库)。模板里把变量类型设为「内容库」并指定分组，填写时多选，自动按勾选顺序编号、每项缩进输出。</p>
+      <p class="section-note" style="margin-top:8px">分组管理可复用内容(如 检查内容库、培训内容库)。每个分组可点「批量添加」一次性粘贴多条;模板里把变量类型设为「内容库」并指定分组，填写时多选，自动按勾选顺序编号、每项缩进输出。</p>
     </div>
   </div>
 
@@ -4988,6 +4988,144 @@ function renderHeaderSub() {
   const bits = [s.line, s.station].filter(function (x) { return (x || '').trim(); });
   $('#headerSub').textContent = bits.length ? bits.join(' · ') : '未设置线路站点,去「设置」里填写';
 }
+/* 解析内容库批量文本:每行一条,忽略空行,去掉行首序号/项目符号,同批次去重 */
+function parseLibraryText(raw) {
+  const out = [], seen = {};
+  String(raw || '').split(/\r?\n/).forEach(function (line) {
+    let s = line.replace(/\u3000/g, ' ').trim();
+    if (!s) return;
+    s = s.replace(/^[0-9０-９]{1,3}\s*[、)）:：]\s*/, '');
+    s = s.replace(/^[0-9０-９]{1,3}\s*[.．]\s+/, '');
+    s = s.replace(/^[-*·•—]\s*/, '');
+    s = s.trim();
+    if (!s) return;
+    if (seen[s]) return;
+    seen[s] = 1;
+    out.push(s);
+  });
+  return out;
+}
+function openLibraryImportSheet(lib) {
+  const bodyNode = document.createElement('div');
+  const tip = document.createElement('p');
+  tip.className = 'section-note';
+  tip.style.marginBottom = '9px';
+  tip.style.lineHeight = '1.9';
+  tip.textContent = '每行一条内容,空行会自动忽略;行首的「1.」「1、」「-」等序号符号会自动去掉;同批次里的重复内容会跳过。';
+  bodyNode.appendChild(tip);
+  const ta = document.createElement('textarea');
+  ta.className = 'textarea';
+  ta.style.minHeight = '180px';
+  ta.style.fontSize = '14px';
+  ta.style.lineHeight = '1.7';
+  ta.placeholder = '每行一条,例如:\n值机岗位在岗,设备正常\n进站口引导有序\n安检通道卫生已清理';
+  ta.setAttribute('aria-label', '内容库条目');
+  bodyNode.appendChild(ta);
+  const preview = document.createElement('div');
+  preview.className = 'preview placeholder';
+  preview.style.marginTop = '9px';
+  preview.style.minHeight = '56px';
+  preview.style.fontSize = '.82rem';
+  preview.style.maxHeight = '180px';
+  preview.style.overflow = 'auto';
+  preview.textContent = '还没有解析到内容,把文字粘到上面的输入框';
+  bodyNode.appendChild(preview);
+
+  const footNode = document.createElement('div');
+  footNode.className = 'btn-row';
+  const replaceBtn = document.createElement('button');
+  replaceBtn.type = 'button'; replaceBtn.className = 'btn btn-danger'; replaceBtn.textContent = '替换本组';
+  replaceBtn.disabled = true;
+  const appendBtn = document.createElement('button');
+  appendBtn.type = 'button'; appendBtn.className = 'btn btn-primary'; appendBtn.textContent = '追加到本组';
+  appendBtn.disabled = true;
+
+  function getParsed() { return parseLibraryText(ta.value); }
+  function updatePreview() {
+    const list = getParsed();
+    if (!list.length) {
+      preview.classList.add('placeholder');
+      preview.textContent = '还没有解析到内容,把文字粘到上面的输入框';
+      appendBtn.disabled = true; replaceBtn.disabled = true;
+      appendBtn.textContent = '追加到本组'; replaceBtn.textContent = '替换本组';
+      return;
+    }
+    preview.classList.remove('placeholder');
+    preview.textContent = '';
+    const head = document.createElement('div');
+    head.style.cssText = 'font-weight:700;color:var(--primary);margin-bottom:6px';
+    head.textContent = '共解析到 ' + list.length + ' 条内容：';
+    preview.appendChild(head);
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px';
+    list.slice(0, 12).forEach(function (t) {
+      const row = document.createElement('div');
+      row.style.cssText = 'font-size:.78rem;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+      row.textContent = '· ' + t;
+      wrap.appendChild(row);
+    });
+    if (list.length > 12) {
+      const more = document.createElement('div');
+      more.style.cssText = 'font-size:.76rem;color:var(--text-3)';
+      more.textContent = '… 还有 ' + (list.length - 12) + ' 条';
+      wrap.appendChild(more);
+    }
+    preview.appendChild(wrap);
+    appendBtn.disabled = false; replaceBtn.disabled = false;
+    appendBtn.textContent = '追加 ' + list.length + ' 条';
+    replaceBtn.textContent = '替换为 ' + list.length + ' 条';
+  }
+  ta.addEventListener('input', debounce(updatePreview, 120));
+
+  appendBtn.addEventListener('click', function () {
+    const list = getParsed();
+    if (!list.length) return;
+    lib.items = lib.items || [];
+    const existing = {};
+    lib.items.forEach(function (it) { const k = String(it.text || '').trim(); if (k) existing[k] = 1; });
+    let added = 0, skipped = 0;
+    list.forEach(function (t) {
+      if (existing[t]) { skipped++; return; }
+      existing[t] = 1;
+      lib.items.push({ id: uid(), text: t });
+      added++;
+    });
+    save(); renderLibraries(); renderForm();
+    Sheet.closeNow();
+    if (added && skipped) toast('已添加 ' + added + ' 条,跳过 ' + skipped + ' 条重复');
+    else if (added) toast('已添加 ' + added + ' 条内容');
+    else toast('全部 ' + skipped + ' 条都已存在,未新增');
+  });
+
+  replaceBtn.addEventListener('click', function () {
+    const list = getParsed();
+    if (!list.length) return;
+    const current = (lib.items || []).length;
+    if (!current) {
+      lib.items = list.map(function (t) { return { id: uid(), text: t }; });
+      save(); renderLibraries(); renderForm();
+      Sheet.closeNow();
+      toast('已导入 ' + list.length + ' 条内容');
+      return;
+    }
+    Sheet.confirmSheet({
+      title: '替换「' + (lib.name || '该分组') + '」的全部内容?',
+      message: '当前 ' + current + ' 条会被替换为新的 ' + list.length + ' 条,此操作不可撤销。',
+      okText: '确认替换', danger: true,
+      detail: list.slice(0, 10).join('、') + (list.length > 10 ? ' 等 ' + list.length + ' 条' : ''),
+      onOk: function () {
+        lib.items = list.map(function (t) { return { id: uid(), text: t }; });
+        save(); renderLibraries(); renderForm();
+        Sheet.closeNow();
+        toast('已替换为 ' + list.length + ' 条内容');
+      }
+    });
+  });
+
+  footNode.appendChild(replaceBtn); footNode.appendChild(appendBtn);
+  updatePreview();
+  Sheet.open({ title: '批量添加内容 · ' + (lib.name || '分组'), bodyNode: bodyNode, footNode: footNode, autofocus: true });
+}
 function renderLibraries() {
   const box = $('#libraryList');
   if (!box) return;
@@ -5032,9 +5170,13 @@ function renderLibraries() {
       itemsBox.appendChild(r);
     });
     card.appendChild(itemsBox);
-    const addIt = E('button', 'btn btn-ghost btn-sm', '+ 添加内容'); addIt.style.marginTop = '6px';
+    const btnRow = E('div', 'btn-row'); btnRow.style.marginTop = '6px';
+    const addIt = E('button', 'btn btn-ghost btn-sm', '+ 添加内容');
     addIt.addEventListener('click', function () { lib.items = lib.items || []; lib.items.push({ id: uid(), text: '' }); save(); renderLibraries(); });
-    card.appendChild(addIt);
+    const bulkIt = E('button', 'btn btn-ghost btn-sm', '批量添加');
+    bulkIt.addEventListener('click', function () { openLibraryImportSheet(lib); });
+    btnRow.appendChild(addIt); btnRow.appendChild(bulkIt);
+    card.appendChild(btnRow);
     box.appendChild(card);
   });
 }
@@ -5054,7 +5196,7 @@ function renderSettingsAll() {
   $('#setLeaderPhone').value = s.leaderPhone || '';
   renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries();
   renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
-  $('#aboutText').textContent = '信息助手 v5.3 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
+  $('#aboutText').textContent = '信息助手 v6 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
     + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页内容可自定义,正式认定以运营单位现行文件为准。';
 }
@@ -6911,6 +7053,13 @@ function openHelpSheet() {
       '点「检查语法」可先验证,保存时也会自动校验;脚本写错只影响这个模板,页面不会崩',
       '内置示例「安检数据汇总」:按安检点录过包数/过人数,自动算合计,可直接改脚本或删掉',
       '特殊模板同样支持「连续录入」:复制后清空数字,保留口别与人员,下一条直接填'
+    ] },
+    { t: '内容库', l: [
+      '设置 → 内容库:按分组维护可复用的条文,如「检查内容库」「培训内容库」',
+      '每组都能「批量添加」:一行一条粘贴,空行自动忽略,行首「1.」「1、」「-」等序号自动去掉',
+      '同一批里重复的行自动合并,已存在的内容追加时也会跳过,不会出现两条一样的',
+      '也可以用「替换本组」整组覆盖,替换前会二次确认',
+      '模板里把变量类型设为「内容库」并指定分组,填写页多选,按勾选顺序编号、每项缩进输出'
     ] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
