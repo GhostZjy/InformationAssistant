@@ -94,8 +94,6 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .card.collapsed .card-head{margin-bottom:0}
 .card.collapsed .card-body{display:none}
 .card.collapsed .collapse-toggle svg{transform:rotate(-90deg)}
-.content-textarea{width:100%;min-height:230px;padding:12px 13px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--card-2);font-size:15px;line-height:1.7;color:var(--text);resize:vertical;box-sizing:border-box}
-.content-textarea:focus{outline:none;border-color:var(--primary);background:var(--card)}
 .tag.link-tpl{background:var(--primary-soft);color:var(--primary)}
 .chip.linked::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;margin-left:4px;flex:none}
 .section-note{font-size:.75rem;color:var(--text-3);line-height:1.6}
@@ -811,20 +809,6 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
     </div>
   </div>
 
-  <div class="card card-collapsible" data-collapse="content">
-    <div class="card-head">
-      <div style="display:flex;align-items:center;gap:2px;min-width:0">
-        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开内容片段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <span class="card-title">内容片段</span>
-      </div>
-      <button class="link-btn" id="btnAddContentItem">添加</button>
-    </div>
-    <div class="card-body">
-      <div id="contentItemList"></div>
-      <p class="section-note" style="margin-top:8px">模板里写 <code>*内容*</code> 时,上报页会把这些片段列成一排按钮,一键切换整段正文;也可以直接手写。</p>
-    </div>
-  </div>
-
   <div class="card card-collapsible" data-collapse="custom">
     <div class="card-head">
       <div style="display:flex;align-items:center;gap:2px;min-width:0">
@@ -1154,17 +1138,6 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
   </div>
 </template>
 
-<template id="tpl-row-content">
-  <div class="dyn-item">
-    <div class="dyn-item-head">
-      <span class="di-title"></span>
-      <button type="button" class="mini-btn danger ct-del">删除</button>
-    </div>
-    <input class="input ct-name" type="text" placeholder="名称,如 早班传达 / 晚班传达" autocomplete="off" style="min-height:42px;margin-bottom:8px">
-    <textarea class="content-textarea ct-text" placeholder="在此填写该条内容正文,支持多行"></textarea>
-  </div>
-</template>
-
 <template id="tpl-manage-item">
   <div class="list-row">
     <button type="button" class="chip grow mi-name" style="justify-content:flex-start;text-align:left"></button>
@@ -1390,7 +1363,7 @@ function seedData() {
     version: 5,
     settings: {
       line: '', station: '', leader: '', leaderPhone: '',
-      contentItems: [], entrances: [], groups: [], members: [], custom: [],
+      entrances: [], groups: [], members: [], custom: [],
       groupOrder: [], tplOrder: [],
       theme: 'auto', bigMode: false, continuous: false,
       recentTplIds: [], tplUseCount: {}, itemChips: [],
@@ -1427,15 +1400,12 @@ function normalize(d) {
   if (!Array.isArray(s.groups)) s.groups = [];
   if (!Array.isArray(s.members)) s.members = [];
   if (!Array.isArray(s.custom)) s.custom = [];
-  if (!Array.isArray(s.contentItems)) s.contentItems = [];
   if (!Array.isArray(s.tplCollapsed)) s.tplCollapsed = [];
   if (!Array.isArray(s.groupOrder)) s.groupOrder = [];
   if (!Array.isArray(s.tplOrder)) s.tplOrder = [];
-  /* 迁移:旧的单条 content -> contentItems */
-  if (typeof s.content === 'string' && s.content.trim() && !s.contentItems.length) {
-    s.contentItems = [{ id: uid(), name: '默认', text: s.content }];
-  }
-  s.content = '';
+  /* 已下线的「内容片段」数据不再保留 */
+  delete s.content;
+  delete s.contentItems;
   if (['auto', 'light', 'dark'].indexOf(s.theme) < 0) s.theme = 'auto';
   const out = {
     version: 5, settings: s,
@@ -2085,11 +2055,6 @@ function ensureValues(tpl) {
     const p = presetValue(name);
     if (p) { if (String(values[name] == null ? '' : values[name]) !== p) values[name] = p; return; }
     if (name in values && String(values[name] || '').length) return;
-    /* 内容变量:从设置页「内容」第一条预填,可再修改;保留换行 */
-    if (name === '内容' && data.settings.contentItems && data.settings.contentItems.length) {
-      values[name] = data.settings.contentItems[0].text || '';
-      return;
-    }
     const d = defaultByType(name, type);
     if (!(name in values)) values[name] = d;
     /* 单选/多选不预选,避免误报;由「待填」提示引导用户选择 */
@@ -2542,27 +2507,6 @@ function buildField(tpl, name) {
     ta.setAttribute('aria-label', name);
     ta.addEventListener('input', function () { values[name] = ta.value; queuePreview(); });
     input.parentNode.replaceChild(ta, input);
-    if (isContent) {
-      const items = data.settings.contentItems || [];
-      if (items.length > 1) {
-        const chooser = document.createElement('div');
-        chooser.className = 'chip-group';
-        chooser.style.marginBottom = '8px';
-        items.forEach(function (it) {
-          const c = mk('tpl-chip');
-          c.textContent = it.name || '内容';
-          c.setAttribute('aria-pressed', values[name] === it.text ? 'true' : 'false');
-          c.addEventListener('click', function () {
-            values[name] = it.text || '';
-            ta.value = it.text || '';
-            queuePreview();
-            $$('.chip', chooser).forEach(function (x) { x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
-          });
-          chooser.appendChild(c);
-        });
-        node.insertBefore(chooser, ta);
-      }
-    }
   } else if (/(违禁品|限带品)/.test(name)) {
     buildItemCombo(node, input, tpl, name);
   } else {
@@ -4633,50 +4577,6 @@ function renderLibraries() {
     box.appendChild(card);
   });
 }
-function renderContentItems() {
-  const host = $('#contentItemList');
-  if (!host) return;
-  host.innerHTML = '';
-  const items = data.settings.contentItems || [];
-  if (!items.length) {
-    const e = document.createElement('div');
-    e.className = 'section-note';
-    e.style.padding = '6px 0';
-    e.textContent = '还没有内容片段。点右上角「添加」新建一段。';
-    host.appendChild(e);
-    return;
-  }
-  items.forEach(function (it, idx) {
-    const node = mk('tpl-row-content');
-    if (!node) return;
-    $('.di-title', node).textContent = '片段 ' + (idx + 1);
-    const nm = $('.ct-name', node), tx = $('.ct-text', node);
-    nm.value = it.name || '';
-    nm.placeholder = '名称,如 早班传达 / 晚班传达';
-    nm.setAttribute('aria-label', '片段 ' + (idx + 1) + ' 名称');
-    tx.style.minHeight = '110px';
-    tx.value = it.text || '';
-    tx.setAttribute('aria-label', '片段 ' + (idx + 1) + ' 正文');
-    nm.addEventListener('input', function () { it.name = nm.value; save(); });
-    tx.addEventListener('input', function () { it.text = tx.value; save(); renderForm(); });
-    $('.ct-del', node).addEventListener('click', function () {
-      if (items.length < 2) { toast('至少保留一段，否则 *内容* 变量会没有默认值'); return; }
-      data.settings.contentItems.splice(idx, 1);
-      save(); renderContentItems(); renderForm(); toast('已删除');
-    });
-    host.appendChild(node);
-  });
-}
-function bindContentItems() {
-  const b = $('#btnAddContentItem');
-  if (!b) return;
-  b.addEventListener('click', function () {
-    data.settings.contentItems = data.settings.contentItems || [];
-    const n = data.settings.contentItems.length + 1;
-    data.settings.contentItems.push({ id: uid(), name: '片段 ' + n, text: '' });
-    save(); renderContentItems();
-  });
-}
 function bindLibraries() {
   const b = $('#btnAddLibGroup');
   if (b) b.addEventListener('click', function () {
@@ -4691,7 +4591,7 @@ function renderSettingsAll() {
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
-  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries(); renderContentItems();
+  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries();
   renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5.3 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
@@ -6444,7 +6344,7 @@ function openHelpSheet() {
     ] },
     { t: '快速上手', l: ['在「上报」页点「选择模板」按钮,先选分类、再选该分类下的模板', '弹窗顶部可直接搜索模板;分类和模板的顺序可在弹窗里点「调整顺序」用 ▲▼ 自定义,自动保存', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
       '有变量没填时会先列出漏填项让你确认,可以选择返回填写或仍要复制', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
-    { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '模板里写 *内容* 时,可在「设置 → 内容片段」准备几套正文,上报页一键切换', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
+    { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
     { t: '人员批量导入', l: ['设置页「人员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
@@ -6720,7 +6620,6 @@ function boot() {
   } catch (e) {}
   bindSettingsInputs();
   bindLibraries();
-  bindContentItems();
   bindGlobal();
   autoSnapshot();
   bootRender();
