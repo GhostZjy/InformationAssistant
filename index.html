@@ -429,6 +429,70 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
+/* SECTION: fast-entry */
+.quick-block{margin-bottom:10px}
+.quick-title{font-size:.72rem;font-weight:700;color:var(--text-3);letter-spacing:.4px;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px}
+.quick-title .qt-badge{font-size:.64rem;font-weight:700;color:var(--primary);background:var(--primary-soft);
+  padding:1px 6px;border-radius:6px}
+.quick-chips{display:flex;gap:6px;flex-wrap:wrap}
+.quick-chip{min-height:36px;padding:5px 12px;border-radius:18px;border:1px solid var(--border);
+  background:var(--card-2);color:var(--text-2);font-size:.82rem;font-weight:600;transition:all .15s}
+.quick-chip:active{transform:scale(.96);background:var(--primary-soft);color:var(--primary);border-color:var(--primary)}
+.quick-chip .qc-n{font-size:.66rem;color:var(--text-3);margin-left:3px}
+.quick-chip.cur{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.quick-chip.cur .qc-n{color:rgba(255,255,255,.8)}
+.quick-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+.quick-row .quick-label{font-size:.72rem;color:var(--text-3);font-weight:700;flex:none}
+.qty-quick{display:flex;gap:5px;margin-top:6px;grid-column:1/-1;align-items:center}
+.qty-quick .qq-label{font-size:.7rem;color:var(--text-3);font-weight:600;margin-right:1px}
+.qty-quick button{min-height:34px;min-width:42px;padding:0 10px;border-radius:9px;border:1px solid var(--border);
+  background:var(--card);color:var(--text-2);font-size:.8rem;font-weight:700}
+.qty-quick button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.qty-quick button:active{background:var(--primary-soft);color:var(--primary)}
+.cont-row{display:flex;align-items:center;gap:10px;padding:9px 11px;margin-bottom:11px;border-radius:var(--radius-sm);
+  background:var(--primary-soft);border:1px solid var(--primary-soft)}
+.cont-row .cont-text{flex:1;min-width:0;line-height:1.45}
+.cont-row .cont-text b{display:block;font-size:.82rem;color:var(--primary-dark)}
+.cont-row .cont-text span{font-size:.7rem;color:var(--text-2)}
+html[data-theme="dark"] .cont-row .cont-text b{color:var(--primary)}
+.cont-row .switch{width:48px;height:28px}
+.cont-row .switch::after{width:22px;height:22px;top:3px;left:3px}
+.cont-row .switch[aria-checked="true"]::after{transform:translateX(20px)}
+.preview-meta #btnEditPreview{margin-left:auto;min-height:30px;padding:2px 8px;font-size:.74rem}
+.preview.editing{outline:2px dashed var(--primary);outline-offset:2px;background:var(--card);cursor:text}
+.preview-meta .pm-edit-on{color:var(--primary);font-weight:700}
+.hist-quick{margin-bottom:6px}
+.hq-row{display:flex;align-items:center;gap:7px;margin-top:7px}
+.hq-row .hq-label{font-size:.72rem;color:var(--text-3);font-weight:700;flex:none;width:30px}
+.hq-row .hq-chips{flex:1;min-width:0}
+.hist-quick .chip{min-height:34px;padding:4px 11px;font-size:.78rem}
+.hist-quick .hq-empty{display:none}
+/* 大字号高对比 */
+body.big-mode{font-size:18px}
+body.big-mode .app-sub{font-size:.8rem}
+body.big-mode .card{padding:17px;border-color:var(--border-strong)}
+body.big-mode .card-title{font-size:.92rem}
+body.big-mode .field-label{font-size:.9rem}
+body.big-mode .input,body.big-mode .select,body.big-mode .textarea{font-size:18px;min-height:52px;
+  border-color:var(--border-strong);background:var(--card)}
+body.big-mode .btn{min-height:52px;font-size:1rem;border-width:2px}
+body.big-mode .chip{min-height:46px;font-size:.95rem;border-color:var(--border-strong)}
+body.big-mode .quick-chip{min-height:44px;font-size:.94rem}
+body.big-mode .stepper{width:150px}
+body.big-mode .stepper-btn{width:48px;height:48px;font-size:1.4rem}
+body.big-mode .stepper-input{height:48px;font-size:18px}
+body.big-mode .mini-btn{min-height:44px;font-size:.86rem}
+body.big-mode .tab{font-size:.85rem;min-height:64px}
+body.big-mode .tab svg{width:24px;height:24px}
+body.big-mode .preview{font-size:1.06rem;border-width:2px;line-height:1.8}
+body.big-mode .link-btn{font-size:.9rem;min-height:42px}
+body.big-mode .section-note{font-size:.82rem}
+body.big-mode .preview-meta{font-size:.82rem}
+body.big-mode .dyn-item{border-width:2px;border-color:var(--border-strong)}
+body.big-mode .tpl-item,body.big-mode .cb-opt{font-size:.95rem;min-height:52px}
+body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
+
 /* SECTION: responsive */
 @media (min-width:900px){
   .wrap{max-width:900px}
@@ -536,9 +600,16 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
             填写内容
           </span>
           <span class="head-acts">
-            <button class="link-btn" id="btnBackToTpl">模板列表</button>
+            <button class="link-btn" id="btnReuseLast">复用上一条</button>
             <button class="link-btn" id="btnResetForm">重置</button>
           </span>
+        </div>
+        <div class="cont-row" id="contRow" hidden>
+          <div class="cont-text">
+            <b>连续录入</b>
+            <span>复制后自动清空物品/数量/备注，保留口别和人员，时间刷新为当前</span>
+          </div>
+          <button type="button" class="switch" id="swContinuous" role="switch" aria-checked="false" aria-label="连续录入模式"></button>
         </div>
         <div id="formArea"></div>
       </div>
@@ -557,12 +628,20 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
         <div class="preview-meta">
           <span id="previewCount">0 字</span>
           <span id="previewTpl"></span>
+          <button type="button" class="link-btn" id="btnEditPreview">编辑</button>
         </div>
         <div class="report-actions">
           <button class="btn btn-primary btn-block" id="btnCopy" data-primary-action="copy">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span id="btnCopyText">复制结果</span>
           </button>
+        </div>
+        <div id="sendHintWrap" style="margin-top:10px" hidden>
+          <div class="group-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;flex:none"><path d="M21 3L3 10l7 3 3 7z"/></svg>
+            <span class="gh-text" id="sendHintText"></span>
+            <button type="button" id="btnSendCopyGroup">复制群名</button>
+          </div>
         </div>
       </div>
     </div>
@@ -628,6 +707,7 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
       <input class="input" type="search" id="histSearch" placeholder="搜索上报记录" autocomplete="off">
     </div>
     <div class="chip-scroll" id="histFilterBar"></div>
+    <div class="hist-quick" id="histQuickBar"></div>
     <div id="historyList"></div>
   </div>
 </section>
@@ -772,6 +852,8 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
       <span class="field-label">主题</span>
       <div class="chip-group" id="themeChips"></div>
     </div>
+    <div class="divider"></div>
+    <div id="displaySettings"></div>
     <div class="divider"></div>
     <div id="notifySettings"></div>
   </div>
@@ -1276,7 +1358,9 @@ function seedLookupSource() { return []; }
 const DISPATCH_DEFAULT = ['劝导自弃后进站', '携带物品离站', '换乘其他交通工具', '现场自助寄件', '移交民警处置'];
 function seedTemplates() {
   const t = (name, group, groupHint, content, varTypes) => ({
-    id: uid(), name, group, groupHint, content, varTypes: varTypes || {}, builtin: true,
+    id: uid(), name, group,
+    groupHint: Array.isArray(groupHint) ? groupHint : (groupHint ? [groupHint] : []),
+    content, varTypes: varTypes || {}, builtin: true,
     createdAt: Date.now(), updatedAt: Date.now()
   });
   return [
@@ -1313,7 +1397,9 @@ function seedData() {
       line: '', station: '', leader: '', leaderPhone: '',
       contentItems: [], entrances: [], groups: [], members: [], custom: [], dispatchOptions: DISPATCH_DEFAULT.slice(),
       groupOrder: [], tplOrder: [],
-      theme: 'auto', notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 },
+      theme: 'auto', bigMode: false, continuous: false,
+      recentTplIds: [], tplUseCount: {}, itemChips: [],
+      notify: { enabled: true, sound: true, vibrate: true, advanceMin: 0 },
       tplCollapsed: []
     },
     templates: seedTemplates(),
@@ -1337,6 +1423,11 @@ function normalize(d) {
   if (!d || typeof d !== 'object') return base;
   const s = Object.assign(emptySettings(), d.settings || {});
   s.notify = Object.assign(base.settings.notify, d.settings && d.settings.notify ? d.settings.notify : {});
+  if (typeof s.bigMode !== 'boolean') s.bigMode = false;
+  if (typeof s.continuous !== 'boolean') s.continuous = false;
+  if (!Array.isArray(s.recentTplIds)) s.recentTplIds = [];
+  if (!s.tplUseCount || typeof s.tplUseCount !== 'object' || Array.isArray(s.tplUseCount)) s.tplUseCount = {};
+  if (!Array.isArray(s.itemChips)) s.itemChips = [];
   if (!Array.isArray(s.entrances)) s.entrances = [];
   if (!Array.isArray(s.groups)) s.groups = [];
   if (!Array.isArray(s.members)) s.members = [];
@@ -1779,27 +1870,42 @@ function missingVars(tpl, values) {
   return miss;
 }
 /* 复制前拦一道:漏填就列出来让用户确认,仍可选择照发 */
+function focusFieldByVar(name) {
+  let el = null;
+  $$('#formArea [data-var]').forEach(function (n) { if (!el && n.dataset.var === name) el = n; });
+  if (!el) return;
+  try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+  const f = el.querySelector('input:not([type=hidden]),select,textarea,button');
+  if (f && f.focus) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+}
 function copyWithCheck() {
   const text = currentText();
   if (!text) { toast('暂无内容可复制'); return; }
   const tpl = tplById(currentTplId);
-  const miss = tpl ? missingVars(tpl, values) : [];
-  if (!miss.length) { doCopy(text, $('#btnCopy'), $('#btnCopyText')); return; }
+  const miss = (!manualText && tpl) ? missingVars(tpl, values) : [];
+  const drift = manualText ? [] : timeDriftWarnings(tpl);
+  const finish = function () { doCopy(text, $('#btnCopy'), $('#btnCopyText')); };
+  const askMiss = function () {
+    if (!miss.length) { finish(); return; }
+    Sheet.confirmSheet({
+      title: '还有 ' + miss.length + ' 项没填',
+      message: '这些变量现在是空的,发出去可能要返工。要现在复制吗?',
+      detail: '未填：' + miss.join('、'),
+      okText: '仍要复制',
+      cancelText: '返回填写',
+      onOk: finish,
+      onCancel: function () { focusFieldByVar(miss[0]); }
+    });
+  };
+  if (!drift.length) { askMiss(); return; }
   Sheet.confirmSheet({
-    title: '还有 ' + miss.length + ' 项没填',
-    message: '这些变量现在是空的,发出去可能要返工。要现在复制吗?',
-    detail: '未填：' + miss.join('、'),
+    title: '时间好像不是现在',
+    message: drift[0].msg + '，确认不是把旧时间发出去？',
+    detail: drift.map(function (d) { return d.msg; }).join('\n'),
     okText: '仍要复制',
-    cancelText: '返回填写',
-    onOk: function () { doCopy(text, $('#btnCopy'), $('#btnCopyText')); },
-    onCancel: function () {
-      let el = null;
-      $$('#formArea [data-var]').forEach(function (n) { if (!el && n.dataset.var === miss[0]) el = n; });
-      if (!el) return;
-      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
-      const f = el.querySelector('input:not([type=hidden]),select,textarea,button');
-      if (f && f.focus) { try { f.focus({ preventScroll: true }); } catch (e) {} }
-    }
+    cancelText: '去改时间',
+    onOk: askMiss,
+    onCancel: function () { focusFieldByVar(drift[0].name); }
   });
 }
 /* SECTION: js-sheet */
@@ -1897,9 +2003,35 @@ const Sheet = (function () {
 let currentTplId = null;
 let values = {};
 let touchedVars = {};          // 用户手动改过的变量,自动刷新时跳过
+let previewEditing = false;    // 预览区是否处于「临时编辑」状态
+let manualText = '';           // 预览区手工改过的文本,优先用于复制;表单再次变动时清空
 const collapsedGroups = new Set(Array.isArray(data.settings.tplCollapsed) ? data.settings.tplCollapsed : []);
 let tplQuery = '';
 let previewQueued = false;
+function hasItemsVar(tpl) {
+  if (!tpl) return false;
+  return extractVars(tpl.content).some(function (n) { return varType(tpl, n) === 'items'; });
+}
+/* 记录模板使用:最近使用列表 + 使用次数(用于「常用」排序) */
+function recordTplUse(id, silent) {
+  if (!id) return;
+  const recent = (data.settings.recentTplIds || []).filter(function (x) { return x !== id && tplById(x); });
+  data.settings.recentTplIds = [id].concat(recent).slice(0, 6);
+  if (!silent) {
+    if (!data.settings.tplUseCount || typeof data.settings.tplUseCount !== 'object') data.settings.tplUseCount = {};
+    data.settings.tplUseCount[id] = (data.settings.tplUseCount[id] || 0) + 1;
+  }
+  save();
+}
+function recentTpls() {
+  return (data.settings.recentTplIds || []).map(tplById).filter(Boolean).slice(0, 4);
+}
+function hotTpls(excludeIds) {
+  const c = data.settings.tplUseCount || {};
+  return data.templates.filter(function (t) {
+    return excludeIds.indexOf(t.id) < 0 && (c[t.id] || 0) >= 2;
+  }).sort(function (a, b) { return (c[b.id] || 0) - (c[a.id] || 0); }).slice(0, 4);
+}
 function persistCollapsedGroups() {
   data.settings.tplCollapsed = Array.from(collapsedGroups);
   save();
@@ -1955,11 +2087,16 @@ function ensureValues(tpl) {
     /* 单选/多选不预选,避免误报;由「待填」提示引导用户选择 */
   });
 }
-function selectTemplate(id, keepValues) {
+function selectTemplate(id, keepValues, silent) {
   if (currentTplId && currentTplId !== id) saveFormCache();
   currentTplId = id;
   data.lastTplId = id;
   touchedVars = {};                       // 换模板后回到「自动填充」状态
+  previewEditing = false;
+  manualText = '';
+  const hintWrap = $('#sendHintWrap');
+  if (hintWrap) hintWrap.hidden = true;
+  recordTplUse(id, silent);
   const tpl = tplById(id);
   if (!keepValues) {
     values = loadFormCache(id);
@@ -2116,6 +2253,27 @@ function openTplPicker() {
     paint2();
     Sheet.open({ title: g || '未分组', bodyNode: body2, autofocus: false });
   }
+  function quickBlock(label, list, badge, showCount) {
+    const wrap = document.createElement('div'); wrap.className = 'quick-block';
+    const t = document.createElement('div'); t.className = 'quick-title';
+    t.textContent = label;
+    if (badge) { const b = document.createElement('span'); b.className = 'qt-badge'; b.textContent = badge; t.appendChild(b); }
+    wrap.appendChild(t);
+    const row = document.createElement('div'); row.className = 'quick-chips';
+    list.forEach(function (tp) {
+      const c = document.createElement('button'); c.type = 'button';
+      c.className = 'quick-chip' + (tp.id === currentTplId ? ' cur' : '');
+      c.textContent = tp.name;
+      const cnt = (data.settings.tplUseCount || {})[tp.id];
+      if (showCount && cnt) {
+        const n = document.createElement('span'); n.className = 'qc-n'; n.textContent = cnt; c.appendChild(n);
+      }
+      c.addEventListener('click', function () { pick(tp); });
+      row.appendChild(c);
+    });
+    wrap.appendChild(row);
+    return wrap;
+  }
   function paint() {
     listBox.innerHTML = '';
     const q = query.trim().toLowerCase();
@@ -2133,6 +2291,12 @@ function openTplPicker() {
       }
       hits.forEach(function (t) { listBox.appendChild(tplItem(t, true)); });
       return;
+    }
+    if (!sortMode) {
+      const rec = recentTpls();
+      const hot = rec.length ? hotTpls(rec.map(function (t) { return t.id; })) : [];
+      if (rec.length) listBox.appendChild(quickBlock('最近使用', rec, '一键直达', false));
+      if (hot.length) listBox.appendChild(quickBlock('常用', hot, '', true));
     }
     const keys = orderedGroupKeys();
     note.textContent = sortMode ? '点 ▲▼ 调整分类顺序,自动保存'
@@ -2156,10 +2320,16 @@ function openTplPicker() {
   paint();
   Sheet.open({ title: '选择模板', bodyNode: bodyNode, autofocus: false });
 }
+function tplGroups(tpl) {
+  const g = tpl && tpl.groupHint;
+  if (Array.isArray(g)) return g.filter(Boolean);
+  if (typeof g === 'string') return g.trim() ? [g.trim()] : [];
+  return [];
+}
 function renderGroupHint() {
   const tpl = tplById(currentTplId);
   const wrap = $('#groupHintWrap'), txt = $('#groupHintText');
-  const groups = Array.isArray(tpl && tpl.groupHint) ? tpl.groupHint.filter(Boolean) : [];
+  const groups = tplGroups(tpl);
   if (groups.length) {
     txt.textContent = '发往：' + groups.join('、');
     wrap.hidden = false;
@@ -2556,6 +2726,55 @@ function buildLibraryField(tpl, name) {
   paint();
   return node;
 }
+/* 清单里哪一列是物品名:跳过口别/人员/时间/备注等列,取第一个文本列 */
+function itemNameField(fields) {
+  if (!Array.isArray(fields) || !fields.length) return null;
+  const skip = /口别|安检点|人员|岗位|备注|时间|日期|群/;
+  const f = fields.find(function (x) { return !x.source && (x.type === 'text' || !x.type) && !skip.test(x.key); });
+  return f || fields.find(function (x) { return !x.source && !x.type; }) || fields[0] || null;
+}
+function collectItemNameUse(name, fields) {
+  const counts = {};
+  const key = fields ? (itemNameField(fields) || {}).key : 'name';
+  (data.history || []).forEach(function (h) {
+    const arr = h.vals && h.vals[name + '__items'];
+    if (!Array.isArray(arr)) return;
+    arr.forEach(function (it) {
+      const v = String((key && it[key]) || it.name || '').trim();
+      if (v) counts[v] = (counts[v] || 0) + 1;
+    });
+  });
+  return counts;
+}
+function frequentItemChips(name, fields, limit, counts) {
+  limit = limit || 6;
+  counts = counts || collectItemNameUse(name, fields);
+  const hot = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  const preset = (data.settings.itemChips || []).concat(['酒精', '打火机', '刀片', '充电宝']);
+  const out = [];
+  hot.forEach(function (n) { if (out.length < limit) out.push(n); });
+  preset.forEach(function (n) {
+    const v = String(n || '').trim();
+    if (v && out.indexOf(v) < 0 && out.length < limit) out.push(v);
+  });
+  return out;
+}
+/* 数量快捷值:1/2/3/5 一键点,少按步进器 */
+function qtyQuickRow(getVal, setVal) {
+  const wrap = document.createElement('div'); wrap.className = 'qty-quick';
+  const lab = document.createElement('span'); lab.className = 'qq-label'; lab.textContent = '快捷'; wrap.appendChild(lab);
+  [1, 2, 3, 5].forEach(function (v) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = String(v);
+    b.setAttribute('aria-label', '数量设为 ' + v);
+    if (String(getVal() || '') === String(v)) b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', function () {
+      setVal(v);
+      $$('button', wrap).forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    });
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
 function buildItemsField(tpl, name) {
   const node = mk('tpl-field-items');
   fieldLabel(node, name, 'items');
@@ -2564,6 +2783,28 @@ function buildItemsField(tpl, name) {
   const stepper = $('.stepper', node);
   const items = values[name + '__items'] || (values[name + '__items'] = []);
   const fields = getFields(tpl, name);
+  let namePlaceChip = null;   // 快捷词落位方式由下面的分支各自赋值
+
+  /* 常用物品快捷词行,点一下直接生成一条已填好物品名的记录 */
+  (function renderQuickItems() {
+    const counts = collectItemNameUse(name, fields);
+    const names = frequentItemChips(name, fields, 6, counts);
+    if (!names.length) return;
+    const row = document.createElement('div'); row.className = 'quick-row';
+    const lab = document.createElement('span'); lab.className = 'quick-label'; lab.textContent = '常用';
+    row.appendChild(lab);
+    const chips = document.createElement('div'); chips.className = 'quick-chips';
+    names.forEach(function (nm) {
+      const c = document.createElement('button'); c.type = 'button'; c.className = 'quick-chip';
+      c.textContent = nm;
+      const cnt = counts[nm];
+      if (cnt) { const n = document.createElement('span'); n.className = 'qc-n'; n.textContent = cnt; c.appendChild(n); }
+      c.addEventListener('click', function () { if (namePlaceChip) namePlaceChip(nm); });
+      chips.appendChild(c);
+    });
+    row.appendChild(chips);
+    node.insertBefore(row, box);
+  })();
 
   if (fields) {
     // 自定义字段模式
@@ -2648,6 +2889,12 @@ function buildItemsField(tpl, name) {
             });
           }
           grid.appendChild(el);
+          if (f.type === 'number') {
+            grid.appendChild(qtyQuickRow(
+              function () { return it[f.key]; },
+              function (v) { el.value = String(v); it[f.key] = String(v); queuePreview(); }
+            ));
+          }
         });
         $('.di-del', row).addEventListener('click', function () {
           items.splice(idx, 1);
@@ -2690,6 +2937,20 @@ function buildItemsField(tpl, name) {
       items.length = 0;
       syncCount(); paint(); queuePreview();
     });
+    namePlaceChip = function (nm) {
+      const item = {};
+      fields.forEach(function (f) {
+        item[f.key] = '';
+        if (f.type === 'number' && /数量|件数|数/.test(f.key)) item[f.key] = '1';
+      });
+      const key = (itemNameField(fields) || {}).key;
+      if (key) item[key] = nm;
+      items.push(item);
+      syncCount(); paint(); queuePreview();
+      const last = box.lastElementChild;
+      const num = last && last.querySelector('input[type="number"]');
+      if (num) { try { num.focus({ preventScroll: false }); } catch (e) {} }
+    };
     syncCount();
     paint();
     clearBtn.style.display = items.length ? '' : 'none';
@@ -2722,6 +2983,10 @@ function buildItemsField(tpl, name) {
         min: 1, max: 999,
         onChange: function (v) { it.count = String(v); queuePreview(); }
       });
+      $('.dyn-grid', row).insertBefore(qtyQuickRow(
+        function () { return it.count || '1'; },
+        function (v) { it.count = String(v); $('.di-count', row).value = String(v); queuePreview(); }
+      ), $('.di-note', row));
       $('.di-del', row).addEventListener('click', function () {
         items.splice(idx, 1);
         syncCount(); paint(); queuePreview();
@@ -2753,6 +3018,10 @@ function buildItemsField(tpl, name) {
     items.length = 0;
     syncCount(); paint(); queuePreview();
   });
+  namePlaceChip = function (nm) {
+    items.push({ name: nm, spec: '', count: '1', method: (data.settings.dispatchOptions || [])[0] || '', note: '' });
+    syncCount(); paint(); queuePreview();
+  };
   syncCount();
   paint();
   clearBtn.style.display = items.length ? '' : 'none';
@@ -2762,6 +3031,7 @@ function renderForm() {
   const area = $('#formArea');
   area.innerHTML = '';
   const tpl = tplById(currentTplId);
+  syncContRow(tpl);
   if (!tpl) {
     const e = document.createElement('div');
     e.className = 'empty';
@@ -2786,20 +3056,65 @@ function renderForm() {
   });
   area.appendChild(frag);
 }
+function syncContRow(tpl) {
+  const row = $('#contRow'), sw = $('#swContinuous');
+  if (!row) return;
+  row.hidden = !(tpl && hasItemsVar(tpl));
+  if (sw) sw.setAttribute('aria-checked', data.settings.continuous ? 'true' : 'false');
+}
 function queuePreview() {
+  if (manualText) { manualText = ''; exitEditingUI(); }
   saveFormCacheThrottled();
   if (previewQueued) return;
   previewQueued = true;
   requestAnimationFrame(function () { previewQueued = false; renderPreview(); });
 }
 const saveFormCacheThrottled = debounce(saveFormCache, 600);
+/* 时间戳防错:日期不是今天、时间与当前相差 3 小时以上就提示,避免把旧时间发出去 */
+function timeDriftWarnings(tpl) {
+  const out = [];
+  if (!tpl) return out;
+  const d = new Date();
+  const nowMin = d.getHours() * 60 + d.getMinutes();
+  const today = todayStr(d);
+  extractVars(tpl.content).forEach(function (name) {
+    const type = varType(tpl, name);
+    if (type === 'time') {
+      const v = normalizeTime(values[name]);
+      if (!v) return;
+      let diff = minutesOf(v) - nowMin;
+      if (diff > 720) diff -= 1440;
+      if (diff < -720) diff += 1440;
+      if (Math.abs(diff) >= 180) {
+        const h = Math.abs(diff) / 60;
+        out.push({ name: name, msg: '「' + name + '」与当前相差约 ' + (h % 1 ? h.toFixed(1) : h) + ' 小时' });
+      }
+    } else if (type === 'date' && ['年', '月', '日'].indexOf(name) < 0) {
+      const v = String(values[name] || '');
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v) && v !== today) {
+        out.push({ name: name, msg: '「' + name + '」不是今天（' + v.slice(5).replace('-', '月') + '日）' });
+      }
+    }
+  });
+  return out;
+}
 function renderPreview() {
   const tpl = tplById(currentTplId);
   const box = $('#previewBox'), cnt = $('#previewCount'), stamp = $('#previewStamp'), tname = $('#previewTpl');
+  if (previewEditing) return;              // 编辑中,不覆盖用户正在改的文本
   if (!tpl) {
     box.className = 'preview placeholder';
     box.textContent = '选择模板并填写内容,结果实时显示在这里';
     cnt.textContent = '0 字'; tname.textContent = ''; stamp.textContent = '';
+    return;
+  }
+  if (manualText) {
+    box.className = 'preview';
+    box.textContent = manualText;
+    tname.textContent = tpl.name;
+    cnt.textContent = manualText.replace(/\s/g, '').length + ' 字';
+    stamp.textContent = '已临时修改,复制按这份发';
+    stamp.style.color = 'var(--primary)';
     return;
   }
   const out = renderTemplate(tpl, values);
@@ -2815,10 +3130,22 @@ function renderPreview() {
   box.textContent = out;
   cnt.textContent = out.replace(/\s/g, '').length + ' 字';
   const miss = missingVars(tpl, values);
-  stamp.textContent = miss.length ? ('待填:' + miss.slice(0, 3).join('、') + (miss.length > 3 ? ' 等' + miss.length + '项' : '')) : '已填完整';
-  stamp.style.color = miss.length ? 'var(--warn)' : 'var(--success)';
+  if (miss.length) {
+    stamp.textContent = '待填:' + miss.slice(0, 3).join('、') + (miss.length > 3 ? ' 等' + miss.length + '项' : '');
+    stamp.style.color = 'var(--warn)';
+    return;
+  }
+  const drift = timeDriftWarnings(tpl);
+  if (drift.length) {
+    stamp.textContent = '⚠ ' + drift[0].msg;
+    stamp.style.color = 'var(--warn)';
+  } else {
+    stamp.textContent = '已填完整';
+    stamp.style.color = 'var(--success)';
+  }
 }
 function currentText() {
+  if (manualText) return manualText;
   const box = $('#previewBox');
   if (box.classList.contains('placeholder')) return '';
   return box.textContent || '';
@@ -2918,16 +3245,90 @@ function flashButton(btn, labelEl, doneText) {
     btn.classList.remove('btn-success');
   }, 1400);
 }
+/* 预览临时编辑:先把生成结果改成可编辑,复制时优先用手动内容 */
+function exitEditingUI() {
+  const box = $('#previewBox'), btn = $('#btnEditPreview');
+  previewEditing = false;
+  if (box) { box.removeAttribute('contenteditable'); box.classList.remove('editing'); }
+  if (btn) { btn.textContent = '编辑'; btn.classList.remove('pm-edit-on'); }
+}
+function setPreviewEditing(on) {
+  const box = $('#previewBox'), btn = $('#btnEditPreview');
+  if (!box || !btn) return;
+  if (on && box.classList.contains('placeholder')) { toast('先填写内容再编辑预览'); return; }
+  if (on) {
+    previewEditing = true;
+    box.setAttribute('contenteditable', 'true');
+    box.classList.add('editing');
+    btn.textContent = '完成';
+    btn.classList.add('pm-edit-on');
+    try { box.focus(); } catch (e) {}
+  } else {
+    const edited = (box.innerText || '').replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    const tpl = tplById(currentTplId);
+    const generated = tpl ? renderTemplate(tpl, values).trim() : '';
+    manualText = edited && edited !== generated ? edited : '';
+    exitEditingUI();
+    renderPreview();
+    if (manualText) toast('预览已按手动内容复制');
+  }
+}
+/* 连续录入:复制后清空物品/数量/备注,保留口别与人员,日期时间刷新为当前 */
+function continuousReset(tpl) {
+  if (!tpl) return;
+  extractVars(tpl.content).forEach(function (n) {
+    const type = varType(tpl, n);
+    if (type === 'items') {
+      const arr = values[n + '__items'];
+      const fields = getFields(tpl, n);
+      const last = Array.isArray(arr) && arr.length ? arr[arr.length - 1] : {};
+      if (!Array.isArray(arr)) { values[n + '__items'] = []; return; }
+      arr.length = 0;
+      if (fields) {
+        const item = {};
+        fields.forEach(function (f) {
+          item[f.key] = '';
+          if (f.source === 'entrances' || f.source === 'groups' || /口别|安检点|人员|岗位/.test(f.key)) {
+            item[f.key] = String(last[f.key] || '');
+          }
+        });
+        arr.push(item);
+      } else {
+        arr.push({ name: '', spec: '', count: '1', method: last.method || (data.settings.dispatchOptions || [])[0] || '', note: '' });
+      }
+      return;
+    }
+    if (/(备注|说明)$/.test(n)) { values[n] = ''; delete touchedVars[n]; }
+  });
+  extractVars(tpl.content).forEach(function (n) {
+    const type = varType(tpl, n);
+    if (type === 'time' || type === 'date') delete touchedVars[n];
+  });
+  resetDatetimeVars(tpl);
+  manualText = ''; previewEditing = false;
+  saveFormCache(); renderForm(); renderPreview();
+}
+/* 复制后提示发往哪个群,并给一键复制群名 */
+function afterCopyHint(tpl) {
+  const groups = tplGroups(tpl);
+  const wrap = $('#sendHintWrap'), txt = $('#sendHintText');
+  if (!groups.length) {
+    if (wrap) wrap.hidden = true;
+    if (!data.settings.continuous) toast('已复制到剪贴板');
+    return;
+  }
+  if (txt) txt.textContent = (data.settings.continuous ? '已复制并清空物品 · 发往：' : '已复制 · 发往：') + groups.join('、');
+  if (wrap) wrap.hidden = false;
+}
 async function doCopy(text, btn, labelEl) {
   if (!text) { toast('暂无内容可复制'); return; }
   const ok = await copyText(text);
-  if (ok) {
-    if (btn) flashButton(btn, labelEl, '已复制');
-    toast('已复制到剪贴板');
-    addHistory(text, tplById(currentTplId));
-  } else {
-    toast('复制失败,请长按预览框手动选择复制');
-  }
+  if (!ok) { toast('复制失败,请长按预览框手动选择复制'); return; }
+  if (btn) flashButton(btn, labelEl, '已复制');
+  const tpl = tplById(currentTplId);
+  addHistory(text, tpl);
+  if (data.settings.continuous && hasItemsVar(tpl)) continuousReset(tpl);
+  afterCopyHint(tpl);
 }
 
 /* SECTION: js-timeline */
@@ -3308,6 +3709,81 @@ function renderRemindBar() {
 /* SECTION: js-history */
 let histFilter = '全部';
 let histQuery = '';
+let histToday = false;
+let histEntrance = '';
+let histItem = '';
+function itemDisplayName(it) {
+  const keys = Object.keys(it || {});
+  for (let i = 0; i < keys.length; i++) {
+    const v = String(it[keys[i]] || '').trim();
+    if (v && /物品|名称|品名/.test(keys[i])) return v;
+  }
+  for (let j = 0; j < keys.length; j++) {
+    const v2 = String(it[keys[j]] || '').trim();
+    if (!v2) continue;
+    if (/^\d{1,2}:\d{2}$/.test(v2) || /^\d+(?:\.\d+)?$/.test(v2)) continue;
+    if (/口别|安检点|人员|岗位|时间|日期|备注|群/.test(keys[j])) continue;
+    return v2;
+  }
+  return '';
+}
+function historyItemCounts() {
+  const counts = {};
+  (data.history || []).forEach(function (h) {
+    if (!h.vals) return;
+    Object.keys(h.vals).forEach(function (k) {
+      if (k.slice(-7) !== '__items') return;
+      const arr = h.vals[k];
+      if (!Array.isArray(arr)) return;
+      arr.forEach(function (it) {
+        const v = itemDisplayName(it);
+        if (v) counts[v] = (counts[v] || 0) + 1;
+      });
+    });
+  });
+  return counts;
+}
+function renderHistoryQuick(list) {
+  const qbar = $('#histQuickBar');
+  if (!qbar) return;
+  qbar.innerHTML = '';
+  const active = histToday || histEntrance || histItem;
+  function row(label, chips) {
+    if (!chips.length) return;
+    const r = document.createElement('div'); r.className = 'hq-row';
+    const l = document.createElement('span'); l.className = 'hq-label'; l.textContent = label;
+    const b = document.createElement('div'); b.className = 'hq-chips chip-scroll';
+    chips.forEach(function (c) { b.appendChild(c); });
+    r.appendChild(l); r.appendChild(b); qbar.appendChild(r);
+  }
+  function chip(text, on, fn) {
+    const c = mk('tpl-chip');
+    c.textContent = text;
+    c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    c.addEventListener('click', fn);
+    return c;
+  }
+  const timeChips = [chip('今日', histToday, function () { histToday = !histToday; renderHistory(); })];
+  if (active) timeChips.push(chip('清空筛选', false, function () {
+    histToday = false; histEntrance = ''; histItem = ''; renderHistory();
+  }));
+  row('时间', timeChips);
+  const ents = (data.settings.entrances || []).filter(Boolean).filter(function (e) {
+    return list.some(function (h) { return h.text.indexOf(e) >= 0; });
+  }).slice(0, 8);
+  if (ents.length) {
+    row('口别', ents.map(function (e) {
+      return chip(e, histEntrance === e, function () { histEntrance = histEntrance === e ? '' : e; renderHistory(); });
+    }));
+  }
+  const counts = historyItemCounts();
+  const items = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 8);
+  if (items.length) {
+    row('物品', items.map(function (n) {
+      return chip(n, histItem === n, function () { histItem = histItem === n ? '' : n; renderHistory(); });
+    }));
+  }
+}
 function renderHistory() {
   const list = data.history || [];
   const today = todayStr();
@@ -3329,10 +3805,14 @@ function renderHistory() {
     });
     bar.hidden = false;
   } else { bar.hidden = true; }
+  renderHistoryQuick(list);
   const box = $('#historyList');
   box.innerHTML = '';
   const shown = list.filter(function (h) {
     if (histFilter !== '全部' && h.templateName !== histFilter) return false;
+    if (histToday && todayStr(new Date(h.createdAt)) !== today) return false;
+    if (histEntrance && h.text.indexOf(histEntrance) < 0) return false;
+    if (histItem && h.text.indexOf(histItem) < 0) return false;
     if (histQuery && h.text.toLowerCase().indexOf(histQuery.toLowerCase()) < 0) return false;
     return true;
   });
@@ -3482,6 +3962,10 @@ function reuseHistory(h) {
   switchView('report');
   currentTplId = tpl.id;
   data.lastTplId = tpl.id;
+  recordTplUse(tpl.id);
+  const hintWrap2 = $('#sendHintWrap');
+  if (hintWrap2) hintWrap2.hidden = true;
+  manualText = ''; previewEditing = false;
   values = vals || loadFormCache(tpl.id);
   touchedVars = {};
   ensureValues(tpl);
@@ -3645,6 +4129,20 @@ function applyTheme() {
   }
   const metas = document.querySelectorAll('meta[name="theme-color"]');
   if (metas.length) metas[0].setAttribute('content', dark ? '#0d1117' : '#4f7cf7');
+}
+function applyDisplayMode() {
+  document.body.classList.toggle('big-mode', !!data.settings.bigMode);
+}
+function renderDisplaySettings() {
+  const box = $('#displaySettings');
+  if (!box) return;
+  box.innerHTML = '';
+  switchRow(box, '大字号高对比', '站内强光下看得清、点得准：字号放大、按钮加大、边框加深',
+    !!data.settings.bigMode, function (v) {
+      data.settings.bigMode = v;
+      save(); applyDisplayMode();
+      toast(v ? '已切换为大字号高对比' : '已恢复标准字号');
+    });
 }
 function renderThemeChips() {
   const box = $('#themeChips');
@@ -4147,7 +4645,7 @@ function renderSettingsAll() {
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
   renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderDispatch(); renderLibraries();
-  renderThemeChips(); renderNotifySettings(); renderCaps();
+  renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
     + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页内容可自定义,正式认定以运营单位现行文件为准。';
@@ -4581,7 +5079,7 @@ function openManageSheet() {
     const hintWrap = document.createElement('div');
     hintWrap.className = 'chip-group';
     hintWrap.setAttribute('aria-label', '发往群名(多选)');
-    const selectedGroups = Array.isArray(t.groupHint) ? t.groupHint : [];
+    const selectedGroups = tplGroups(t);
     (data.settings.groups || []).filter(Boolean).forEach(function (g) {
       const chip = document.createElement('button');
       chip.type = 'button';
@@ -5876,6 +6374,18 @@ function renderTodo(list, nowMin, doneCount) {
 function openHelpSheet() {
   const node = document.createElement('div');
   const blocks = [
+    { t: '高频提效（本次新增）', l: [
+      '模板选择顶部有「最近使用 / 常用」快捷词，常用模板一键直达，不用每次翻分类',
+      '上报页「复用上一条」：直接载入最近一条记录并换成当前时间，改完就发',
+      '物品名「常用」标签：酒精、打火机、刀片、充电宝等一键填，历史里常用的会自动排前面',
+      '「连续录入」开关：复制后自动清空物品/数量/备注，保留口别和人员并刷新时间，可连录下一条',
+      '数量旁「快捷 1/2/3/5」一键点，少按步进器',
+      '复制后底部提示「发往：XX群」，并可直接复制群名',
+      '预览点「编辑」可临时改措辞，复制按改后的内容发；再动表单会自动回到模板生成',
+      '日期不是今天、时间与当前差 3 小时以上会提醒，避免把旧时间发出去',
+      '设置里打开「大字号高对比」：强光下更清楚、按钮更好点',
+      '历史页可按「今日 / 口别 / 物品」快速筛选，找记录更快'
+    ] },
     { t: '快速上手', l: ['在「上报」页点「选择模板」按钮,先选分类、再选该分类下的模板', '弹窗顶部可直接搜索模板;分类和模板的顺序可在弹窗里点「调整顺序」用 ▲▼ 自定义,自动保存', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
       '有变量没填时会先列出漏填项让你确认,可以选择返回填写或仍要复制', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
@@ -5962,7 +6472,7 @@ function bootRender() {
   if (!currentTplId || !tplById(currentTplId)) {
     currentTplId = (data.lastTplId && tplById(data.lastTplId)) ? data.lastTplId : (data.templates.length ? data.templates[0].id : null);
   }
-  if (currentTplId) selectTemplate(currentTplId);
+  if (currentTplId) selectTemplate(currentTplId, false, true);
   else { values = {}; touchedVars = {}; renderForm(); renderPreview(); renderGroupHint(); }
   renderTplChips();
   renderTimeline(true);
@@ -6001,13 +6511,41 @@ function bindGlobal() {
   $('#btnManageTpl').addEventListener('click', openManageSheet);
   $('#btnMakeTpl').addEventListener('click', function () { openTplMakerSheet(''); });
   $('#btnPickTpl').addEventListener('click', openTplPicker);
-  $('#btnBackToTpl').addEventListener('click', openTplPicker);
+  $('#btnReuseLast').addEventListener('click', function () {
+    const h = (data.history || [])[0];
+    if (!h) { toast('还没有可复用的上报记录'); return; }
+    reuseHistory(h);
+  });
+  $('#swContinuous').addEventListener('click', function () {
+    data.settings.continuous = !data.settings.continuous;
+    save(); syncContRow(tplById(currentTplId));
+    toast(data.settings.continuous ? '连续录入已打开:复制后自动清空物品,保留口别人员' : '连续录入已关闭');
+  });
+  const pvBox = $('#previewBox');
+  pvBox.addEventListener('input', function () {
+    if (!previewEditing) return;
+    manualText = pvBox.innerText || '';
+    const c = $('#previewCount');
+    if (c) c.textContent = manualText.replace(/\s/g, '').length + ' 字';
+  });
+  pvBox.addEventListener('paste', function (e) {
+    if (!previewEditing) return;
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+    try { document.execCommand('insertText', false, t); } catch (err) {}
+  });
+  $('#btnEditPreview').addEventListener('click', function () { setPreviewEditing(!previewEditing); });
+  $('#btnSendCopyGroup').addEventListener('click', async function () {
+    const groups = tplGroups(tplById(currentTplId));
+    if (!groups.length) { toast('这个模板没有设置群名'); return; }
+    const ok = await copyText(groups.join('、'));
+    toast(ok ? '已复制群名：' + groups.join('、') : '复制失败');
+  });
   $('#btnManageTimeline').addEventListener('click', openTimelineSheet);
   $('#btnManageLookup').addEventListener('click', openLookupSheet);
   $('#btnImportMembers').addEventListener('click', openMemberImportSheet);
   $('#btnCopyGroup').addEventListener('click', async function () {
-    const t = tplById(currentTplId);
-    const groups = t && Array.isArray(t.groupHint) ? t.groupHint.filter(Boolean) : [];
+    const groups = tplGroups(tplById(currentTplId));
     if (!groups.length) { toast('这个模板没有设置群名'); return; }
     const text = groups.join('、');
     const ok = await copyText(text);
@@ -6107,6 +6645,7 @@ document.addEventListener('keydown', function (e) {
 function boot() {
   injectPwa();
   applyTheme();
+  applyDisplayMode();
   try {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = function () { if ((data.settings.theme || 'auto') === 'auto') applyTheme(); };
