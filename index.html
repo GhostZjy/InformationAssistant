@@ -210,6 +210,12 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .tpl-item.linked .ti-name::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
   background:var(--primary);margin-left:6px;vertical-align:middle}
 /* 三级选择器:上报页单按钮 + 弹窗分类/模板两级 */
+.icon-btn{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:0;background:transparent;color:var(--text-2);flex:none}
+.icon-btn:active{background:var(--card-2);color:var(--primary)}
+.icon-btn svg{width:19px;height:19px}
+.quick-tpl{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.quick-tpl::-webkit-scrollbar{display:none}
+.quick-tpl .quick-chip{flex:none;min-height:32px;padding:4px 11px;font-size:.78rem}
 .tpl-pick-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:10px 14px;text-align:left;
   border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--card-2);color:var(--text);
   transition:border-color .15s,background .15s,transform .1s}
@@ -581,11 +587,15 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
         <div class="card-head">
           <span class="card-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
-            选择模板
+            上报模板
           </span>
           <span class="head-acts">
-            <button class="link-btn" id="btnMakeTpl">制作模板</button>
-            <button class="link-btn" id="btnManageTpl">管理模板</button>
+            <button class="icon-btn" id="btnMakeTpl" aria-label="制作模板" title="把现成文本做成模板">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg>
+            </button>
+            <button class="icon-btn" id="btnManageTpl" aria-label="管理模板" title="管理模板与特殊模板脚本">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h8M16 18h4"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="14" cy="18" r="2"/></svg>
+            </button>
           </span>
         </div>
         <div class="tpl-picker">
@@ -597,6 +607,7 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
             <svg class="tpb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
           </button>
         </div>
+        <div class="quick-tpl" id="quickTplBar" hidden></div>
         <div id="groupHintWrap" style="margin-top:11px" hidden>
           <div class="group-hint">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;flex:none"><path d="M3 11l18-8-8 18-2-8z"/></svg>
@@ -822,7 +833,7 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
     </div>
     <div class="card-body">
       <div id="libraryList"></div>
-      <p class="section-note" style="margin-top:8px">分组管理可复用内容(如 检查内容库、培训内容库)。每个分组可点「批量添加」一次性粘贴多条;模板里把变量类型设为「内容库」并指定分组，填写时多选，自动按勾选顺序编号、每项缩进输出。</p>
+      <p class="section-note" style="margin-top:8px">分组管理可复用内容(如 检查内容库、培训内容库)。分组可折叠;支持「批量添加」整段粘贴、自动去编号和标题、重复内容提示并可一键清理。模板里把变量类型设为「内容库」并指定分组，填写时多选，自动按勾选顺序编号、每项缩进输出。</p>
     </div>
   </div>
 
@@ -2227,6 +2238,33 @@ function moveTplOrder(id, dir) {
   data.settings.tplOrder = full; save();
 }
 /* 旧入口名保留:各处在模板增删/切换后调用它刷新选择按钮 */
+function renderQuickTpls() {
+  const bar = $('#quickTplBar');
+  if (!bar) return;
+  const list = recentTpls().filter(function (t) { return t.id !== currentTplId; }).slice(0, 5);
+  const cur = tplById(currentTplId);
+  bar.innerHTML = '';
+  if (!list.length) { bar.hidden = true; return; }
+  bar.hidden = false;
+  if (cur) {
+    const c = document.createElement('button');
+    c.type = 'button'; c.className = 'quick-chip cur'; c.textContent = cur.name;
+    c.setAttribute('aria-label', '当前模板:' + cur.name + ',点击切换');
+    c.addEventListener('click', function () { openTplPicker(); });
+    bar.appendChild(c);
+  }
+  list.forEach(function (t) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'quick-chip'; b.textContent = t.name;
+    b.setAttribute('aria-label', '切换到 ' + t.name);
+    b.addEventListener('click', function () {
+      selectTemplate(t.id);
+      renderTplChips();
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+    });
+    bar.appendChild(b);
+  });
+}
 function renderTplChips() {
   const nameEl = $('#pickTplName'), subEl = $('#pickTplSub');
   if (!nameEl) return;
@@ -2241,6 +2279,7 @@ function renderTplChips() {
     nameEl.textContent = '还没有模板';
     subEl.textContent = '点右上角「制作模板」或「管理模板」创建';
   }
+  renderQuickTpls();
 }
 function openTplPicker() {
   if (!data.templates.length) { toast('还没有模板,先点「制作模板」或「管理模板」创建'); return; }
@@ -4988,22 +5027,74 @@ function renderHeaderSub() {
   const bits = [s.line, s.station].filter(function (x) { return (x || '').trim(); });
   $('#headerSub').textContent = bits.length ? bits.join(' · ') : '未设置线路站点,去「设置」里填写';
 }
-/* 解析内容库批量文本:每行一条,忽略空行,去掉行首序号/项目符号,同批次去重 */
+/* 解析内容库批量文本:支持整段粘贴,自动跳过标题/时间/“内容如下”,提取编号条目并去掉编号 */
+function libItemPrefix(line) {
+  const pats = [
+    /^[(（]\s*[0-9０-９一二三四五六七八九十]{1,3}\s*[)）]\s*/,
+    /^[0-9０-９]{1,3}\s*[、)）:：]\s*/,
+    /^[0-9０-９]{1,3}\s*[.．](?![0-9０-９])\s*/,
+    /^[一二三四五六七八九十]{1,3}\s*[、.．)）]\s*/,
+    /^第\s*[0-9０-９一二三四五六七八九十]{1,3}\s*[条项]\s*/,
+    /^[-*·•—]\s*/
+  ];
+  for (let i = 0; i < pats.length; i++) {
+    const m = line.match(pats[i]);
+    if (m) return line.slice(m[0].length).trim();
+  }
+  return null;
+}
+function libMetaLine(line) {
+  if (/^【[^】]*】$/.test(line)) return true;
+  if (/^(记录人|主持人?|参会人?|列席人?|时间|地点|日期|审核人|上报人|抄送|报送|备注)\s*[:：]/.test(line)) return true;
+  if (/(如下|以下)\s*[:：]?\s*$/.test(line)) return true;
+  return false;
+}
+function libJoinCont(a, b) {
+  if (!a) return b;
+  const last = a.slice(-1), first = b.slice(0, 1);
+  if (/[A-Za-z0-9]/.test(last) && /[A-Za-z0-9]/.test(first)) return a + ' ' + b;
+  return a + b;
+}
 function parseLibraryText(raw) {
-  const out = [], seen = {};
-  String(raw || '').split(/\r?\n/).forEach(function (line) {
-    let s = line.replace(/\u3000/g, ' ').trim();
-    if (!s) return;
-    s = s.replace(/^[0-9０-９]{1,3}\s*[、)）:：]\s*/, '');
-    s = s.replace(/^[0-9０-９]{1,3}\s*[.．]\s+/, '');
-    s = s.replace(/^[-*·•—]\s*/, '');
-    s = s.trim();
-    if (!s) return;
-    if (seen[s]) return;
-    seen[s] = 1;
-    out.push(s);
+  const lines = String(raw || '').split(/\r?\n/).map(function (l) { return l.replace(/\u3000/g, ' ').trim(); });
+  const out = [];
+  let cur = '', numbered = 0;
+
+  lines.forEach(function (line) {
+    if (!line) return;
+    const rest = libItemPrefix(line);
+    if (rest !== null) {
+      numbered++;
+      cur = rest;
+      if (cur) out.push(cur);
+      return;
+    }
+    if (!numbered) return;                 // 编号开始前的内容(标题/日期/“内容如下”)全部跳过
+    if (libMetaLine(line)) { cur = ''; return; }
+    if (cur) out[out.length - 1] = libJoinCont(out[out.length - 1], line);  // 折行续接
   });
-  return out;
+
+  if (numbered >= 2) {
+    const seen = {}, res = [];
+    out.forEach(function (t) {
+      const k = libNormText(t);
+      if (!k || seen[k]) return;
+      seen[k] = 1; res.push(t);
+    });
+    return res;
+  }
+
+  /* 没有编号:整段按行处理,仍去掉行首符号与元信息行 */
+  const seen2 = {}, res2 = [];
+  lines.forEach(function (line) {
+    if (!line || libMetaLine(line)) return;
+    const rest = libItemPrefix(line);
+    const t = (rest === null ? line : rest).trim();
+    const k = libNormText(t);
+    if (!k || seen2[k]) return;
+    seen2[k] = 1; res2.push(t);
+  });
+  return res2;
 }
 function openLibraryImportSheet(lib) {
   const bodyNode = document.createElement('div');
@@ -5011,7 +5102,7 @@ function openLibraryImportSheet(lib) {
   tip.className = 'section-note';
   tip.style.marginBottom = '9px';
   tip.style.lineHeight = '1.9';
-  tip.textContent = '每行一条内容,空行会自动忽略;行首的「1.」「1、」「-」等序号符号会自动去掉;同批次里的重复内容会跳过。';
+  tip.textContent = '可直接整段粘贴:自动跳过标题、时间、「内容如下」这类开头,只提取编号条目并去掉「1、」「(1)」「一、」等编号;折行会自动接回上一条,重复内容自动跳过。不编号的文本则按行拆条。';
   bodyNode.appendChild(tip);
   const ta = document.createElement('textarea');
   ta.className = 'textarea';
@@ -5126,10 +5217,24 @@ function openLibraryImportSheet(lib) {
   updatePreview();
   Sheet.open({ title: '批量添加内容 · ' + (lib.name || '分组'), bodyNode: bodyNode, footNode: footNode, autofocus: true });
 }
+function libNormText(s) {
+  return String(s == null ? '' : s).replace(/[\s\u3000]+/g, ' ').trim().replace(/[。；;，,、.]+$/, '');
+}
+function libDupIndex(lib, text, skipIdx) {
+  const key = libNormText(text);
+  if (!key) return -1;
+  const items = lib.items || [];
+  for (let i = 0; i < items.length; i++) {
+    if (i === skipIdx) continue;
+    if (libNormText(items[i].text) === key) return i;
+  }
+  return -1;
+}
 function renderLibraries() {
   const box = $('#libraryList');
   if (!box) return;
   const E = function (tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const saveSoon = debounce(save, 300);
   box.innerHTML = '';
   const libs = data.libraries || [];
   if (!libs.length) {
@@ -5137,45 +5242,122 @@ function renderLibraries() {
     return;
   }
   libs.forEach(function (lib, gi) {
+    lib.items = lib.items || [];
     const card = E('div', 'dyn-item');
     const head = E('div', 'list-row');
+    const collapsed = typeof lib.collapsed === 'boolean' ? lib.collapsed : lib.items.length > 4;
+
+    const chev = E('button', 'icon-btn');
+    chev.type = 'button';
+    chev.setAttribute('aria-label', collapsed ? '展开分组' : '折叠分组');
+    chev.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;transform:rotate(' + (collapsed ? '-90' : '0') + 'deg)"><path d="M6 9l6 6 6-6"/></svg>';
+    chev.addEventListener('click', function () { lib.collapsed = !collapsed; save(); renderLibraries(); });
+
     const nameInp = document.createElement('input');
     nameInp.className = 'input'; nameInp.type = 'text'; nameInp.value = lib.name || '';
-    nameInp.style.cssText = 'flex:1;min-height:40px;font-weight:700';
+    nameInp.style.cssText = 'flex:1;min-width:0;min-height:40px;font-weight:700';
     nameInp.setAttribute('aria-label', '分组名');
     nameInp.addEventListener('input', debounce(function () { lib.name = nameInp.value; save(); }, 300));
-    const delG = E('button', 'mini-btn danger', '删除分组');
+
+    const cnt = E('span', '', lib.items.length + ' 条');
+    cnt.style.cssText = 'font-size:.74rem;color:var(--text-3);flex:none';
+
+    const delG = E('button', 'mini-btn danger', '删组');
+    delG.setAttribute('aria-label', '删除分组 ' + (lib.name || ''));
     delG.addEventListener('click', function () {
       Sheet.confirmSheet({
         title: '删除分组「' + lib.name + '」?', message: '组内内容会一并删除，引用此分组的模板变量将取不到内容。', okText: '删除', danger: true,
         onOk: function () { libs.splice(gi, 1); save(); renderLibraries(); }
       });
     });
-    head.appendChild(nameInp); head.appendChild(delG); card.appendChild(head);
-    const itemsBox = E('div'); itemsBox.style.marginTop = '8px';
-    (lib.items || []).forEach(function (it, ii) {
-      const r = E('div', 'list-row'); r.style.padding = '4px 0';
+    head.appendChild(chev); head.appendChild(nameInp); head.appendChild(cnt); head.appendChild(delG);
+    card.appendChild(head);
+
+    const itemsBox = E('div'); itemsBox.style.marginTop = collapsed ? '0' : '8px';
+    itemsBox.hidden = collapsed;
+    lib.items.forEach(function (it, ii) {
+      const itemWrap = E('div');
+      const r = E('div', 'list-row'); r.style.cssText = 'padding:4px 0;align-items:flex-start;border:1px solid transparent;border-radius:10px;flex-wrap:wrap';
       const ti = document.createElement('textarea');
       ti.className = 'input'; ti.value = it.text || ''; ti.placeholder = '内容文字,可换行';
       ti.rows = 2;
-      ti.style.cssText = 'flex:1;min-height:56px;font-size:.84rem;line-height:1.5;resize:vertical';
-      ti.addEventListener('input', debounce(function () { it.text = ti.value; save(); }, 300));
+      ti.style.cssText = 'flex:1;min-width:0;min-height:56px;font-size:.84rem;line-height:1.5;resize:vertical';
+      ti.addEventListener('input', function () {
+        it.text = ti.value;
+        refreshDup();
+        saveSoon();
+      });
       const up = E('button', 'mini-btn', '↑'); up.disabled = ii === 0;
+      up.setAttribute('aria-label', '上移');
       up.addEventListener('click', function () { const tmp = lib.items[ii - 1]; lib.items[ii - 1] = lib.items[ii]; lib.items[ii] = tmp; save(); renderLibraries(); });
       const dn = E('button', 'mini-btn', '↓'); dn.disabled = ii === lib.items.length - 1;
+      dn.setAttribute('aria-label', '下移');
       dn.addEventListener('click', function () { const tmp = lib.items[ii + 1]; lib.items[ii + 1] = lib.items[ii]; lib.items[ii] = tmp; save(); renderLibraries(); });
       const del = E('button', 'mini-btn danger', '删');
+      del.setAttribute('aria-label', '删除该条内容');
       del.addEventListener('click', function () { lib.items.splice(ii, 1); save(); renderLibraries(); });
       r.appendChild(ti); r.appendChild(up); r.appendChild(dn); r.appendChild(del);
-      itemsBox.appendChild(r);
+
+      const dupHint = E('div', '', '');
+      dupHint.className = 'field-hint';
+      dupHint.style.cssText = 'display:none;color:var(--danger);padding:0 4px 6px';
+
+      function refreshDup() {
+        const hit = libDupIndex(lib, it.text, ii);
+        if (hit >= 0) {
+          dupHint.style.display = '';
+          dupHint.textContent = '与本组第 ' + (hit + 1) + ' 条内容相同,建议删掉其中一条';
+          r.style.borderColor = 'var(--danger)';
+        } else {
+          dupHint.style.display = 'none';
+          r.style.borderColor = 'transparent';
+        }
+      }
+      ti.addEventListener('blur', function () {
+        const hit = libDupIndex(lib, it.text, ii);
+        if (hit >= 0) { toast('这条内容与第 ' + (hit + 1) + ' 条重复'); debounce(function () { save(); renderLibraries(); }, 220)(); }
+      });
+      refreshDup();
+      itemWrap.appendChild(r); itemWrap.appendChild(dupHint);
+      itemsBox.appendChild(itemWrap);
     });
+    if (!lib.items.length) {
+      const e = E('div', 'section-note', '本组还没有内容,可以点下方「添加内容」或「批量添加」。');
+      e.style.padding = '4px 0';
+      itemsBox.appendChild(e);
+    }
     card.appendChild(itemsBox);
-    const btnRow = E('div', 'btn-row'); btnRow.style.marginTop = '6px';
+
+    const btnRow = E('div', 'btn-row'); btnRow.style.marginTop = '6px'; btnRow.hidden = collapsed;
     const addIt = E('button', 'btn btn-ghost btn-sm', '+ 添加内容');
-    addIt.addEventListener('click', function () { lib.items = lib.items || []; lib.items.push({ id: uid(), text: '' }); save(); renderLibraries(); });
+    addIt.addEventListener('click', function () { lib.items.push({ id: uid(), text: '' }); save(); renderLibraries(); });
     const bulkIt = E('button', 'btn btn-ghost btn-sm', '批量添加');
     bulkIt.addEventListener('click', function () { openLibraryImportSheet(lib); });
     btnRow.appendChild(addIt); btnRow.appendChild(bulkIt);
+
+    const dupCount = lib.items.filter(function (it, idx) { return libDupIndex(lib, it.text, idx) >= 0 && libDupIndex(lib, it.text, idx) < idx; }).length;
+    if (dupCount) {
+      const clean = E('button', 'btn btn-ghost btn-sm', '清理 ' + dupCount + ' 条重复');
+      clean.style.color = 'var(--danger)';
+      clean.addEventListener('click', function () {
+        Sheet.confirmSheet({
+          title: '清理重复内容?', message: '本组有 ' + dupCount + ' 条与前面内容重复,清理后只保留最先出现的那条。', okText: '清理', danger: true,
+          onOk: function () {
+            const seen = {};
+            lib.items = lib.items.filter(function (it) {
+              const k = libNormText(it.text);
+              if (!k) return true;
+              if (seen[k]) return false;
+              seen[k] = 1; return true;
+            });
+            save(); renderLibraries();
+            toast('已清理重复内容');
+          }
+        });
+      });
+      btnRow.appendChild(clean);
+    }
     card.appendChild(btnRow);
     box.appendChild(card);
   });
@@ -5184,7 +5366,9 @@ function bindLibraries() {
   const b = $('#btnAddLibGroup');
   if (b) b.addEventListener('click', function () {
     data.libraries = data.libraries || [];
-    data.libraries.push({ id: uid(), name: '新分组', items: [] });
+    let name = '新分组', n = 2;
+    while (data.libraries.some(function (l) { return (l.name || '').trim() === name; })) { name = '新分组 ' + n; n++; }
+    data.libraries.push({ id: uid(), name: name, items: [] });
     save(); renderLibraries();
   });
 }
@@ -5196,7 +5380,7 @@ function renderSettingsAll() {
   $('#setLeaderPhone').value = s.leaderPhone || '';
   renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries();
   renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
-  $('#aboutText').textContent = '信息助手 v6 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
+  $('#aboutText').textContent = '信息助手 v7 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
     + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页内容可自定义,正式认定以运营单位现行文件为准。';
 }
@@ -7055,9 +7239,10 @@ function openHelpSheet() {
       '特殊模板同样支持「连续录入」:复制后清空数字,保留口别与人员,下一条直接填'
     ] },
     { t: '内容库', l: [
-      '设置 → 内容库:按分组维护可复用的条文,如「检查内容库」「培训内容库」',
-      '每组都能「批量添加」:一行一条粘贴,空行自动忽略,行首「1.」「1、」「-」等序号自动去掉',
-      '同一批里重复的行自动合并,已存在的内容追加时也会跳过,不会出现两条一样的',
+      '设置 → 内容库:按分组维护可复用的条文,如「检查内容库」「培训内容库」,每组可折叠',
+      '「批量添加」支持整段粘贴:自动跳过标题、时间、「内容如下」,只提取编号条目并去掉编号',
+      '折行的内容会自动接回上一条,同一批重复的自动合并,已存在的内容追加时也会跳过',
+      '手动编辑时若与组内已有内容重复,会标红提示,并可一键「清理重复」',
       '也可以用「替换本组」整组覆盖,替换前会二次确认',
       '模板里把变量类型设为「内容库」并指定分组,填写页多选,按勾选顺序编号、每项缩进输出'
     ] },
