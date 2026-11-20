@@ -76,7 +76,6 @@ html[data-theme="dark"] code{color:var(--primary)}
 .tab svg{width:21px;height:21px}
 .tab[aria-selected="true"]{color:var(--primary)}
 .tab:active{background:var(--card-2)}
-.tab .tab-dot{width:5px;height:5px;border-radius:50%;background:var(--danger);position:absolute;transform:translate(14px,-16px)}
 
 /* SECTION: views */
 main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
@@ -139,7 +138,6 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
   background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;
   background-repeat:no-repeat;padding-right:34px}
 .inline-2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.inline-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
 .stepper{display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--card-2);overflow:hidden;width:132px;flex:none}
 .stepper-btn{width:44px;height:44px;min-height:44px;display:grid;place-items:center;color:var(--primary);
@@ -276,14 +274,14 @@ main{padding-bottom:calc(var(--tab-h) + var(--sab) + 20px)}
 .lk-report{margin-top:9px}
 
 .group-hint{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:var(--radius-sm);
-  background:var(--warn-soft);color:var(--warn);font-size:.88rem;font-weight:600;line-height:1.5}
+  background:var(--primary-soft);color:var(--primary-dark);font-size:.88rem;font-weight:600;line-height:1.5}
 .group-hint .gh-text{flex:1;min-width:0;word-break:break-word}
 .group-hint button{color:inherit;font-size:.8rem;text-decoration:underline;min-height:36px;flex:none}
 .preview{background:var(--card-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;
   font-size:.92rem;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:var(--text);min-height:92px}
 .preview.placeholder{color:var(--text-3);font-size:.85rem;display:grid;place-items:center;text-align:center}
 .preview-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:.73rem;color:var(--text-3)}
-.report-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.report-actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:11px}
 .report-actions .btn{min-height:50px;font-size:.95rem}
 .dyn-item{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card-2);padding:11px;
   margin-bottom:9px}
@@ -411,7 +409,7 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
 .sheet-foot:empty{display:none}
 
 /* SECTION: alert+toast */
-.alert-banner{position:fixed;left:0;right:0;top:0;z-index:300;padding:calc(var(--sat) + 12px) 14px 14px;
+.alert-banner{position:relative;left:auto;right:auto;top:auto;z-index:300;padding:calc(var(--sat) + 12px) 14px 14px;
   background:var(--danger);color:#fff;box-shadow:var(--shadow-lg);display:none;animation:slideDown .3s ease}
 .alert-banner.show{display:block}
 @keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
@@ -509,7 +507,7 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
   .sheet-backdrop{border-radius:0}
 }
 @media (max-width:360px){
-  .inline-2,.inline-3,.dyn-grid,.cap-grid,.report-actions{grid-template-columns:1fr}
+  .inline-2,.dyn-grid,.cap-grid,.report-actions{grid-template-columns:1fr}
   .clock-time{font-size:2.1rem}
   .tab{font-size:.64rem}
 }
@@ -593,6 +591,21 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
         </div>
       </div>
 
+      <div class="card" id="onboardCard" hidden>
+        <div class="card-head">
+          <span class="card-title">第一次用？</span>
+          <button class="link-btn" id="btnOnboardClose">知道了</button>
+        </div>
+        <div class="card-body">
+          <div class="section-note" style="line-height:1.75">
+            1. 先到「设置」填好线路、站点、班组,模板里会自动带入;<br>
+            2. 选模板 → 填内容 → 复制结果,再发到群里;<br>
+            3. 右上角「?」随时能看完整说明。
+          </div>
+          <button class="btn btn-ghost" id="btnOnboardHelp" style="margin-top:10px">查看完整说明</button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-head">
           <span class="card-title">
@@ -635,13 +648,6 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span id="btnCopyText">复制结果</span>
           </button>
-        </div>
-        <div id="sendHintWrap" style="margin-top:10px" hidden>
-          <div class="group-hint">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;flex:none"><path d="M21 3L3 10l7 3 3 7z"/></svg>
-            <span class="gh-text" id="sendHintText"></span>
-            <button type="button" id="btnSendCopyGroup">复制群名</button>
-          </div>
         </div>
       </div>
     </div>
@@ -805,6 +811,20 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
     </div>
   </div>
 
+  <div class="card card-collapsible" data-collapse="content">
+    <div class="card-head">
+      <div style="display:flex;align-items:center;gap:2px;min-width:0">
+        <button type="button" class="collapse-toggle" aria-expanded="true" aria-label="折叠或展开内容片段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="card-title">内容片段</span>
+      </div>
+      <button class="link-btn" id="btnAddContentItem">添加</button>
+    </div>
+    <div class="card-body">
+      <div id="contentItemList"></div>
+      <p class="section-note" style="margin-top:8px">模板里写 <code>*内容*</code> 时,上报页会把这些片段列成一排按钮,一键切换整段正文;也可以直接手写。</p>
+    </div>
+  </div>
+
   <div class="card card-collapsible" data-collapse="custom">
     <div class="card-head">
       <div style="display:flex;align-items:center;gap:2px;min-width:0">
@@ -931,17 +951,6 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
 <!-- SECTION: templates -->
 <template id="tpl-chip"><button type="button" class="chip"></button></template>
 
-<template id="tpl-picker-group">
-  <div class="tpl-group">
-    <button type="button" class="tpl-group-head" aria-expanded="true">
-      <svg class="tg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      <span class="tg-name"></span>
-      <span class="tg-count"></span>
-    </button>
-    <div class="tg-items"></div>
-  </div>
-</template>
-
 <template id="tpl-picker-item">
   <button type="button" class="tpl-item" role="option">
     <span class="ti-name"></span>
@@ -998,10 +1007,10 @@ body.big-mode .hq-row .chip{min-height:40px;font-size:.86rem}
   <div class="field">
     <div class="field-label"><span class="fl-name"></span><span class="req" hidden>必填</span></div>
     <div class="stepper-row" style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span class="section-note" style="flex:1">件数</span>
+      <span class="section-note" style="flex:1">条数</span>
       <div class="stepper">
         <button type="button" class="stepper-btn" data-dir="-1" aria-label="减少件数">-</button>
-        <input class="stepper-input" type="number" inputmode="numeric" min="0" max="99" value="0">
+        <input class="stepper-input" type="number" inputmode="numeric" min="0" max="999" value="0">
         <button type="button" class="stepper-btn" data-dir="1" aria-label="增加件数">+</button>
       </div>
     </div>
@@ -1295,7 +1304,6 @@ const Caps = (function () {
         { name: '安全上下文(https)', ok: secure },
         { name: '系统通知', ok: notify },
         { name: '震动', ok: vibrate },
-        { name: '系统分享面板', ok: share },
         { name: '剪贴板 API', ok: clipboard },
         { name: '文件下载', ok: download },
         { name: '已装到主屏幕', ok: standalone },
@@ -1431,7 +1439,7 @@ function normalize(d) {
   if (['auto', 'light', 'dark'].indexOf(s.theme) < 0) s.theme = 'auto';
   const out = {
     version: 5, settings: s,
-    templates: Array.isArray(d.templates) ? d.templates : base.templates,
+    templates: Array.isArray(d.templates) ? d.templates.filter(function (x) { return x && typeof x === 'object'; }) : base.templates,
     timeline: Array.isArray(d.timeline) ? d.timeline : [],
     libraries: Array.isArray(d.libraries) ? d.libraries : [],
     lookup: Array.isArray(d.lookup) ? d.lookup : base.lookup,
@@ -1474,10 +1482,19 @@ function normalize(d) {
     if (i.done && typeof i.done !== 'object') i.done = null;
   });
   /* 速查条目校验:丢弃缺 kind/name 的畸形数据,避免物品候选出现 undefined */
+  const KIND_TEXT_MAP = { xa: 'A类', xb: 'B类', ban: '禁止携带', limit: '限制携带', rule: '处置口径', report: '汇报口径', duty: '勤务考勤', score: '奖惩分值', exam: '考点速记', info: '便民信息' };
   out.lookup = out.lookup.filter(function (r) {
     return r && typeof r === 'object' && typeof r.kind === 'string' && r.kind && typeof r.name === 'string' && r.name.trim();
+  }).map(function (r) {
+    const items = Array.isArray(r.items) ? r.items.filter(function (x) { return typeof x === 'string' && x.trim(); }) : [];
+    return {
+      kind: r.kind,
+      kindText: (typeof r.kindText === 'string' && r.kindText.trim()) ? r.kindText : (KIND_TEXT_MAP[r.kind] || r.kind),
+      name: r.name.trim(), items: items,
+      warn: typeof r.warn === 'string' ? r.warn : ''
+    };
   });
-  out.history = out.history.slice(0, 300).map(function (h) {
+  out.history = out.history.filter(function (h) { return h && typeof h === 'object'; }).slice(0, 300).map(function (h) {
     return { id: h.id || uid(), templateId: h.templateId || '', templateName: h.templateName || '', text: String(h.text || ''), vals: (h.vals && typeof h.vals === 'object') ? h.vals : null, createdAt: h.createdAt || Date.now() };
   });
   return out;
@@ -1913,10 +1930,11 @@ const Sheet = (function () {
     current = cfg;
     layer.classList.add('open');
     document.body.classList.add('sheet-open');
+    backBtn.hidden = !stack.length;
     Sound.unlock();
     body.scrollTop = 0;
     if (cfg.onOpen) cfg.onOpen(body, foot);
-    if (cfg.autofocus !== false) {
+    if (cfg.autofocus === true) {
       setTimeout(function () {
         const f = body.querySelector('input:not([type=hidden]),select,textarea,button');
         if (f && f.focus) { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }
@@ -1932,10 +1950,12 @@ const Sheet = (function () {
       current = prev.cfg;
       titleEl.textContent = prev.title;
       attach(body, prev.bodyKids); attach(foot, prev.footKids);
+      backBtn.hidden = !stack.length;
     } else {
       current = null;
       layer.classList.remove('open');
       document.body.classList.remove('sheet-open');
+      backBtn.hidden = true;
       if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
     }
     if (cfg.onClose) cfg.onClose();
@@ -2021,9 +2041,10 @@ function persistCollapsedGroups() {
   save();
 }
 
-function saveFormCache() {
-  if (!currentTplId) return;
-  try { data.formCache[currentTplId] = deepCopy(values); } catch (e) { data.formCache[currentTplId] = values; }
+function saveFormCache(id) {
+  const tid = id || currentTplId;
+  if (!tid) return;
+  try { data.formCache[tid] = deepCopy(values); } catch (e) { data.formCache[tid] = values; }
   save();
 }
 /* 日期/时间属于「每次填写都应反映当前时刻」的变量,缓存里不保留,
@@ -2037,6 +2058,8 @@ function loadFormCache(id) {
     extractVars(tpl.content).forEach(function (name) {
         const type = varType(tpl, name);
         if (type === 'time' || type === 'date' || name === '内容') delete out[name];
+        /* 自动带入类变量以「设置」为准,缓存里的旧值一律丢弃,避免改了设置不生效 */
+        if (presetValue(name)) delete out[name];
       });
   }
   return out;
@@ -2058,9 +2081,10 @@ function ensureValues(tpl) {
       if (!Array.isArray(values[name + '__sel'])) values[name + '__sel'] = [];
       return;
     }
-    if (name in values && String(values[name] || '').length) return;
+    /* 自动带入类变量始终以「设置」为最新值,不被表单缓存盖住 */
     const p = presetValue(name);
-    if (p) { values[name] = p; return; }
+    if (p) { if (String(values[name] == null ? '' : values[name]) !== p) values[name] = p; return; }
+    if (name in values && String(values[name] || '').length) return;
     /* 内容变量:从设置页「内容」第一条预填,可再修改;保留换行 */
     if (name === '内容' && data.settings.contentItems && data.settings.contentItems.length) {
       values[name] = data.settings.contentItems[0].text || '';
@@ -2072,15 +2096,13 @@ function ensureValues(tpl) {
   });
 }
 function selectTemplate(id, keepValues, silent) {
-  if (currentTplId && currentTplId !== id) saveFormCache();
+  if (currentTplId && currentTplId !== id) saveFormCache(currentTplId);
   currentTplId = id;
   data.lastTplId = id;
   touchedVars = {};                       // 换模板后回到「自动填充」状态
   previewEditing = false;
   manualText = '';
-  const hintWrap = $('#sendHintWrap');
-  if (hintWrap) hintWrap.hidden = true;
-  recordTplUse(id, silent);
+  recordTplUse(id, true);
   const tpl = tplById(id);
   if (!keepValues) {
     values = loadFormCache(id);
@@ -2893,7 +2915,7 @@ function buildItemsField(tpl, name) {
     }
     function syncCount() { $('.stepper-input', stepper).value = String(items.length); }
     bindStepper(stepper, {
-      min: 0, max: 99,
+      min: 0, max: 999,
       onChange: function (v) {
         while (items.length < v) {
           const item = {};
@@ -2977,7 +2999,7 @@ function buildItemsField(tpl, name) {
   }
   function syncCount() { $('.stepper-input', stepper).value = String(items.length); }
   bindStepper(stepper, {
-    min: 0, max: 99,
+    min: 0, max: 999,
     onChange: function (v) {
       while (items.length < v) items.push({ name: '', spec: '', count: '1', note: '' });
       if (items.length > v) items.length = v;
@@ -3041,7 +3063,7 @@ function syncContRow(tpl) {
   if (sw) sw.setAttribute('aria-checked', data.settings.continuous ? 'true' : 'false');
 }
 function queuePreview() {
-  if (manualText) { manualText = ''; exitEditingUI(); }
+  if (manualText) { manualText = ''; exitEditingUI(); toast('表单已变动,预览已按模板重新生成'); }
   saveFormCacheThrottled();
   if (previewQueued) return;
   previewQueued = true;
@@ -3200,12 +3222,23 @@ function snapshotValues(tpl, vals) {
     if (presetValue(name)) return;
     if (type === 'date' || type === 'time') return;
     if (type === 'items') { out[name + '__items'] = deepCopy(vals[name + '__items'] || []); return; }
+    if (type === 'tree') { out[name + '__path'] = deepCopy(vals[name + '__path'] || []); return; }
+    if (type === 'library') { out[name + '__sel'] = deepCopy(vals[name + '__sel'] || []); return; }
     if (name in vals) out[name] = vals[name];
   });
   return out;
 }
 function addHistory(text, tpl) {
   if (!text) return;
+  const tid = tpl ? tpl.id : '';
+  const top = data.history[0];
+  /* 连点复制不去重会把统计刷高,同一条内容只更新时间 */
+  if (top && top.text === text && top.templateId === tid) {
+    top.createdAt = Date.now();
+    top.vals = tpl ? snapshotValues(tpl, values) : null;
+    save(); renderHistory();
+    return;
+  }
   data.history.unshift({
     id: uid(), templateId: tpl ? tpl.id : '', templateName: tpl ? tpl.name : '',
     text: text, vals: tpl ? snapshotValues(tpl, values) : null, createdAt: Date.now()
@@ -3289,14 +3322,9 @@ function continuousReset(tpl) {
 /* 复制后提示发往哪个群,并给一键复制群名 */
 function afterCopyHint(tpl) {
   const groups = tplGroups(tpl);
-  const wrap = $('#sendHintWrap'), txt = $('#sendHintText');
-  if (!groups.length) {
-    if (wrap) wrap.hidden = true;
-    if (!data.settings.continuous) toast('已复制到剪贴板');
-    return;
+  if (groups.length) {
+    toast((data.settings.continuous ? '已复制并清空物品 · 发往：' : '已复制 · 发往：') + groups.join('、'));
   }
-  if (txt) txt.textContent = (data.settings.continuous ? '已复制并清空物品 · 发往：' : '已复制 · 发往：') + groups.join('、');
-  if (wrap) wrap.hidden = false;
 }
 async function doCopy(text, btn, labelEl) {
   if (!text) { toast('暂无内容可复制'); return; }
@@ -3305,6 +3333,7 @@ async function doCopy(text, btn, labelEl) {
   if (btn) flashButton(btn, labelEl, '已复制');
   const tpl = tplById(currentTplId);
   addHistory(text, tpl);
+  if (tpl) recordTplUse(tpl.id);
   if (data.settings.continuous && hasItemsVar(tpl)) continuousReset(tpl);
   afterCopyHint(tpl);
 }
@@ -3403,7 +3432,7 @@ function renderTimeline(force) {
   renderTodo(list, nowMin, doneCount);
   const sig = list.map(function (i) {
     return [i.id, i.start, i.end, i.task, i.desc, i.crossDay, isDoneToday(i) ? 1 : 0, statusOf(i, nowMin)].join('|');
-  }).join('#') + '#' + nowMin;
+  }).join('#');
   if (!force && sig === lastListSig) return;
   lastListSig = sig;
   const box = $('#timelineList');
@@ -3542,6 +3571,7 @@ function openTimelineSheet() {
     }).filter(function (i) { return i.task || i.start; });
     const bad = cleaned.filter(function (i) { return !i.start || !i.task; });
     if (bad.length) { toast('有 ' + bad.length + ' 个任务缺少名称或开始时间'); return; }
+    if (items.length && !cleaned.length) { toast('任务内容为空,未保存'); return; }
     data.timeline = cleaned;
     if (data.reminderLog.date !== todayStr()) data.reminderLog = { date: todayStr(), ids: [] };
     dirty = false;
@@ -3594,16 +3624,16 @@ const Reminder = (function () {
     return data.reminderLog;
   }
   function fire(item, nowMin) {
+    if (!data.settings.notify.enabled) return;   // 关着提醒时不记已提醒,当天开启后还能补响
     const log = ensureLog();
     if (log.ids.indexOf(item.id) >= 0) return;
     log.ids.push(item.id);
     save();
     const range = item.end ? (item.start + ' - ' + item.end) : item.start;
-    if (!data.settings.notify.enabled) return;
-    banner('任务提醒 · ' + range, item.task + (item.desc ? '|' + item.desc : ''));
+    banner('任务提醒 · ' + range, item.task + (item.desc ? ' · ' + item.desc : ''));
     if (Caps.notify && Caps.notifyPerm() === 'granted') {
       try {
-        const n = new Notification('任务提醒 · ' + range, { body: item.task + (item.desc ? '\n' + item.desc : ''), tag: item.id, requireInteraction: false });
+        const n = new Notification('任务提醒 · ' + range, { body: item.task + (item.desc ? '\n' + item.desc : ''), tag: item.id, renotify: true, requireInteraction: false });
         n.onclick = function () { window.focus(); try { n.close(); } catch (e) {} };
       } catch (e) {}
     }
@@ -3611,7 +3641,7 @@ const Reminder = (function () {
     Sound.beep(2);
     if (document.hidden) flashTitle(item.task || '任务提醒');
   }
-  /* 到点判定按「分钟」进行:命中触发分钟起 5 分钟内、当天未响过就提醒。
+  /* 到点判定按「分钟」进行:命中触发分钟起 30 分钟内、当天未响过就提醒。
      不依赖定时器落在特定秒点,后台被浏览器节流、切回前台补发都能覆盖;
      reminderLog 按天去重,不会重复响。 */
   function check() {
@@ -3627,7 +3657,7 @@ const Reminder = (function () {
       const trigger = ((w[0] - adv) % 1440 + 1440) % 1440;
       let delta = nowMin - trigger;
       if (delta < -720) delta += 1440;   // 跨午夜:触发点在昨晚、现在刚过零点
-      if (delta >= 0 && delta <= 5 && log.ids.indexOf(item.id) < 0) fire(item, nowMin);
+      if (delta >= 0 && delta <= 30 && log.ids.indexOf(item.id) < 0) fire(item, nowMin);
     });
   }
   function askPermission() {
@@ -3931,6 +3961,7 @@ function reuseHistory(h) {
     });
     return;
   }
+  if (currentTplId && currentTplId !== tpl.id) saveFormCache(currentTplId);
   let vals = null, mode = 'cache';
   if (h.vals && typeof h.vals === 'object') { vals = deepCopy(h.vals); mode = 'snap'; }
   else {
@@ -3941,8 +3972,6 @@ function reuseHistory(h) {
   currentTplId = tpl.id;
   data.lastTplId = tpl.id;
   recordTplUse(tpl.id);
-  const hintWrap2 = $('#sendHintWrap');
-  if (hintWrap2) hintWrap2.hidden = true;
   manualText = ''; previewEditing = false;
   values = vals || loadFormCache(tpl.id);
   touchedVars = {};
@@ -4027,7 +4056,8 @@ function renderLookup() {
   const rows = data.lookup.filter(function (r) {
     if (lookupKind !== '全部' && KIND_LABEL[r.kind] !== lookupKind) return false;
     if (!q) return true;
-    const hay = (r.name + ' ' + r.items.join(' ') + ' ' + (r.warn || '')).toLowerCase();
+    const items = Array.isArray(r.items) ? r.items : [];
+    const hay = (r.name + ' ' + items.join(' ') + ' ' + (r.warn || '')).toLowerCase();
     return hay.indexOf(q.toLowerCase()) >= 0;
   });
   if (!rows.length) {
@@ -4042,11 +4072,11 @@ function renderLookup() {
   rows.forEach(function (r) {
     const node = mk('tpl-lookup-card');
     const kind = $('.lk-kind', node);
-    kind.textContent = r.kindText;
+    kind.textContent = r.kindText || KIND_BADGE[r.kind] || r.kind;
     kind.className = 'lk-kind ' + (KIND_CLS[r.kind] || 'rule');
     highlightInto($('.lk-name', node), r.name, q);
     const ul = $('.lk-list', node);
-    r.items.forEach(function (line) {
+    (Array.isArray(r.items) ? r.items : []).forEach(function (line) {
       const li = document.createElement('li');
       highlightInto(li, line, q);
       ul.appendChild(li);
@@ -4106,7 +4136,7 @@ function applyTheme() {
     icon.appendChild(p);
   }
   const metas = document.querySelectorAll('meta[name="theme-color"]');
-  if (metas.length) metas[0].setAttribute('content', dark ? '#0d1117' : '#4f7cf7');
+  Array.prototype.forEach.call(metas, function (m) { m.setAttribute('content', dark ? '#0d1117' : '#4f7cf7'); });
 }
 function applyDisplayMode() {
   document.body.classList.toggle('big-mode', !!data.settings.bigMode);
@@ -4582,9 +4612,10 @@ function renderLibraries() {
     const itemsBox = E('div'); itemsBox.style.marginTop = '8px';
     (lib.items || []).forEach(function (it, ii) {
       const r = E('div', 'list-row'); r.style.padding = '4px 0';
-      const ti = document.createElement('input');
-      ti.className = 'input'; ti.type = 'text'; ti.value = it.text || ''; ti.placeholder = '内容文字';
-      ti.style.cssText = 'flex:1;min-height:38px;font-size:.84rem';
+      const ti = document.createElement('textarea');
+      ti.className = 'input'; ti.value = it.text || ''; ti.placeholder = '内容文字,可换行';
+      ti.rows = 2;
+      ti.style.cssText = 'flex:1;min-height:56px;font-size:.84rem;line-height:1.5;resize:vertical';
       ti.addEventListener('input', debounce(function () { it.text = ti.value; save(); }, 300));
       const up = E('button', 'mini-btn', '↑'); up.disabled = ii === 0;
       up.addEventListener('click', function () { const tmp = lib.items[ii - 1]; lib.items[ii - 1] = lib.items[ii]; lib.items[ii] = tmp; save(); renderLibraries(); });
@@ -4602,6 +4633,50 @@ function renderLibraries() {
     box.appendChild(card);
   });
 }
+function renderContentItems() {
+  const host = $('#contentItemList');
+  if (!host) return;
+  host.innerHTML = '';
+  const items = data.settings.contentItems || [];
+  if (!items.length) {
+    const e = document.createElement('div');
+    e.className = 'section-note';
+    e.style.padding = '6px 0';
+    e.textContent = '还没有内容片段。点右上角「添加」新建一段。';
+    host.appendChild(e);
+    return;
+  }
+  items.forEach(function (it, idx) {
+    const node = mk('tpl-row-content');
+    if (!node) return;
+    $('.di-title', node).textContent = '片段 ' + (idx + 1);
+    const nm = $('.ct-name', node), tx = $('.ct-text', node);
+    nm.value = it.name || '';
+    nm.placeholder = '名称,如 早班传达 / 晚班传达';
+    nm.setAttribute('aria-label', '片段 ' + (idx + 1) + ' 名称');
+    tx.style.minHeight = '110px';
+    tx.value = it.text || '';
+    tx.setAttribute('aria-label', '片段 ' + (idx + 1) + ' 正文');
+    nm.addEventListener('input', function () { it.name = nm.value; save(); });
+    tx.addEventListener('input', function () { it.text = tx.value; save(); renderForm(); });
+    $('.ct-del', node).addEventListener('click', function () {
+      if (items.length < 2) { toast('至少保留一段，否则 *内容* 变量会没有默认值'); return; }
+      data.settings.contentItems.splice(idx, 1);
+      save(); renderContentItems(); renderForm(); toast('已删除');
+    });
+    host.appendChild(node);
+  });
+}
+function bindContentItems() {
+  const b = $('#btnAddContentItem');
+  if (!b) return;
+  b.addEventListener('click', function () {
+    data.settings.contentItems = data.settings.contentItems || [];
+    const n = data.settings.contentItems.length + 1;
+    data.settings.contentItems.push({ id: uid(), name: '片段 ' + n, text: '' });
+    save(); renderContentItems();
+  });
+}
 function bindLibraries() {
   const b = $('#btnAddLibGroup');
   if (b) b.addEventListener('click', function () {
@@ -4616,7 +4691,7 @@ function renderSettingsAll() {
   $('#setStation').value = s.station || '';
   $('#setLeader').value = s.leader || '';
   $('#setLeaderPhone').value = s.leaderPhone || '';
-  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries();
+  renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries(); renderContentItems();
   renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
   $('#aboutText').textContent = '信息助手 v5.3 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
@@ -4655,7 +4730,9 @@ function bindCollapse() {
       card.classList.toggle('collapsed', collapsed);
       toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     }
-    setState(!!state[key]);
+    const DEFAULT_COLLAPSED = { group: 1, member: 1, library: 1, custom: 1, lookup: 1 };
+    const saved = Object.prototype.hasOwnProperty.call(state, key) ? !!state[key] : !!DEFAULT_COLLAPSED[key];
+    setState(saved);
     toggle.addEventListener('click', function () {
       const collapsed = !card.classList.contains('collapsed');
       state[key] = collapsed;
@@ -4742,6 +4819,7 @@ function applyImported(parsed) {
       values = {};
       touchedVars = {};
       bootRender();
+      Sheet.closeNow();
       toast('导入成功');
     }
   });
@@ -4839,7 +4917,7 @@ function openLookupSheet() {
     items.forEach(function (item, idx) {
       const node = mk('tpl-manage-item');
       const btn = $('.mi-name', node);
-      btn.textContent = item.name + '(' + item.kindText + ')';
+      btn.textContent = item.name + '(' + (item.kindText || KIND_BADGE[item.kind] || item.kind) + ')';
       btn.setAttribute('aria-pressed', 'false');
       btn.addEventListener('click', function () {
         if (editing) {
@@ -4904,7 +4982,7 @@ function openLookupSheet() {
 
     const itemsInput = document.createElement('textarea');
     itemsInput.className = 'textarea'; itemsInput.rows = 6;
-    itemsInput.value = item.items.join('\n');
+    itemsInput.value = (Array.isArray(item.items) ? item.items : []).join('\n');
     itemsInput.placeholder = '每行一条内容';
     itemsInput.style.marginBottom = '9px';
 
@@ -5556,6 +5634,7 @@ function openManageSheet() {
     const use = document.createElement('button');
     use.type = 'button'; use.className = 'btn'; use.textContent = '在主界面使用';
     use.addEventListener('click', function () {
+      if (currentTplId && currentTplId !== t.id) saveFormCache(currentTplId);
       currentTplId = t.id; data.lastTplId = t.id;
       values = {}; touchedVars = {}; ensureValues(t);
       dirty = false;
@@ -5923,6 +6002,11 @@ function openTplMakerSheet(seedText, suggestName) {
                        : '已选 ' + on.length + ' 处替换。这里也可以继续手动改,例如加 {?备注}…{/备注} 可选段。');
     return built;
   }
+  function sigOf() {
+    return [src.value, result.value, nameIn.value, groupIn.value,
+      rows.map(function (r) { return (r.on ? '1' : '0') + r.name + '|' + r.type + '|' + (r.options || ''); }).join('~')].join('\u0001');
+  }
+  let baseSig = '';
   function paintRows() {
     rowBox.innerHTML = '';
     if (!rows.length) {
@@ -6082,15 +6166,16 @@ function openTplMakerSheet(seedText, suggestName) {
   paintRows();
   refreshResult();
   if (raw.trim()) scan();
+  baseSig = sigOf();
   Sheet.open({
     title: '制作模板', bodyNode: body, footNode: foot,
-    dirty: function () { return !!result.value.trim() && !!raw.trim(); },
+    dirty: function () { return sigOf() !== baseSig; },
     autofocus: !raw
   });
 }
 /* SECTION: js-backup */
 const SNAP_KEY = KEY + '.snap';
-const SNAP_MAX = 7;
+const SNAP_MAX = 3;
 function loadSnapshots() {
   try { const a = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(a) ? a : []; }
   catch (e) { return []; }
@@ -6334,7 +6419,7 @@ function renderTodo(list, nowMin, doneCount) {
     row.appendChild(t); row.appendChild(c); body.appendChild(row);
   }
   const current = list.filter(function (i) { return statusOf(i, nowMin) === 'current' && !isDoneToday(i); });
-  const late = list.filter(function (i) { return statusOf(i, nowMin) === 'past' && !isDoneToday(i); });
+  const late = list.filter(function (i) { return statusOf(i, nowMin) === 'past' && !isDoneToday(i) && i.end; });
   const future = list.filter(function (i) { return statusOf(i, nowMin) === 'future'; });
   if (current.length) current.forEach(function (i) { addLine('现在', 'now', i.task + (i.end ? '(至 ' + i.end + ')' : ''), true); });
   else addLine('现在', 'now', '当前无进行中任务', false);
@@ -6359,7 +6444,7 @@ function openHelpSheet() {
     ] },
     { t: '快速上手', l: ['在「上报」页点「选择模板」按钮,先选分类、再选该分类下的模板', '弹窗顶部可直接搜索模板;分类和模板的顺序可在弹窗里点「调整顺序」用 ▲▼ 自定义,自动保存', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
       '有变量没填时会先列出漏填项让你确认,可以选择返回填写或仍要复制', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
-    { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
+    { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '模板里写 *内容* 时,可在「设置 → 内容片段」准备几套正文,上报页一键切换', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
     { t: '人员批量导入', l: ['设置页「人员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
@@ -6370,7 +6455,7 @@ function openHelpSheet() {
     { t: '物品输入与速查联动', l: ['违禁品/限带品字段输入时从速查实时给候选,点选即填,也能手输速查里没有的', '速查页 A/B 类卡片展开后有「用这条上报」,自动跳进对应查危简报并填好物品名'] },
     { t: '今日待办', l: ['时间线页顶部显示现在该做哪件、接下来哪件、哪些到点还没勾完成', '不依赖系统通知,打开页面就能看清,离线可用'] },
     { t: '数据统计', l: ['物品清单类型支持自定义字段,可配置「数字」类型并勾选「求和」自动汇总', '字段可关联「安检点」或「群名」,填数据时直接下拉选择不用手输', '模板里用 *总字段名* 引用汇总值,如 *总过机数*'] },
-    { t: '数据与备份', l: ['全部数据只存在这台设备的浏览器里,不上传', '每天首次打开自动备份一份快照,保留最近 7 份,「备份与恢复」可一键回滚', '也可手动立即备份、导出 .json 发给同事', '导入分两种:整包覆盖全部数据;合并导入只并入模板/速查(同名覆盖),不动历史与设置', '清除浏览器数据会一并删除,请定期备份'] }
+    { t: '数据与备份', l: ['全部数据只存在这台设备的浏览器里,不上传', '每天首次打开自动备份一份快照,保留最近 3 份,「备份与恢复」可一键回滚', '也可手动立即备份、导出 .json 发给同事', '导入分两种:整包覆盖全部数据;合并导入只并入模板/速查(同名覆盖),不动历史与设置', '清除浏览器数据会一并删除,请定期备份'] }
   ];
   blocks.forEach(function (b) {
     const title = document.createElement('div');
@@ -6403,9 +6488,13 @@ function switchView(name) {
     t.tabIndex = on ? 0 : -1;
   });
   if (name === 'report') {
+    const prevId = currentTplId;
     const chg = applyTimelineTpl();
     renderTplChips();
-    if (chg && currentTplId && tplById(currentTplId)) selectTemplate(currentTplId);
+    if (chg && currentTplId && tplById(currentTplId)) {
+      saveFormCache(prevId);
+      selectTemplate(currentTplId);
+    }
     refreshDatetimeFields();
   }
   if (name === 'timeline') renderTimeline(true);
@@ -6478,14 +6567,27 @@ function bindGlobal() {
     save(); applyTheme(); renderThemeChips();
     toast('主题:' + themeNames[data.settings.theme]);
   });
+  $('#btnOnboardClose').addEventListener('click', function () {
+    $('#onboardCard').hidden = true;
+    try { localStorage.setItem('infoAssistant.v5.seen', '1'); } catch (e) {}
+  });
+  $('#btnOnboardHelp').addEventListener('click', function () {
+    $('#onboardCard').hidden = true;
+    try { localStorage.setItem('infoAssistant.v5.seen', '1'); } catch (e) {}
+    openHelpSheet();
+  });
   $('#btnHelp').addEventListener('click', openHelpSheet);
   $('#btnManageTpl').addEventListener('click', openManageSheet);
   $('#btnMakeTpl').addEventListener('click', function () { openTplMakerSheet(''); });
   $('#btnPickTpl').addEventListener('click', openTplPicker);
   $('#btnReuseLast').addEventListener('click', function () {
-    const h = (data.history || [])[0];
-    if (!h) { toast('还没有可复用的上报记录'); return; }
-    reuseHistory(h);
+    const all = data.history || [];
+    if (!all.length) { toast('还没有可复用的上报记录'); return; }
+    const tpl = tplById(currentTplId);
+    const mine = tpl ? all.filter(function (x) { return x.templateId === tpl.id; })[0] : null;
+    if (mine) { reuseHistory(mine); return; }
+    if (tpl) { toast('当前模板还没有记录,先载入了最近一条'); }
+    reuseHistory(all[0]);
   });
   $('#swContinuous').addEventListener('click', function () {
     data.settings.continuous = !data.settings.continuous;
@@ -6506,12 +6608,6 @@ function bindGlobal() {
     try { document.execCommand('insertText', false, t); } catch (err) {}
   });
   $('#btnEditPreview').addEventListener('click', function () { setPreviewEditing(!previewEditing); });
-  $('#btnSendCopyGroup').addEventListener('click', async function () {
-    const groups = tplGroups(tplById(currentTplId));
-    if (!groups.length) { toast('这个模板没有设置群名'); return; }
-    const ok = await copyText(groups.join('、'));
-    toast(ok ? '已复制群名：' + groups.join('、') : '复制失败');
-  });
   $('#btnManageTimeline').addEventListener('click', openTimelineSheet);
   $('#btnManageLookup').addEventListener('click', openLookupSheet);
   $('#btnImportMembers').addEventListener('click', openMemberImportSheet);
@@ -6624,6 +6720,7 @@ function boot() {
   } catch (e) {}
   bindSettingsInputs();
   bindLibraries();
+  bindContentItems();
   bindGlobal();
   autoSnapshot();
   bootRender();
@@ -6632,7 +6729,10 @@ function boot() {
   try { seen = localStorage.getItem('infoAssistant.v5.seen'); } catch (e) {}
   if (!seen) {
     try { localStorage.setItem('infoAssistant.v5.seen', '1'); } catch (e) {}
-    setTimeout(openHelpSheet, 500);
+    setTimeout(function () {
+      const c = $('#onboardCard');
+      if (c) c.hidden = false;
+    }, 900);
   }
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
