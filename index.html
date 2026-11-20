@@ -1324,6 +1324,43 @@ const Sound = (function () {
 /* 速查内容属于数据,不内置在工具里:通过「设置 → 导入配置」载入,或在设置页自行维护 */
 function seedLookup() { return []; }
 function seedLookupSource() { return []; }
+/* 特殊模板示例脚本:return 一个对象,fields 描述表单,render 生成文字,compute 做汇总 */
+const SPECIAL_DEMO_CODE = String.raw`// 特殊模板脚本:必须 return 一个对象
+// fields 描述表单,render 生成文字,compute 做汇总,validate / reset 可选
+return {
+  fields: [
+    { key: 'rows', type: 'table', label: '按安检点录入', rows: 'entrances',
+      cols: [
+        { key: 'bags', label: '过包(件)', type: 'number' },
+        { key: 'persons', label: '过人(人)', type: 'number' }
+      ] },
+    { key: '备注', type: 'textarea', label: '备注(选填)' }
+  ],
+  compute: function (v, h) {
+    var rows = v.rows || [];
+    return { bags: h.sum(rows, 'bags'), persons: h.sum(rows, 'persons') };
+  },
+  render: function (d, v, h) {
+    var rows = v.rows || [];
+    var lines = rows.filter(function (r) { return h.num(r.bags) || h.num(r.persons); })
+      .map(function (r, i) { return (i + 1) + '. ' + r.__label + ' 过包' + h.num(r.bags) + '件,过人' + h.num(r.persons) + '人'; });
+    var out = ['【安检数据汇总】', '时间:' + h.today + ' ' + h.now];
+    var ls = (h.line + ' ' + h.station).trim();
+    if (ls) out.push('线路站点:' + ls);
+    if (lines.length) out.push('分口数据:', lines.join('\n'));
+    out.push('合计:过包' + d.bags + '件,过人' + d.persons + '人');
+    if (v['备注']) out.push('备注:' + v['备注']);
+    return out.join('\n');
+  },
+  validate: function (v, d) {
+    return (d.bags || d.persons) ? [] : ['至少填一个口的过包数或过人数'];
+  },
+  reset: function (v) {
+    (v.rows || []).forEach(function (r) { r.bags = ''; r.persons = ''; });
+    v['备注'] = '';
+    return v;
+  }
+};`;
 function seedTemplates() {
   const t = (name, group, groupHint, content, varTypes) => ({
     id: uid(), name, group,
@@ -1344,6 +1381,10 @@ function seedTemplates() {
     t('交接班记录', '设备与勤务', '',
       '【交接班记录】\n交接时间:*日期* *交接时间*\n线路站点:*线路* *站点*\n安检点:*多安检点*\n接班人:*接班人*\n设备状态:*设备状态*\n本班次查获:违禁品 *违禁品件数* 件,限带品 *限带品件数* 件\n班次情况:*班次情况*\n{?待跟进事项}待跟进事项:*待跟进事项*\n{/待跟进事项}',
       { '交接时间': { type: 'time' }, '多安检点': { type: 'entrances' }, '接班人': { type: 'text' }, '设备状态': { type: 'single', options: ['全部正常', '部分设备故障(已报修)', '设备停用'] }, '违禁品件数': { type: 'number' }, '限带品件数': { type: 'number' }, '班次情况': { type: 'text' }, '待跟进事项': { type: 'text' } }),
+    t('智慧安检测试', '设备与勤务', '车站设备群',
+      '【智慧安检测试】\n测试时间:*日期* *测试时间*\n线路站点:*线路* *站点*\n测试安检点:*测试安检点*\n测试结果:*测试结果*\n测试人:*测试人*\n{?异常说明}异常说明:*异常说明*\n{/异常说明}',
+      { '测试时间': { type: 'time' }, '测试安检点': { type: 'entrances' }, '测试结果': { type: 'single', options: ['全部通过', '部分通过', '设备异常'] }, '测试人': { type: 'text' }, '异常说明': { type: 'text' } }),
+    Object.assign(t('安检数据汇总', '设备与勤务', '车站设备群', '', {}), { kind: 'special', code: SPECIAL_DEMO_CODE }),
     t('突发情况上报', '应急', '应急处置群',
       '【突发情况上报】\n上报时间：*日期* *上报时间*\n发生时间：*发生时间*\n地点：*线路* *站点* *安检点*\n事件类型：*事件类型*\n现场情况：*现场情况*\n已采取措施：*已采取措施*\n是否报警：*是否报警*\n{?人员伤亡}人员伤亡：*人员伤亡*\n{/人员伤亡}',
       { '上报时间': { type: 'time' }, '发生时间': { type: 'time' }, '事件类型': { type: 'single', options: ['乘客不配合安检', '扰乱安检秩序', '发现可疑物品', '火警烟感报警', '乘客身体不适', '打架斗殴', '其他突发情况'] }, '现场情况': { type: 'text' }, '已采取措施': { type: 'text' }, '人员伤亡': { type: 'text' }, '是否报警': { type: 'single', options: ['已报站方和民警', '已拨打110', '已拨打120', '暂未报警'] } })
@@ -1431,6 +1472,8 @@ function normalize(d) {
       t.groupHint = [];
     }
     if (!t.varTypes || typeof t.varTypes !== 'object') t.varTypes = {};
+    if (t.kind !== 'special') t.kind = 'text';
+    if (typeof t.code !== 'string') t.code = '';
     if (!Array.isArray(t.varOrder)) t.varOrder = [];
     if (typeof t.builtin !== 'boolean') t.builtin = false;
   });
@@ -1467,6 +1510,23 @@ function normalize(d) {
   out.history = out.history.filter(function (h) { return h && typeof h === 'object'; }).slice(0, 300).map(function (h) {
     return { id: h.id || uid(), templateId: h.templateId || '', templateName: h.templateName || '', text: String(h.text || ''), vals: (h.vals && typeof h.vals === 'object') ? h.vals : null, createdAt: h.createdAt || Date.now() };
   });
+  /* 已安装过的数据一次性补上「智慧安检测试」模板(用户删掉后不再自动加回) */
+  if (!out.settings.seedTestReady) {
+    const has = out.templates.some(function (t) { return t && t.name === '智慧安检测试'; });
+    if (!has) {
+      const seedTest = seedTemplates().filter(function (t) { return t.name === '智慧安检测试'; })[0];
+      if (seedTest) out.templates.push(seedTest);
+    }
+    out.settings.seedTestReady = true;
+  }
+  if (!out.settings.seedSumReady) {
+    const hasSum = out.templates.some(function (t) { return t && t.name === '安检数据汇总'; });
+    if (!hasSum) {
+      const demo = seedTemplates().filter(function (t) { return t.name === '安检数据汇总'; })[0];
+      if (demo) out.templates.push(demo);
+    }
+    out.settings.seedSumReady = true;
+  }
   return out;
 }
 function migrateV4(d) {
@@ -1538,7 +1598,8 @@ function inferType(name) {
   if (name === '年' || name === '月' || name === '日') return 'date';
   if (name.indexOf('日期') >= 0) return 'date';
   if (name.indexOf('时间') >= 0) return 'time';
-  if (name === '多安检点') return 'entrances';
+  if (name === '多安检点' || name === '测试安检点') return 'entrances';
+  if (name.indexOf('安检点') >= 0 && /(多|测试|全部)/.test(name)) return 'entrances';
   if (name === '安检点') return 'entrance';
   if (name === '多人员') return 'members';
   if (name === '人员') return 'member';
@@ -1564,6 +1625,14 @@ function varType(tpl, name) {
 function varOptions(tpl, name) {
   const declared = tpl && tpl.varTypes && tpl.varTypes[name];
   if (declared && Array.isArray(declared.options) && declared.options.length) return declared.options.slice();
+  /* 按变量类型取选项:安检点多选/人员多选不应依赖变量名 */
+  const ty = varType(tpl, name);
+  if (ty === 'entrances') return (data.settings.entrances || []).filter(Boolean);
+  if (ty === 'members') {
+    return (data.settings.members || []).filter(function (m) { return m.name; }).map(function (m) {
+      return m.name + (m.id ? '（' + m.id + '）' : '');
+    });
+  }
   const c = customByKey(name);
   if (c) return String(c.value || '').split('|').map(function (x) { return x.trim(); }).filter(Boolean);
   if (name === '安检点') return data.settings.entrances.filter(Boolean);
@@ -1813,6 +1882,7 @@ function optionalOnlyVars(content) {
    物品清单为空视为漏填(清单没填就发汇总,正文会缺一整块数据)。 */
 function missingVars(tpl, values) {
   if (!tpl) return [];
+  if (isSpecial(tpl)) { const r = specialResult(tpl); return r.issues || []; }
   const opt = optionalOnlyVars(tpl.content);
   const miss = [];
   visibleVars(tpl).forEach(function (name) {
@@ -1859,9 +1929,9 @@ function copyWithCheck() {
   const askMiss = function () {
     if (!miss.length) { finish(); return; }
     Sheet.confirmSheet({
-      title: '还有 ' + miss.length + ' 项没填',
-      message: '这些变量现在是空的,发出去可能要返工。要现在复制吗?',
-      detail: '未填：' + miss.join('、'),
+      title: isSpecial(tpl) ? '校验未通过' : ('还有 ' + miss.length + ' 项没填'),
+      message: isSpecial(tpl) ? '特殊模板的校验规则没通过,要现在复制吗?' : '这些变量现在是空的,发出去可能要返工。要现在复制吗?',
+      detail: (isSpecial(tpl) ? '问题：' : '未填：') + miss.join('、'),
       okText: '仍要复制',
       cancelText: '返回填写',
       onOk: finish,
@@ -1986,6 +2056,10 @@ function hasItemsVar(tpl) {
   if (!tpl) return false;
   return extractVars(tpl.content).some(function (n) { return varType(tpl, n) === 'items'; });
 }
+function hasEntrancesVar(tpl) {
+  if (!tpl) return false;
+  return extractVars(tpl.content).some(function (n) { return varType(tpl, n) === 'entrances'; });
+}
 /* 记录模板使用:最近使用列表 + 使用次数(用于「常用」排序) */
 function recordTplUse(id, silent) {
   if (!id) return;
@@ -2036,6 +2110,7 @@ function loadFormCache(id) {
 }
 function ensureValues(tpl) {
   if (!tpl) return;
+  if (isSpecial(tpl)) return;
   extractVars(tpl.content).forEach(function (name) {
     const type = varType(tpl, name);
     if (type === 'items') {
@@ -2183,7 +2258,9 @@ function openTplPicker() {
     const on = t.id === currentTplId;
     node.classList.toggle('on', on);
     node.setAttribute('aria-selected', on ? 'true' : 'false');
-    if (linkedIds.indexOf(t.id) >= 0 && !on) $('.ti-mark', node).hidden = false;
+    const mark = $('.ti-mark', node);
+    if (mark && t.kind === 'special') { mark.hidden = false; mark.textContent = '特殊'; }
+    else if (linkedIds.indexOf(t.id) >= 0 && !on) $('.ti-mark', node).hidden = false;
     node.addEventListener('click', function () { pick(t); });
     return node;
   }
@@ -2971,6 +3048,281 @@ function buildItemsField(tpl, name) {
   clearBtn.style.display = items.length ? '' : 'none';
   return node;
 }
+/* SECTION: js-special */
+/* 特殊模板:脚本在模板里存为字符串,选中时编译成模块,由 fields/render/compute 驱动 */
+const SPECIAL_CACHE = {};
+function isSpecial(tpl) { return !!(tpl && tpl.kind === 'special'); }
+function specialTodayCN() {
+  const d = new Date();
+  return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+function specialHelpers() {
+  return {
+    get line() { return String(data.settings.line || '').trim(); },
+    get station() { return String(data.settings.station || '').trim(); },
+    get leader() { return String(data.settings.leader || '').trim(); },
+    get phone() { return String(data.settings.leaderPhone || '').trim(); },
+    get entrances() { return (data.settings.entrances || []).filter(Boolean); },
+    get groups() { return (data.settings.groups || []).filter(Boolean); },
+    get members() { return (data.settings.members || []).filter(function (m) { return m && m.name; }); },
+    get today() { return specialTodayCN(); },
+    get now() { return nowHM(new Date()); },
+    num: function (v) {
+      const n = parseFloat(String(v == null ? '' : v).replace(/[^\d.\-]/g, ''));
+      return isNaN(n) ? 0 : n;
+    },
+    sum: function (rows, key) {
+      return (rows || []).reduce(function (a, r) { return a + specialHelpers().num(r && r[key]); }, 0);
+    },
+    fmt: function (n) { const v = specialHelpers().num(n); return String(Math.round(v * 100) / 100); }
+  };
+}
+function specialCompile(tpl) {
+  if (!tpl) return { err: '模板不存在' };
+  const src = String(tpl.code || '').trim();
+  if (!src) return { err: '这个特殊模板还没有脚本' };
+  const hit = SPECIAL_CACHE[tpl.id];
+  if (hit && hit.src === src) return hit;
+  let c;
+  try {
+    const fn = new Function('helpers', '"use strict";\n' + src);
+    const mod = fn(specialHelpers());
+    if (!mod || typeof mod !== 'object') throw new Error('脚本没有 return 对象');
+    if (typeof mod.render !== 'function') throw new Error('脚本缺少 render 函数');
+    c = { src: src, mod: mod, err: null };
+  } catch (e) {
+    c = { src: src, mod: null, err: (e && e.message) ? e.message : String(e) };
+  }
+  SPECIAL_CACHE[tpl.id] = c;
+  return c;
+}
+function specialFields(mod) { return mod && Array.isArray(mod.fields) ? mod.fields.filter(function (f) { return f && f.key; }) : []; }
+function specialValuesFor(mod) {
+  specialFields(mod).forEach(function (f) {
+    const key = f.key;
+    if (f.type === 'table') {
+      const labels = f.rows === 'entrances'
+        ? (data.settings.entrances || []).filter(Boolean)
+        : (Array.isArray(f.rows) ? f.rows : []);
+      const prev = Array.isArray(values[key]) ? values[key] : [];
+      const byLabel = {};
+      prev.forEach(function (r) { if (r && r.__label) byLabel[r.__label] = r; });
+      values[key] = labels.map(function (lb) {
+        const old = byLabel[lb] || {};
+        const row = { __label: lb };
+        (f.cols || []).forEach(function (col) {
+          row[col.key] = old[col.key] != null ? old[col.key] : (col.default != null ? col.default : '');
+        });
+        return row;
+      });
+      return;
+    }
+    if (values[key] == null) {
+      if (f.default != null) values[key] = f.default;
+      else if (f.type === 'date') values[key] = todayStr(new Date());
+      else if (f.type === 'time') values[key] = nowHM(new Date());
+      else values[key] = '';
+    }
+  });
+}
+function specialLabel(node, f) {
+  const lab = document.createElement('div');
+  lab.className = 'field-label';
+  const nm = document.createElement('span');
+  nm.className = 'fl-name';
+  nm.textContent = f.label || f.key;
+  lab.appendChild(nm);
+  if (f.optional) {
+    const req = document.createElement('span');
+    req.style.cssText = 'font-size:.72rem;color:var(--text-3)';
+    req.textContent = '选填';
+    lab.appendChild(req);
+  }
+  node.appendChild(lab);
+}
+function specialChips(f, key, single) {
+  const box = document.createElement('div');
+  box.className = 'chip-group';
+  const opts = f.type === 'entrances' ? (data.settings.entrances || []).filter(Boolean) : (Array.isArray(f.options) ? f.options : []);
+  if (!opts.length) {
+    const h = document.createElement('div');
+    h.className = 'field-hint';
+    h.textContent = f.type === 'entrances' ? '还没有安检点,去「设置」里添加' : '还没有可选项';
+    box.appendChild(h);
+    return box;
+  }
+  const selected = String(values[key] || '').split('、').map(function (x) { return x.trim(); }).filter(Boolean);
+  opts.forEach(function (o) {
+    const c = mk('tpl-chip');
+    c.textContent = o;
+    c.setAttribute('aria-pressed', selected.indexOf(o) >= 0 ? 'true' : 'false');
+    c.addEventListener('click', function () {
+      if (single) {
+        const on = c.getAttribute('aria-pressed') === 'true';
+        $$('.chip', box).forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+        c.setAttribute('aria-pressed', on ? 'false' : 'true');
+        values[key] = on ? '' : o;
+      } else {
+        const on = c.getAttribute('aria-pressed') === 'true';
+        c.setAttribute('aria-pressed', on ? 'false' : 'true');
+        values[key] = $$('.chip', box).filter(function (x) { return x.getAttribute('aria-pressed') === 'true'; })
+          .map(function (x) { return x.textContent; }).join('、');
+      }
+      queuePreview();
+    });
+    box.appendChild(c);
+  });
+  return box;
+}
+function specialTable(f) {
+  const node = document.createElement('div');
+  node.className = 'field';
+  specialLabel(node, f);
+  const rows = Array.isArray(values[f.key]) ? values[f.key] : [];
+  const cols = Array.isArray(f.cols) ? f.cols.filter(function (c) { return c && c.key; }) : [];
+  if (!cols.length) {
+    const h = document.createElement('div');
+    h.className = 'field-hint';
+    h.textContent = '表格字段缺少 cols 配置';
+    node.appendChild(h);
+    return node;
+  }
+  const box = document.createElement('div');
+  box.style.cssText = 'border:1px solid var(--border);border-radius:10px;overflow:hidden';
+  const head = document.createElement('div');
+  head.style.cssText = 'display:grid;grid-template-columns:86px repeat(' + cols.length + ',1fr);gap:6px;padding:8px 10px;background:var(--card-2);font-size:.76rem;font-weight:700;color:var(--text-2)';
+  const hc = document.createElement('span'); hc.textContent = f.rowLabel || '项目'; head.appendChild(hc);
+  cols.forEach(function (c) {
+    const s2 = document.createElement('span'); s2.textContent = c.label || c.key; head.appendChild(s2);
+  });
+  box.appendChild(head);
+  rows.forEach(function (r, ri) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:86px repeat(' + cols.length + ',1fr);gap:6px;padding:7px 10px;align-items:center;border-top:1px solid var(--border)';
+    const lb = document.createElement('span');
+    lb.textContent = r.__label || (ri + 1);
+    lb.style.cssText = 'font-size:.82rem;font-weight:600;color:var(--text-2)';
+    row.appendChild(lb);
+    cols.forEach(function (c) {
+      const inp = document.createElement('input');
+      inp.className = 'input';
+      inp.type = c.type === 'number' ? 'number' : 'text';
+      if (c.type === 'number') { inp.inputMode = 'numeric'; inp.min = '0'; }
+      inp.style.cssText = 'min-height:38px;font-size:.84rem;padding:6px 8px';
+      inp.value = r[c.key] == null ? '' : r[c.key];
+      inp.placeholder = c.placeholder || '';
+      inp.setAttribute('aria-label', (r.__label || '') + ' ' + (c.label || c.key));
+      inp.addEventListener('input', function () { r[c.key] = inp.value; queuePreview(); });
+      row.appendChild(inp);
+    });
+    box.appendChild(row);
+  });
+  if (!rows.length) {
+    const h = document.createElement('div');
+    h.className = 'field-hint';
+    h.style.padding = '10px';
+    h.textContent = f.rows === 'entrances' ? '还没有安检点,去「设置」里添加后再回来' : '表格暂无行';
+    box.appendChild(h);
+  }
+  node.appendChild(box);
+  return node;
+}
+function specialFieldNode(f) {
+  const type = f.type || 'text';
+  if (type === 'table') return specialTable(f);
+  const node = document.createElement('div');
+  node.className = 'field';
+  specialLabel(node, f);
+  const key = f.key;
+  if (type === 'select' || type === 'multi' || type === 'entrances') {
+    node.appendChild(specialChips(f, key, type === 'select'));
+    return node;
+  }
+  if (type === 'textarea') {
+    const ta = document.createElement('textarea');
+    ta.className = 'input';
+    ta.rows = 2;
+    ta.placeholder = f.placeholder || ('请输入' + (f.label || key));
+    ta.value = values[key] == null ? '' : values[key];
+    ta.setAttribute('aria-label', f.label || key);
+    ta.addEventListener('input', function () { values[key] = ta.value; queuePreview(); });
+    node.appendChild(ta);
+    return node;
+  }
+  const inp = document.createElement('input');
+  inp.className = 'input';
+  inp.type = type === 'date' ? 'date' : (type === 'number' ? 'number' : 'text');
+  if (type === 'number') { inp.inputMode = 'numeric'; inp.min = '0'; }
+  if (type === 'time') inp.inputMode = 'numeric';
+  inp.placeholder = f.placeholder || (type === 'time' ? '如 08:30' : ('请输入' + (f.label || key)));
+  inp.value = values[key] == null ? '' : values[key];
+  inp.setAttribute('aria-label', f.label || key);
+  inp.addEventListener('input', function () {
+    values[key] = inp.value;
+    if (type !== 'time') queuePreview();
+  });
+  if (type === 'time') {
+    inp.addEventListener('blur', function () {
+      const n = normalizeTime(inp.value);
+      if (n) { inp.value = n; values[key] = n; queuePreview(); }
+    });
+  }
+  node.appendChild(inp);
+  return node;
+}
+function buildSpecialForm(tpl) {
+  const area = $('#formArea');
+  const c = specialCompile(tpl);
+  if (c.err) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = '特殊模板脚本有问题:' + c.err + '。去「管理模板」里修改脚本。';
+    area.appendChild(e);
+    return;
+  }
+  specialValuesFor(c.mod);
+  const fields = specialFields(c.mod);
+  if (!fields.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = '这个特殊模板不需要填写,直接复制即可';
+    area.appendChild(e);
+    return;
+  }
+  fields.forEach(function (f) { area.appendChild(specialFieldNode(f)); });
+}
+function specialResult(tpl) {
+  const c = specialCompile(tpl);
+  if (c.err) return { err: c.err, text: '', issues: [] };
+  const h = specialHelpers();
+  let d = {};
+  try {
+    if (typeof c.mod.compute === 'function') d = c.mod.compute(values, h) || {};
+  } catch (e) {
+    return { err: 'compute 出错:' + e.message, text: '', issues: [] };
+  }
+  let text = '';
+  try {
+    text = c.mod.render(d, values, h);
+  } catch (e) {
+    return { err: 'render 出错:' + e.message, text: '', issues: [] };
+  }
+  let issues = [];
+  if (typeof c.mod.validate === 'function') {
+    try { issues = c.mod.validate(values, d, h) || []; } catch (e) { issues = []; }
+  }
+  return { err: null, text: String(text == null ? '' : text), issues: Array.isArray(issues) ? issues : [] };
+}
+function specialReset(tpl) {
+  const c = specialCompile(tpl);
+  if (c.err || !c.mod || typeof c.mod.reset !== 'function') return false;
+  try {
+    const out = c.mod.reset(deepCopy(values), specialHelpers());
+    values = out && typeof out === 'object' ? out : values;
+    renderForm(); renderPreview();
+    return true;
+  } catch (e) { return false; }
+}
 function renderForm() {
   const area = $('#formArea');
   area.innerHTML = '';
@@ -2983,6 +3335,7 @@ function renderForm() {
     area.appendChild(e);
     return;
   }
+  if (isSpecial(tpl)) { buildSpecialForm(tpl); return; }
   const vars = visibleVars(tpl);
   if (!vars.length) {
     const e = document.createElement('div');
@@ -3003,7 +3356,20 @@ function renderForm() {
 function syncContRow(tpl) {
   const row = $('#contRow'), sw = $('#swContinuous');
   if (!row) return;
-  row.hidden = !(tpl && hasItemsVar(tpl));
+  const sp = isSpecial(tpl);
+  const spMod = sp ? specialCompile(tpl) : null;
+  const spReset = !!(spMod && !spMod.err && spMod.mod && typeof spMod.mod.reset === 'function');
+  const hasItems = !!(tpl && hasItemsVar(tpl));
+  const hasEnt = !!(tpl && !hasItems && hasEntrancesVar(tpl));
+  row.hidden = !(tpl && (sp ? spReset : (hasItems || hasEnt)));
+  const desc = $('.cont-text span', row);
+  if (desc) {
+    desc.textContent = sp
+      ? '复制后按该特殊模板脚本定义的规则清空,时间按脚本刷新'
+      : (hasItems
+        ? '复制后自动清空物品/数量/备注，保留口别和人员，时间刷新为当前'
+        : '复制后自动清空已选安检点和备注，保留测试人，时间刷新为当前');
+  }
   if (sw) sw.setAttribute('aria-checked', data.settings.continuous ? 'true' : 'false');
 }
 function queuePreview() {
@@ -3061,13 +3427,29 @@ function renderPreview() {
     stamp.style.color = 'var(--primary)';
     return;
   }
-  const out = renderTemplate(tpl, values);
-  tname.textContent = tpl.name;
+  let out = '';
+  if (isSpecial(tpl)) {
+    const r = specialResult(tpl);
+    tname.textContent = tpl.name + ' · 特殊';
+    if (r.err) {
+      box.className = 'preview placeholder';
+      box.textContent = '脚本出错:' + r.err;
+      cnt.textContent = '0 字';
+      stamp.textContent = '去「管理模板」修脚本';
+      stamp.style.color = 'var(--danger)';
+      return;
+    }
+    out = r.text;
+  } else {
+    out = renderTemplate(tpl, values);
+    tname.textContent = tpl.name;
+  }
   if (!out.trim()) {
     box.className = 'preview placeholder';
-    box.textContent = '填写内容后,这里会实时生成可发送的文本';
+    box.textContent = isSpecial(tpl) ? '脚本没有输出内容:render 需要 return 一段文本' : '填写内容后,这里会实时生成可发送的文本';
     cnt.textContent = '0 字';
-    stamp.textContent = '';
+    stamp.textContent = isSpecial(tpl) ? '去「管理模板」检查脚本' : '';
+    stamp.style.color = isSpecial(tpl) ? 'var(--danger)' : '';
     return;
   }
   box.className = 'preview';
@@ -3075,7 +3457,7 @@ function renderPreview() {
   cnt.textContent = out.replace(/\s/g, '').length + ' 字';
   const miss = missingVars(tpl, values);
   if (miss.length) {
-    stamp.textContent = '待填:' + miss.slice(0, 3).join('、') + (miss.length > 3 ? ' 等' + miss.length + '项' : '');
+    stamp.textContent = (isSpecial(tpl) ? '校验:' : '待填:') + miss.slice(0, 3).join('、') + (miss.length > 3 ? ' 等' + miss.length + '项' : '');
     stamp.style.color = 'var(--warn)';
     return;
   }
@@ -3161,6 +3543,7 @@ async function copyText(text) {
 function snapshotValues(tpl, vals) {
   const out = {};
   if (!tpl) return out;
+  if (isSpecial(tpl)) return deepCopy(vals);
   extractVars(tpl.content).forEach(function (name) {
     const type = varType(tpl, name);
     if (presetValue(name)) return;
@@ -3253,6 +3636,7 @@ function continuousReset(tpl) {
       }
       return;
     }
+    if (type === 'entrances') { values[n] = ''; delete touchedVars[n]; return; }
     if (/(备注|说明)$/.test(n)) { values[n] = ''; delete touchedVars[n]; }
   });
   extractVars(tpl.content).forEach(function (n) {
@@ -3278,7 +3662,10 @@ async function doCopy(text, btn, labelEl) {
   const tpl = tplById(currentTplId);
   addHistory(text, tpl);
   if (tpl) recordTplUse(tpl.id);
-  if (data.settings.continuous && hasItemsVar(tpl)) continuousReset(tpl);
+  if (data.settings.continuous) {
+    if (isSpecial(tpl)) specialReset(tpl);
+    else if (hasItemsVar(tpl) || hasEntrancesVar(tpl)) continuousReset(tpl);
+  }
   afterCopyHint(tpl);
 }
 
@@ -4971,7 +5358,7 @@ function openManageSheet() {
     data.templates.forEach(function (t, idx) {
       const node = mk('tpl-manage-item');
       const btn = $('.mi-name', node);
-      btn.textContent = t.name + (t.group ? '(' + t.group + ')' : '');
+      btn.textContent = t.name + (t.kind === 'special' ? ' · 特殊' : '') + (t.group ? '(' + t.group + ')' : '');
       btn.setAttribute('aria-pressed', t.id === editingId ? 'true' : 'false');
       btn.addEventListener('click', function () {
         if (dirty) {
@@ -5492,11 +5879,87 @@ function openManageSheet() {
     groupIn.addEventListener('input', function () { dirty = true; });
     editorBox.appendChild(nameIn);
     editorBox.appendChild(row);
+
+    /* 类型切换:通用模板(文本+变量) / 特殊模板(脚本) */
+    const kindRow = document.createElement('div');
+    kindRow.className = 'chip-group';
+    kindRow.style.marginBottom = '10px';
+    kindRow.setAttribute('aria-label', '模板类型');
+    const kindBtns = {};
+    [['text', '通用模板'], ['special', '特殊模板']].forEach(function (o) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.textContent = o[1];
+      b.addEventListener('click', function () {
+        t.kind = o[0];
+        if (t.kind === 'special' && !String(t.code || '').trim()) t.code = SPECIAL_DEMO_CODE;
+        dirty = true;
+        applyKindView();
+      });
+      kindBtns[o[0]] = b;
+      kindRow.appendChild(b);
+    });
+    editorBox.appendChild(kindRow);
+
+    const codeWrap = document.createElement('div');
+    const codeLab = document.createElement('div');
+    codeLab.className = 'field-label';
+    const codeTitle = document.createElement('span');
+    codeTitle.className = 'fl-name';
+    codeTitle.textContent = '特殊模板脚本(JavaScript)';
+    codeLab.appendChild(codeTitle);
+    codeWrap.appendChild(codeLab);
+    const codeIn = document.createElement('textarea');
+    codeIn.className = 'textarea';
+    codeIn.style.cssText = 'min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.55;white-space:pre';
+    codeIn.spellcheck = false;
+    codeIn.value = t.code || '';
+    codeIn.setAttribute('aria-label', '特殊模板脚本');
+    codeIn.addEventListener('input', function () { dirty = true; });
+    codeWrap.appendChild(codeIn);
+    const codeHint = document.createElement('div');
+    codeHint.className = 'section-note';
+    codeHint.style.marginTop = '6px';
+    codeHint.textContent = '脚本必须 return { fields, render, compute?, validate?, reset? }。helpers 提供 line/station/leader/entrances/today/now/num/sum/fmt。字段类型:text / textarea / number / select / multi / entrances / date / time / table。';
+    codeWrap.appendChild(codeHint);
+    const codeBtns = document.createElement('div');
+    codeBtns.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+    const checkBtn = document.createElement('button');
+    checkBtn.type = 'button'; checkBtn.className = 'btn btn-ghost btn-sm'; checkBtn.textContent = '检查语法';
+    checkBtn.addEventListener('click', function () {
+      const c = specialCompile({ id: t.id, code: codeIn.value });
+      toast(c.err ? ('脚本错误:' + c.err) : '脚本语法正常');
+    });
+    const demoBtn = document.createElement('button');
+    demoBtn.type = 'button'; demoBtn.className = 'btn btn-ghost btn-sm'; demoBtn.textContent = '填入示例';
+    demoBtn.addEventListener('click', function () {
+      Sheet.confirmSheet({
+        title: '用示例脚本覆盖当前脚本?',
+        message: '会替换脚本框里的全部内容,原来写的内容不保留。',
+        okText: '覆盖', danger: true,
+        onOk: function () { codeIn.value = SPECIAL_DEMO_CODE; t.code = codeIn.value; dirty = true; toast('已填入示例'); }
+      });
+    });
+    codeBtns.appendChild(checkBtn); codeBtns.appendChild(demoBtn);
+    codeWrap.appendChild(codeBtns);
+    editorBox.appendChild(codeWrap);
+
+    function applyKindView() {
+      const sp = t.kind === 'special';
+      kindBtns.text && kindBtns.text.setAttribute('aria-pressed', sp ? 'false' : 'true');
+      kindBtns.special && kindBtns.special.setAttribute('aria-pressed', sp ? 'true' : 'false');
+      [lab, content, quickBar, vtWrap].forEach(function (el) { if (el) el.style.display = sp ? 'none' : ''; });
+      codeWrap.style.display = sp ? '' : 'none';
+      if (sp && !codeIn.value.trim()) codeIn.value = t.code || '';
+    }
+
     editorBox.appendChild(lab);
     editorBox.appendChild(content);
     editorBox.appendChild(quickBar);
     editorBox.appendChild(vtWrap);
     paintVarTypes();
+    applyKindView();
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button'; saveBtn.className = 'btn btn-primary btn-block';
     saveBtn.style.marginTop = '14px';
@@ -5506,7 +5969,14 @@ function openManageSheet() {
       t.group = groupIn.value.trim();
       // 收集选中的群名
       t.groupHint = Array.from(hintWrap.querySelectorAll('.chip[aria-pressed="true"]')).map(function (c) { return c.textContent; });
-      t.content = content.value;
+      if (t.kind === 'special') {
+        const cc = specialCompile({ id: t.id, code: codeIn.value });
+        if (cc.err) { toast('脚本有错误,先修好再保存:' + cc.err); return; }
+        t.code = codeIn.value;
+      } else {
+        t.kind = 'text';
+        t.content = content.value;
+      }
       t.builtin = false;
       t.updatedAt = Date.now();
       dirty = false;
@@ -5524,7 +5994,7 @@ function openManageSheet() {
     dup.addEventListener('click', function () {
       const nt = {
         id: uid(), name: t.name + '(副本)', group: t.group || '', groupHint: deepCopy(t.groupHint || []),
-        content: t.content, varTypes: deepCopy(t.varTypes || {}), builtin: false, createdAt: Date.now(), updatedAt: Date.now()
+        content: t.content, varTypes: deepCopy(t.varTypes || {}), kind: t.kind || 'text', code: t.code || '', builtin: false, createdAt: Date.now(), updatedAt: Date.now()
       };
       data.templates.push(nt);
       editingId = nt.id; dirty = false;
@@ -5546,12 +6016,25 @@ function openManageSheet() {
   }
   const footNode = document.createElement('div');
   footNode.className = 'btn-row';
+  const addSpecialBtn = document.createElement('button');
+  addSpecialBtn.type = 'button'; addSpecialBtn.className = 'btn'; addSpecialBtn.textContent = '新建特殊模板';
+  addSpecialBtn.addEventListener('click', function () {
+    const t = {
+      id: uid(), name: '特殊模板 ' + (data.templates.length + 1), group: '', groupHint: [],
+      content: '', varTypes: {}, kind: 'special', code: SPECIAL_DEMO_CODE,
+      builtin: false, createdAt: Date.now(), updatedAt: Date.now()
+    };
+    data.templates.push(t);
+    editingId = t.id; dirty = false;
+    save(); paintList(); paintEditor(); renderTplChips();
+  });
+  footNode.appendChild(addSpecialBtn);
   const addBtn = document.createElement('button');
   addBtn.type = 'button'; addBtn.className = 'btn btn-primary'; addBtn.textContent = '新建模板';
   addBtn.addEventListener('click', function () {
     const t = {
       id: uid(), name: '新模板 ' + (data.templates.length + 1), group: '', groupHint: [],
-      content: '', varTypes: {}, builtin: false, createdAt: Date.now(), updatedAt: Date.now()
+      content: '', varTypes: {}, kind: 'text', code: '', builtin: false, createdAt: Date.now(), updatedAt: Date.now()
     };
     data.templates.push(t);
     editingId = t.id; dirty = false;
@@ -5574,7 +6057,7 @@ function openManageSheet() {
    避免「x6」里的 6 把全文所有 6 都换掉。已有 *变量* 一律保护,不参与识别与替换。 */
 const MAKER_TYPES = [
   ['text', '文本'], ['number', '数字'], ['date', '日期'], ['time', '时间'],
-  ['single', '单选'], ['multi', '多选'], ['entrance', '安检点'], ['member', '人员']
+  ['single', '单选'], ['multi', '多选'], ['entrances', '安检点多选'], ['member', '人员']
 ];
 function escapeRe(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function makerKey(r) { return (r.pre || '') + r.frag + (r.suf || ''); }
@@ -6345,6 +6828,16 @@ function openHelpSheet() {
     { t: '快速上手', l: ['在「上报」页点「选择模板」按钮,先选分类、再选该分类下的模板', '弹窗顶部可直接搜索模板;分类和模板的顺序可在弹窗里点「调整顺序」用 ▲▼ 自定义,自动保存', '预览区实时生成完整文本', '点「复制结果」直接粘贴到微信发送',
       '有变量没填时会先列出漏填项让你确认,可以选择返回填写或仍要复制', '时间、日期类变量每次打开自动填当前时刻,不用手动删除'] },
     { t: '模板语法', l: ['*变量名* 会生成对应输入框', '*日期* 自动填当天(如 2026年10月2日)', '含「时间」的变量自动填当前时间,支持 08:30、8.30、830 等写法', '{?备注}备注:*备注*{/备注} 表示变量为空时整段不输出', '在「管理模板 → 变量与类型」里可把变量改成单选、多选、数字、物品清单'] },
+    { t: '特殊模板（带逻辑的模板）', l: [
+      '模板分两类:通用模板只用 *变量* 改字改字段;特殊模板由一段脚本驱动,能自动相加、汇总、按条件输出',
+      '「管理模板」里选中模板后可在「通用模板 / 特殊模板」之间切换,特殊模板会显示脚本框',
+      '脚本由 AI 生成:把需求讲清楚(要哪些输入、怎么汇总、输出成什么文字),让 AI 按约定写好脚本,整段粘进脚本框',
+      '脚本约定:必须 return { fields, render, validate?, compute?, reset? };helpers 提供 line/station/leader/phone/entrances/groups/members/today/now/num/sum/fmt',
+      '支持字段类型:text / textarea / number / select / multi / entrances / date / time / table',
+      '点「检查语法」可先验证,保存时也会自动校验;脚本写错只影响这个模板,页面不会崩',
+      '内置示例「安检数据汇总」:按安检点录过包数/过人数,自动算合计,可直接改脚本或删掉',
+      '特殊模板同样支持「连续录入」:复制后清空数字,保留口别与人员,下一条直接填'
+    ] },
     { t: '发往群名', l: ['在设置页的「发往群名」里添加你常用的群', '在模板管理里为每个模板选择发往哪些群(可多选)', '上报页会显示提示条,点「复制群名」一键复制所有选中的群'] },
     { t: '时间线', l: ['管理每日任务,到点提醒', '支持跨天夜班,例如 22:00 - 02:00,编辑时勾选「跨天夜班」', '左侧圆圈可勾选完成,会记录实际完成时间', '系统通知需要 https 环境并授权;本地文件打开时用页面内横幅加提示音提醒'] },
     { t: '人员批量导入', l: ['设置页「人员」卡片右上角点「批量导入」', '支持「张三 001」「张三,001」「张三（001）」等多种写法,一行一个', '可先「追加到现有」(自动跳过重复),或「替换全部」', '一键粘贴微信、Excel 里复制出来的名单即可'] },
