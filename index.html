@@ -2743,11 +2743,11 @@ function frequentItemChips(name, fields, limit, counts) {
   });
   return out;
 }
-/* 数量快捷值:1/2/3/5 一键点,少按步进器 */
-function qtyQuickRow(getVal, setVal) {
+/* 数量快捷值:0/1/2/3 一键点,再大的数手动输入 */
+function qtyQuickRow(getVal, setVal, values) {
   const wrap = document.createElement('div'); wrap.className = 'qty-quick';
   const lab = document.createElement('span'); lab.className = 'qq-label'; lab.textContent = '快捷'; wrap.appendChild(lab);
-  [1, 2, 3, 5].forEach(function (v) {
+  (values || [0, 1, 2, 3]).forEach(function (v) {
     const b = document.createElement('button'); b.type = 'button'; b.textContent = String(v);
     b.setAttribute('aria-label', '数量设为 ' + v);
     if (String(getVal() || '') === String(v)) b.setAttribute('aria-pressed', 'true');
@@ -2876,7 +2876,8 @@ function buildItemsField(tpl, name) {
           if (f.type === 'number') {
             grid.appendChild(qtyQuickRow(
               function () { return it[f.key]; },
-              function (v) { el.value = String(v); it[f.key] = String(v); queuePreview(); }
+              function (v) { el.value = String(v); it[f.key] = String(v); queuePreview(); },
+              [0, 1, 2, 3]
             ));
           }
         });
@@ -4617,7 +4618,7 @@ function renderSettingsAll() {
   $('#setLeaderPhone').value = s.leaderPhone || '';
   renderEntrances(); renderGroups(); renderMembers(); renderCustom(); renderLibraries();
   renderThemeChips(); renderDisplaySettings(); renderNotifySettings(); renderCaps();
-  $('#aboutText').textContent = '信息助手 v5.1 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
+  $('#aboutText').textContent = '信息助手 v5.3 · 单文件离线应用,无网络请求、无第三方依赖,全部数据只保存在这台设备的浏览器本地存储中。当前有 '
     + data.templates.length + ' 个模板、' + data.timeline.length + ' 个时间线任务、' + data.history.length
     + ' 条上报记录。清除浏览器数据会一并删除,建议定期「导出配置」备份。速查页内容可自定义,正式认定以运营单位现行文件为准。';
 }
@@ -6349,7 +6350,7 @@ function openHelpSheet() {
       '上报页「复用上一条」：直接载入最近一条记录并换成当前时间，改完就发',
       '物品名「常用」标签：酒精、打火机、刀片、充电宝等一键填，历史里常用的会自动排前面',
       '「连续录入」开关：复制后自动清空物品/数量/备注，保留口别和人员并刷新时间，可连录下一条',
-      '数量旁「快捷 1/2/3/5」一键点，少按步进器',
+      '数字旁「快捷 0/1/2/3」一键点，更大的数直接输入',
       '复制后底部提示「发往：XX群」，并可直接复制群名',
       '预览点「编辑」可临时改措辞，复制按改后的内容发；再动表单会自动回到模板生成',
       '日期不是今天、时间与当前差 3 小时以上会提醒，避免把旧时间发出去',
