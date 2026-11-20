@@ -406,6 +406,23 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:3
 .sheet-foot{padding:11px 16px;border-top:1px solid var(--border);flex:none;background:var(--card)}
 .sheet-foot:empty{display:none}
 
+/* 特殊模板表格：窄屏自适应,列多时改卡片式逐行录入 */
+.sp-table{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card)}
+.sp-head{display:grid;gap:6px;padding:8px 10px;background:var(--card-2);font-size:.74rem;font-weight:700;color:var(--text-2);line-height:1.25}
+.sp-row{display:grid;gap:6px;padding:6px 10px;align-items:center;border-top:1px solid var(--border)}
+.sp-lab{font-size:.82rem;font-weight:700;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-inp{width:100%;min-width:0;min-height:38px;font-size:.86rem;padding:6px 8px}
+.sp-card{padding:10px 12px;border-top:1px solid var(--border)}
+.sp-card:first-child{border-top:0}
+.sp-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:9px}
+.sp-card-name{font-size:.92rem;font-weight:800}
+.sp-card-meta{font-size:.72rem;color:var(--text-3)}
+.sp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 8px}
+@media (min-width:560px){.sp-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sp-cell{min-width:0}
+.sp-cell-label{display:block;font-size:.72rem;color:var(--text-2);margin-bottom:4px;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+.sp-cell .input{width:100%;min-width:0;min-height:40px;font-size:.86rem;padding:6px 8px}
+
 /* SECTION: alert+toast */
 .alert-banner{position:relative;left:auto;right:auto;top:auto;z-index:300;padding:calc(var(--sat) + 12px) 14px 14px;
   background:var(--danger);color:#fff;box-shadow:var(--shadow-lg);display:none;animation:slideDown .3s ease}
@@ -1334,7 +1351,7 @@ return {
         { key: 'bags', label: '过包(件)', type: 'number' },
         { key: 'persons', label: '过人(人)', type: 'number' }
       ] },
-    { key: '备注', type: 'textarea', label: '备注(选填)' }
+    { key: '备注', type: 'textarea', label: '备注', optional: true }
   ],
   compute: function (v, h) {
     var rows = v.rows || [];
@@ -3132,7 +3149,7 @@ function specialLabel(node, f) {
   nm.className = 'fl-name';
   nm.textContent = f.label || f.key;
   lab.appendChild(nm);
-  if (f.optional) {
+  if (f.optional && String(f.label || '').indexOf('选填') < 0) {
     const req = document.createElement('span');
     req.style.cssText = 'font-size:.72rem;color:var(--text-3)';
     req.textContent = '选填';
@@ -3187,36 +3204,92 @@ function specialTable(f) {
     node.appendChild(h);
     return node;
   }
+  const dense = cols.length >= 4;          // 列多时逐行改成卡片,避免横向挤压
   const box = document.createElement('div');
-  box.style.cssText = 'border:1px solid var(--border);border-radius:10px;overflow:hidden';
-  const head = document.createElement('div');
-  head.style.cssText = 'display:grid;grid-template-columns:86px repeat(' + cols.length + ',1fr);gap:6px;padding:8px 10px;background:var(--card-2);font-size:.76rem;font-weight:700;color:var(--text-2)';
-  const hc = document.createElement('span'); hc.textContent = f.rowLabel || '项目'; head.appendChild(hc);
-  cols.forEach(function (c) {
-    const s2 = document.createElement('span'); s2.textContent = c.label || c.key; head.appendChild(s2);
-  });
-  box.appendChild(head);
-  rows.forEach(function (r, ri) {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:grid;grid-template-columns:86px repeat(' + cols.length + ',1fr);gap:6px;padding:7px 10px;align-items:center;border-top:1px solid var(--border)';
-    const lb = document.createElement('span');
-    lb.textContent = r.__label || (ri + 1);
-    lb.style.cssText = 'font-size:.82rem;font-weight:600;color:var(--text-2)';
-    row.appendChild(lb);
-    cols.forEach(function (c) {
-      const inp = document.createElement('input');
-      inp.className = 'input';
-      inp.type = c.type === 'number' ? 'number' : 'text';
-      if (c.type === 'number') { inp.inputMode = 'numeric'; inp.min = '0'; }
-      inp.style.cssText = 'min-height:38px;font-size:.84rem;padding:6px 8px';
-      inp.value = r[c.key] == null ? '' : r[c.key];
-      inp.placeholder = c.placeholder || '';
-      inp.setAttribute('aria-label', (r.__label || '') + ' ' + (c.label || c.key));
-      inp.addEventListener('input', function () { r[c.key] = inp.value; queuePreview(); });
-      row.appendChild(inp);
+  box.className = 'sp-table';
+  function colIsTime(c) {
+    if (c.type === 'time') return true;
+    if (c.type === 'number' || c.type === 'date') return false;
+    return /时间|时刻/.test(String(c.label || '') + String(c.key || ''));
+  }
+  function mkCellInput(r, c) {
+    const inp = document.createElement('input');
+    inp.className = 'input sp-inp';
+    inp.type = c.type === 'number' ? 'number' : 'text';
+    if (c.type === 'number') { inp.inputMode = 'numeric'; inp.min = '0'; }
+    const isTime = colIsTime(c);
+    if (isTime) inp.inputMode = 'numeric';
+    inp.value = r[c.key] == null ? '' : r[c.key];
+    inp.placeholder = c.placeholder || (isTime ? '如 08:30' : '');
+    inp.setAttribute('aria-label', (r.__label || '') + ' ' + (c.label || c.key));
+    inp.addEventListener('input', function () {
+      r[c.key] = inp.value;
+      queuePreview();
     });
-    box.appendChild(row);
-  });
+    if (isTime) {
+      inp.addEventListener('blur', function () {
+        const n = normalizeTime(inp.value);
+        if (n) { inp.value = n; r[c.key] = n; queuePreview(); }
+      });
+    }
+    return inp;
+  }
+  if (dense) {
+    rows.forEach(function (r, ri) {
+      const card = document.createElement('div');
+      card.className = 'sp-card';
+      const head = document.createElement('div');
+      head.className = 'sp-card-head';
+      const nm = document.createElement('span');
+      nm.className = 'sp-card-name';
+      nm.textContent = r.__label || (ri + 1);
+      const meta = document.createElement('span');
+      meta.className = 'sp-card-meta';
+      head.appendChild(nm); head.appendChild(meta);
+      card.appendChild(head);
+      const grid = document.createElement('div');
+      grid.className = 'sp-grid';
+      cols.forEach(function (c) {
+        const cell = document.createElement('div');
+        cell.className = 'sp-cell';
+        const lab = document.createElement('span');
+        lab.className = 'sp-cell-label';
+        lab.textContent = c.label || c.key;
+        cell.appendChild(lab);
+        cell.appendChild(mkCellInput(r, c));
+        grid.appendChild(cell);
+      });
+      card.appendChild(grid);
+      function updateMeta() {
+        const filled = cols.filter(function (c) { return String(r[c.key] == null ? '' : r[c.key]).trim() !== ''; }).length;
+        meta.textContent = filled ? (filled + '/' + cols.length + ' 已填') : '待填';
+        meta.style.color = filled === cols.length ? 'var(--success, #16a34a)' : '';
+      }
+      updateMeta();
+      card.addEventListener('input', updateMeta);
+      box.appendChild(card);
+    });
+  } else {
+    const head = document.createElement('div');
+    head.className = 'sp-head';
+    head.style.gridTemplateColumns = '76px repeat(' + cols.length + ',minmax(0,1fr))';
+    const hc = document.createElement('span'); hc.textContent = f.rowLabel || '项目'; head.appendChild(hc);
+    cols.forEach(function (c) {
+      const s2 = document.createElement('span'); s2.textContent = c.label || c.key; head.appendChild(s2);
+    });
+    box.appendChild(head);
+    rows.forEach(function (r, ri) {
+      const row = document.createElement('div');
+      row.className = 'sp-row';
+      row.style.gridTemplateColumns = '76px repeat(' + cols.length + ',minmax(0,1fr))';
+      const lb = document.createElement('span');
+      lb.className = 'sp-lab';
+      lb.textContent = r.__label || (ri + 1);
+      row.appendChild(lb);
+      cols.forEach(function (c) { row.appendChild(mkCellInput(r, c)); });
+      box.appendChild(row);
+    });
+  }
   if (!rows.length) {
     const h = document.createElement('div');
     h.className = 'field-hint';
@@ -3259,12 +3332,13 @@ function specialFieldNode(f) {
   inp.setAttribute('aria-label', f.label || key);
   inp.addEventListener('input', function () {
     values[key] = inp.value;
-    if (type !== 'time') queuePreview();
+    queuePreview();
   });
   if (type === 'time') {
     inp.addEventListener('blur', function () {
       const n = normalizeTime(inp.value);
-      if (n) { inp.value = n; values[key] = n; queuePreview(); }
+      if (n) { inp.value = n; values[key] = n; }
+      queuePreview();
     });
   }
   node.appendChild(inp);
